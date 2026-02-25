@@ -67,7 +67,7 @@ data_entries (N) → aggregated_summary (1 cached snapshot per refresh)
 - **Asset delivery**: Flask static serving (CSS + JS placeholders)
 
 ### Backend
-- **Runtime**: Python 3.13
+- **Runtime**: Python 3.12+
 - **Framework**: Flask 3.1
 - **Database**: SQLite
 - **Excel Processing**: pandas + openpyxl
@@ -82,7 +82,7 @@ data_entries (N) → aggregated_summary (1 cached snapshot per refresh)
 ## Getting Started
 
 ### Prerequisites
-- Python 3.13+
+- Python 3.12+
 - `pip` (comes with Python)
 - Optional: virtual environment
 
@@ -118,6 +118,7 @@ FLASK_RUN_PORT=5000
 This project uses plain Python, so run:
 ```bash
 python app.py       # start server
+pytest              # run unit tests
 python -m py_compile app.py models.py excel_parser.py aggregator.py
 ```
 
@@ -153,8 +154,9 @@ git push origin feature/<name>
 ```
 
 ### Testing Strategy
+- Run unit tests: `pytest`.
 - Run `python -m py_compile ...` after structural changes.
-- Manual smoke test by exercising upload/manual flows.
+- Manual smoke test by exercising upload/manual flows (see `QA_CHECKLIST.md`).
 
 ## Deployment
 
