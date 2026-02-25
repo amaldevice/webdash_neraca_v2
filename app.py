@@ -348,7 +348,15 @@ def generate_indicator_line_chart(indicator, time_range="all"):
     # every response (very large). This can make the /generate-plot response
     # feel like it "doesn't work" on slower machines/browsers.
     # Using CDN keeps responses small and usually fixes the UX.
-    plot_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
+    fig.update_layout(height=480)
+
+    # Provide an explicit default height to avoid 0px height issues in some browsers.
+    plot_html = fig.to_html(
+        full_html=False,
+        include_plotlyjs="cdn",
+        default_height="480px",
+        default_width="100%",
+    )
 
     return plot_html
 
