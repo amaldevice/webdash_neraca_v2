@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h2>Data Management</h2>
+    <p>Kelola data BPS dengan operasi CRUD (Create, Read, Update, Delete) secara langsung.</p>
+</section>
+
+<section class="filter-card">
+    <h3>Filter Data</h3>
+    <form method="GET" style="margin-bottom: 20px;">
+        <div class="form-row">
+            <label for="data_type">Tipe Data</label>
+            <select id="data_type" name="data_type">
+                <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
+                <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
+                <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="time_period">Periode</label>
+            <select id="time_period" name="time_period">
+                <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
+                <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="uploader">Pengupload</label>
+            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}" placeholder="Cari pengupload...">
+        </div>
+        <div class="form-row">
+            <label for="indicator">Indikator</label>
+            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}" placeholder="Cari indikator...">
+        </div>
+        <button type="submit" class="primary">Filter</button>
+        <a href="{{ url_for('data_management') }}" class="secondary" style="text-decoration: none; padding: 10px 16px; border: 1px solid #95aac9; border-radius: 4px;">Reset</a>
+    </form>
+
+    <h3>Tambah Data Baru</h3>
+    <form method="POST" style="border: 1px solid #e1e7ee; padding: 16px; border-radius: 4px; background: #f8fafc;">
+        <input type="hidden" name="action" value="insert">
+        <div class="form-row">
+            <label for="insert_uploader">Pengupload *</label>
+            <input type="text" id="insert_uploader" name="insert_uploader" required placeholder="Nama pengupload">
+        </div>
+        <div class="form-row">
+            <label for="insert_version">Version *</label>
+            <input type="text" id="insert_version" name="insert_version" required placeholder="v1.0, v2.0, dll">
+        </div>
+        <div class="form-row">
+            <label for="insert_data_type">Tipe Data</label>
+            <select id="insert_data_type" name="insert_data_type">
+                <option value="flow" selected>Flow</option>
+                <option value="stock">Stock</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="insert_time_period">Periode</label>
+            <select id="insert_time_period" name="insert_time_period">
+                <option value="monthly" selected>Bulanan</option>
+                <option value="quarterly">Triwulanan</option>
+                <option value="yearly">Tahunan</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="insert_indicator">Indikator *</label>
+            <input type="text" id="insert_indicator" name="insert_indicator" required placeholder="GDP, Inflasi, dll">
+        </div>
+        <div class="form-row">
+            <label for="insert_value">Nilai *</label>
+            <input type="number" step="0.01" id="insert_value" name="insert_value" required placeholder="123.45">
+        </div>
+        <button type="submit" class="primary">Tambah Data</button>
+    </form>
+</section>
+
+<section class="table-placeholder">
+    {% if entries %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>Data Entries ({{ entries|length }} ditampilkan)</h3>
+        {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator %}
+        <form method="POST" style="display: inline;">
+            <input type="hidden" name="action" value="delete_by_filter">
+            <input type="hidden" name="data_type" value="{{ filters.data_type }}">
+            <input type="hidden" name="time_period" value="{{ filters.time_period }}">
+            <input type="hidden" name="uploader" value="{{ filters.uploader }}">
+            <input type="hidden" name="indicator" value="{{ filters.indicator }}">
+            <button type="submit" class="secondary" style="background: #dc3545; border-color: #dc3545; color: white;"
+                    onclick="return confirm('Yakin hapus semua data yang sesuai filter?')">Hapus berdasarkan Filter</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Pengupload</th>
+                <th>Version</th>
+                <th>Indikator</th>
+                <th>Nilai</th>
+                <th>Tipe</th>
+                <th>Periode</th>
+                <th>Periode Data</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.id }}</td>
+                <form method="POST" style="display: contents;">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                    <td><input type="text" name="update_uploader" value="{{ entry.uploader_name }}" style="width: 100px;" required></td>
+                    <td><input type="text" name="update_version" value="{{ entry.version }}" style="width: 80px;" required></td>
+                    <td><input type="text" name="update_indicator" value="{{ entry.indicator_name }}" style="width: 80px;" required></td>
+                    <td><input type="number" step="0.01" name="update_value" value="{{ entry.value }}" style="width: 80px;" required></td>
+                    <td>
+                        <select name="update_data_type" style="width: 70px;">
+                            <option value="flow" {% if entry.data_type == "flow" %}selected{% endif %}>Flow</option>
+                            <option value="stock" {% if entry.data_type == "stock" %}selected{% endif %}>Stock</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="update_time_period" style="width: 90px;">
+                            <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Monthly</option>
+                            <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Quarterly</option>
+                            <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </td>
+                    <td>{{ entry.tanggal_data }}</td>
+                    <td>
+                        <button type="submit" class="primary" style="padding: 4px 8px; font-size: 12px;">Update</button>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="action" value="delete_single">
+                            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                            <button type="submit" class="secondary" style="background: #dc3545; border-color: #dc3545; color: white; padding: 4px 8px; font-size: 12px;"
+                                    onclick="return confirm('Yakin hapus data ini?')">Hapus</button>
+                        </form>
+                    </td>
+                </form>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Tidak ada data untuk filter saat ini.</p>
+    {% endif %}
+</section>
+{% endblock %}

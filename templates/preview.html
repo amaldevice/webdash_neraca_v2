@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h2>Preview Data</h2>
+    <p>Periksa, query, dan export data BPS yang telah diupload.</p>
+</section>
+
+<section class="filter-card">
+    <form method="GET">
+        <div class="form-row">
+            <label for="data_type">Filter Tipe Data</label>
+            <select id="data_type" name="data_type">
+                <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
+                <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
+                <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="time_period">Filter Periode</label>
+            <select id="time_period" name="time_period">
+                <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
+                <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="uploader">Pengupload</label>
+            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
+                   placeholder="Cari pengupload..." list="uploader-options">
+            <datalist id="uploader-options">
+                {% for uploader in filter_options.uploaders %}
+                <option value="{{ uploader }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-row">
+            <label for="indicator">Indikator</label>
+            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
+                   placeholder="Cari indikator..." list="indicator-options">
+            <datalist id="indicator-options">
+                {% for indicator in filter_options.indicators %}
+                <option value="{{ indicator }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-row">
+            <label for="limit">Jumlah Baris per Halaman</label>
+            <select id="limit" name="limit">
+                <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
+                <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
+            </select>
+        </div>
+        <button type="submit" class="primary">Apply Filter</button>
+    </form>
+
+    <div class="export-actions">
+        <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
+            class="secondary">Export CSV</a>
+        <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
+            class="secondary">Export Excel</a>
+    </div>
+</section>
+
+<section class="table-placeholder">
+    {% if entries %}
+    <div class="table-info">
+        <p>Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
+           (Halaman {{ filters.page }} dari {{ filters.total_pages }})</p>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Pengupload</th>
+                <th>Version</th>
+                <th>Indikator</th>
+                <th>Value</th>
+                <th>Tipe</th>
+                <th>Periode</th>
+                <th>Periode Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in entries %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.uploader_name }}</td>
+                <td>{{ row.version }}</td>
+                <td>{{ row.indicator_name }}</td>
+                <td>{{ row.value }}</td>
+                <td>{{ row.data_type }}</td>
+                <td>{{ row.time_period }}</td>
+                <td>{{ row.tanggal_data }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if filters.total_pages > 1 %}
+    <div class="pagination">
+        {% set start_page = [1, filters.page - 2]|max %}
+        {% set end_page = [filters.total_pages, filters.page + 2]|min %}
+
+        {% if filters.page > 1 %}
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page-1) }}"
+           class="pagination-link">&laquo; Previous</a>
+        {% endif %}
+
+        {% for page_num in range(start_page, end_page + 1) %}
+        {% if page_num == filters.page %}
+        <span class="pagination-current">{{ page_num }}</span>
+        {% else %}
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=page_num) }}"
+           class="pagination-link">{{ page_num }}</a>
+        {% endif %}
+        {% endfor %}
+
+        {% if filters.page < filters.total_pages %}
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page+1) }}"
+           class="pagination-link">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p>Tidak ada data untuk filter saat ini.</p>
+    {% endif %}
+</section>
+{% endblock %}

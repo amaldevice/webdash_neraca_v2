@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-card">
+    <h2>{{ "Upload Excel" if mode == "upload" else "Manual Input" }}</h2>
+    <p>Pastikan pengupload dan versioning selalu diisi.</p>
+
+    {% if mode == "upload" %}
+    <form method="POST" enctype="multipart/form-data">
+        <label for="uploader">Pengupload</label>
+        <input id="uploader" name="uploader" required>
+
+        <label for="version">Versioning</label>
+        <input id="version" name="version" required>
+
+        <label for="data_type">Tipe Data</label>
+        <select id="data_type" name="data_type">
+            <option value="flow">Flow</option>
+            <option value="stock">Stock</option>
+        </select>
+
+        <label for="time_period">Periode</label>
+        <select id="time_period" name="time_period">
+            <option value="monthly">Bulanan</option>
+            <option value="quarterly">Triwulanan</option>
+            <option value="yearly">Tahunan</option>
+        </select>
+
+        <label for="excel_file">File Excel</label>
+        <input id="excel_file" name="excel_file" type="file" accept=".xls,.xlsx" required>
+
+        <button type="submit" class="primary">Upload</button>
+    </form>
+    {% else %}
+    <form method="POST">
+        <label for="uploader">Pengupload</label>
+        <input id="uploader" name="uploader" required>
+
+        <label for="version">Versioning</label>
+        <input id="version" name="version" required>
+
+        <label for="data_type">Tipe Data</label>
+        <select id="data_type" name="data_type">
+            <option value="flow">Flow</option>
+            <option value="stock">Stock</option>
+        </select>
+
+        <label for="time_period">Periode</label>
+        <select id="time_period" name="time_period">
+            <option value="monthly">Bulanan</option>
+            <option value="quarterly">Triwulanan</option>
+            <option value="yearly">Tahunan</option>
+        </select>
+
+        <label for="indicator">Indikator</label>
+        <input id="indicator" name="indicator" required>
+
+        <label for="value">Nilai</label>
+        <input id="value" name="value" type="number" step="any" required>
+
+        <button type="submit" class="primary">Simpan Manual</button>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

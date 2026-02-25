@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h2>Data Analysis & Pivot Tables</h2>
+    <p>Analisis data agregat dengan pivot table dan berbagai filter untuk insights mendalam.</p>
+</section>
+
+
+<section class="filter-card">
+    <h3>Pivot Table Analysis</h3>
+    <p>Gunakan filter di bawah untuk membuat pivot table kustom:</p>
+
+    <form id="pivot-form">
+        <div class="form-row">
+            <label for="pivot_data_type">Tipe Data</label>
+            <select id="pivot_data_type" name="pivot_data_type">
+                <option value="">Semua</option>
+                <option value="flow">Flow</option>
+                <option value="stock">Stock</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="pivot_time_period">Periode</label>
+            <select id="pivot_time_period" name="pivot_time_period">
+                <option value="">Semua</option>
+                <option value="monthly">Bulanan</option>
+                <option value="quarterly">Triwulanan</option>
+                <option value="yearly">Tahunan</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="pivot_uploader">Pengupload</label>
+            <select id="pivot_uploader" name="pivot_uploader">
+                <option value="">Semua</option>
+                <!-- Will be populated by JavaScript -->
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="pivot_version">Version</label>
+            <select id="pivot_version" name="pivot_version">
+                <option value="">Semua</option>
+                <!-- Will be populated by JavaScript -->
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="rows">Baris (Rows)</label>
+            <select id="rows" name="rows">
+                <option value="indicator_name">Indikator</option>
+                <option value="uploader_name">Pengupload</option>
+                <option value="data_type">Tipe Data</option>
+                <option value="time_period">Periode</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="cols">Kolom (Columns)</label>
+            <select id="cols" name="cols">
+                <option value="data_type">Tipe Data</option>
+                <option value="time_period">Periode</option>
+                <option value="uploader_name">Pengupload</option>
+                <option value="version">Version</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="agg_func">Fungsi Agregasi</label>
+            <select id="agg_func" name="agg_func">
+                <option value="sum">Sum</option>
+                <option value="avg">Average</option>
+                <option value="count">Count</option>
+                <option value="min">Min</option>
+                <option value="max">Max</option>
+            </select>
+        </div>
+        <button type="button" id="generate-pivot" class="primary">Generate Pivot Table</button>
+        <button type="button" id="reset-pivot" class="secondary">Reset</button>
+    </form>
+</section>
+
+<section class="filter-card">
+    <h3>Line Chart Visualization</h3>
+    <p>Generate line chart tren indikator BPS untuk analisis perubahan waktu.</p>
+
+    <div class="plot-controls">
+        <div class="form-row">
+            <label for="indicator_filter">Pilih Indikator</label>
+            <select id="indicator_filter" name="indicator_filter">
+                <option value="">Pilih Indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="time_range">Rentang Waktu</label>
+            <select id="time_range" name="time_range">
+                <option value="all">Semua Periode</option>
+                <option value="2020">Tahun 2020</option>
+                <option value="2021">Tahun 2021</option>
+                <option value="2022">Tahun 2022</option>
+            </select>
+        </div>
+        <button type="button" id="generate-plot" class="primary">Generate Line Chart</button>
+    </div>
+</section>
+
+<section class="table-placeholder plot-container" id="plot-container" style="display: none;">
+    <div id="plot-display">
+        <!-- Plot will be displayed here -->
+    </div>
+</section>
+
+<section class="table-placeholder">
+    <div id="pivot-result">
+        <p>Klik "Generate Pivot Table" untuk melihat analisis data.</p>
+    </div>
+</section>
+
+<script>
+// Sample data for demonstration (in real app, this would come from AJAX)
+const sampleData = [
+    {% for card in summary.cards %}
+    {type: "{{ card.title }}", value: {{ card.value }}, label: "{{ card.label }}"},
+    {% endfor %}
+];
+
+// Function to populate uploader and version dropdowns
+function populateFilters() {
+    // This would normally fetch from API, but for now we'll use sample data
+    const uploaders = new Set(['john_doe', 'admin', 'bps_user']);
+    const versions = new Set(['v1.0', 'v1.1', 'v2.0']);
+
+    const uploaderSelect = document.getElementById('pivot_uploader');
+    const versionSelect = document.getElementById('pivot_version');
+
+    uploaders.forEach(uploader => {
+        const option = document.createElement('option');
+        option.value = uploader;
+        option.textContent = uploader;
+        uploaderSelect.appendChild(option);
+    });
+
+    versions.forEach(version => {
+        const option = document.createElement('option');
+        option.value = version;
+        option.textContent = version;
+        versionSelect.appendChild(option);
+    });
+}
+
+// Generate pivot table
+document.getElementById('generate-pivot').addEventListener('click', function() {
+    const rows = document.getElementById('rows').value;
+    const cols = document.getElementById('cols').value;
+    const aggFunc = document.getElementById('agg_func').value;
+
+    // In a real implementation, this would make an AJAX call to get filtered data
+    // For now, we'll show a sample pivot table
+    generateSamplePivot(rows, cols, aggFunc);
+});
+
+function generateSamplePivot(rows, cols, aggFunc) {
+    const resultDiv = document.getElementById('pivot-result');
+
+    // Sample pivot table HTML
+    const pivotHTML = `
+        <h4>Pivot Table: ${rows} vs ${cols} (${aggFunc})</h4>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>${rows}</th>
+                    <th>Flow - ${aggFunc}</th>
+                    <th>Stock - ${aggFunc}</th>
+                    <th>Total - ${aggFunc}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GDP</td>
+                    <td>1,250,000</td>
+                    <td>850,000</td>
+                    <td>2,100,000</td>
+                </tr>
+                <tr>
+                    <td>Inflation</td>
+                    <td>2.1</td>
+                    <td>1.8</td>
+                    <td>1.95</td>
+                </tr>
+                <tr>
+                    <td>Unemployment</td>
+                    <td>5.2</td>
+                    <td>4.8</td>
+                    <td>5.0</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="export-actions" style="margin-top: 16px;">
+            <button class="secondary" onclick="exportPivotTable()">Export Pivot</button>
+        </div>
+    `;
+
+    resultDiv.innerHTML = pivotHTML;
+}
+
+function exportPivotTable() {
+    alert('Pivot table export functionality would be implemented here');
+}
+
+// Reset pivot table
+document.getElementById('reset-pivot').addEventListener('click', function() {
+    document.getElementById('pivot-result').innerHTML = '<p>Klik "Generate Pivot Table" untuk melihat analisis data.</p>';
+    document.getElementById('pivot-form').reset();
+});
+
+// Plot generation functionality
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Plot generation script loaded');
+
+    const generateBtn = document.getElementById('generate-plot');
+    if (generateBtn) {
+        console.log('Generate button found, adding event listener');
+        generateBtn.addEventListener('click', handlePlotGeneration);
+    } else {
+        console.error('Generate button not found!');
+    }
+});
+
+function handlePlotGeneration() {
+    console.log('Generate plot clicked');
+
+    const indicatorFilter = document.getElementById('indicator_filter');
+    const timeRange = document.getElementById('time_range');
+
+    if (!indicatorFilter || !timeRange) {
+        console.error('Form elements not found');
+        alert('Form elements not found');
+        return;
+    }
+
+    const indicatorValue = indicatorFilter.value;
+    const timeValue = timeRange.value;
+
+    console.log('Indicator:', indicatorValue, 'Time range:', timeValue);
+
+    // Validate selection
+    if (!indicatorValue || indicatorValue === "") {
+        console.log('No indicator selected');
+        alert('Pilih indikator terlebih dahulu');
+        return;
+    }
+
+    // Show loading state
+    const plotContainer = document.getElementById('plot-container');
+    const plotDisplay = document.getElementById('plot-display');
+
+    if (!plotContainer || !plotDisplay) {
+        console.error('Plot container elements not found');
+        return;
+    }
+
+    console.log('Setting loading state...');
+    plotDisplay.innerHTML = '<div class="loading">Generating line chart...</div>';
+    plotContainer.style.display = 'block';
+
+    // Send request to generate plot
+    console.log('Sending fetch request...');
+    const formData = new URLSearchParams();
+    formData.append('indicator_filter', indicatorValue);
+    formData.append('time_range', timeValue);
+
+    fetch('/generate-plot', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+    .then(response => {
+        console.log('Response received, status:', response.status, 'ok:', response.ok);
+        if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+        }
+        return response.text().then(text => {
+            console.log('Raw response text length:', text.length);
+            console.log('First 100 chars:', text.substring(0, 100));
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                throw new Error('Invalid JSON response: ' + text.substring(0, 200));
+            }
+        });
+    })
+    .then(data => {
+        console.log('Data parsed successfully:', data ? 'has data' : 'no data');
+        if (data && data.plot_html) {
+            console.log('Setting plot HTML, length:', data.plot_html.length);
+            plotDisplay.innerHTML = data.plot_html;
+            console.log('Plot HTML set successfully');
+        } else {
+            console.log('No plot_html in response');
+            plotDisplay.innerHTML = '<div class="error">Error: No plot data received</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error in plot generation:', error);
+        plotDisplay.innerHTML = '<div class="error">Failed to generate plot: ' + error.message + '</div>';
+    });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    populateFilters();
+});
+</script>
+
+<style>
+#pivot-result {
+    margin-top: 24px;
+}
+
+#pivot-result h4 {
+    margin-bottom: 16px;
+    color: #0d3b66;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.pagination-link {
+    padding: 8px 12px;
+    border: 1px solid #95aac9;
+    color: #0d3b66;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.pagination-link:hover {
+    background: #0d3b66;
+    color: white;
+}
+
+.pagination-current {
+    padding: 8px 12px;
+    background: #0d3b66;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.table-info {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 4px;
+    border: 1px solid #e1e7ee;
+}
+
+.plot-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    margin-bottom: 24px;
+}
+
+.plot-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    text-align: center;
+    padding: 40px;
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+</style>
+{% endblock %}

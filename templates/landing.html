@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h2>Landing Dashboard</h2>
+    <p>Summary data terbaru dari proses agregasi.</p>
+</section>
+
+<section class="cards-grid">
+    {% for card in summary.cards %}
+    <article class="card">
+        <h4>{{ card.title }}</h4>
+        <p class="value">{{ card.value }}</p>
+        <span>{{ card.label }}</span>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="actions">
+    <a class="primary" href="{{ url_for('upload_data') }}">Upload Excel</a>
+    <a class="primary" href="{{ url_for('manual_input') }}">Manual Input</a>
+    <a class="secondary" href="{{ url_for('aggregated_summary') }}">View Aggregated Summary</a>
+</section>
+{% endblock %}
