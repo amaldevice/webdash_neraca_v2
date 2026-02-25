@@ -114,6 +114,7 @@
     </div>
 </section>
 
+<script src="https://cdn.plot.ly/plotly-3.3.1.min.js" integrity="sha256-4rD3fugVb/nVJYUv5Ky3v+fYXoouHaBSP20WIJuEiWg=" crossorigin="anonymous"></script>
 <script>
 // Sample data for demonstration (in real app, this would come from AJAX)
 const sampleData = [
@@ -292,14 +293,24 @@ function handlePlotGeneration() {
     })
     .then(data => {
         console.log('Data parsed successfully:', data ? 'has data' : 'no data');
-        if (data && data.plot_html) {
-            console.log('Setting plot HTML, length:', data.plot_html.length);
-            plotDisplay.innerHTML = data.plot_html;
-            console.log('Plot HTML set successfully');
-        } else {
-            console.log('No plot_html in response');
-            plotDisplay.innerHTML = '<div class="error">Error: No plot data received</div>';
+
+        if (data && data.error) {
+            plotDisplay.innerHTML = '<div class="error">' + data.error + '</div>';
+            return;
         }
+
+        if (!data || !data.plot_json) {
+            console.log('No plot_json in response');
+            plotDisplay.innerHTML = '<div class="error">Error: No plot data received</div>';
+            return;
+        }
+
+        // Render with Plotly (more reliable than injecting <script> via innerHTML)
+        const fig = JSON.parse(data.plot_json);
+        // Ensure container is empty before plotting
+        plotDisplay.innerHTML = '';
+        Plotly.newPlot(plotDisplay, fig.data, fig.layout, fig.config || {});
+        console.log('Plot rendered via Plotly.newPlot');
     })
     .catch(error => {
         console.error('Error in plot generation:', error);

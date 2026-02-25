@@ -276,12 +276,10 @@ def generate_plot():
     time_range = request.form.get("time_range", "all")
 
     if not indicator:
-        return jsonify({"plot_html": "<div class='error'>Pilih indikator terlebih dahulu</div>"})
+        return jsonify({"error": "Pilih indikator terlebih dahulu"})
 
-    # Generate line chart for selected indicator
-    plot_html = generate_indicator_line_chart(indicator, time_range)
-
-    return jsonify({"plot_html": plot_html})
+    fig_json = generate_indicator_line_chart(indicator, time_range)
+    return jsonify({"plot_json": fig_json})
 
 
 def generate_indicator_line_chart(indicator, time_range="all"):
@@ -350,15 +348,10 @@ def generate_indicator_line_chart(indicator, time_range="all"):
     # Using CDN keeps responses small and usually fixes the UX.
     fig.update_layout(height=480)
 
-    # Provide an explicit default height to avoid 0px height issues in some browsers.
-    plot_html = fig.to_html(
-        full_html=False,
-        include_plotlyjs="cdn",
-        default_height="480px",
-        default_width="100%",
-    )
-
-    return plot_html
+    # Return JSON instead of HTML-with-<script>. Scripts injected via innerHTML are
+    # not reliably executed by browsers, which can result in a blank plot area.
+    # Client will render using Plotly.newPlot().
+    return fig.to_json()
 
 
 @app.route("/data-management", methods=["GET", "POST"])
