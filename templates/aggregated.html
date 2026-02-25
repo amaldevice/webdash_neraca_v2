@@ -365,6 +365,14 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
     margin-bottom: 24px;
+
+    /* Important: Plotly div uses height:100%. Without an explicit container
+       height, some browsers will render it as 0px (blank). */
+    min-height: 520px;
+}
+
+#plot-display {
+    min-height: 480px;
 }
 
 .plot-controls {
