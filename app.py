@@ -344,7 +344,11 @@ def generate_indicator_line_chart(indicator, time_range="all"):
     )
 
     # Convert to HTML
-    plot_html = fig.to_html(full_html=False, include_plotlyjs=True)
+    # NOTE: Using include_plotlyjs=True inlines the entire Plotly.js bundle into
+    # every response (very large). This can make the /generate-plot response
+    # feel like it "doesn't work" on slower machines/browsers.
+    # Using CDN keeps responses small and usually fixes the UX.
+    plot_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
 
     return plot_html
 
