@@ -7,70 +7,31 @@
 
 
 <section class="filter-card">
-    <h3>Pivot Table Analysis</h3>
-    <p>Gunakan filter di bawah untuk membuat pivot table kustom:</p>
+    <h3>Period Comparison Analysis</h3>
+    <p>Pilih indikator untuk melihat analisis perbandingan periode (Q to Q, M to M, Y to Y, YTD, C to C):</p>
 
     <form id="pivot-form">
         <div class="form-row">
-            <label for="pivot_data_type">Tipe Data</label>
-            <select id="pivot_data_type" name="pivot_data_type">
-                <option value="">Semua</option>
-                <option value="flow">Flow</option>
-                <option value="stock">Stock</option>
+            <label for="analysis_indicator">Pilih Indikator</label>
+            <select id="analysis_indicator" name="analysis_indicator" required>
+                <option value="">Pilih Indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
             </select>
         </div>
         <div class="form-row">
-            <label for="pivot_time_period">Periode</label>
-            <select id="pivot_time_period" name="pivot_time_period">
-                <option value="">Semua</option>
-                <option value="monthly">Bulanan</option>
-                <option value="quarterly">Triwulanan</option>
-                <option value="yearly">Tahunan</option>
+            <label for="analysis_year">Tahun Analisis</label>
+            <select id="analysis_year" name="analysis_year">
+                <option value="">Semua Tahun</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
             </select>
         </div>
-        <div class="form-row">
-            <label for="pivot_uploader">Pengupload</label>
-            <select id="pivot_uploader" name="pivot_uploader">
-                <option value="">Semua</option>
-                <!-- Will be populated by JavaScript -->
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="pivot_version">Version</label>
-            <select id="pivot_version" name="pivot_version">
-                <option value="">Semua</option>
-                <!-- Will be populated by JavaScript -->
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="rows">Baris (Rows)</label>
-            <select id="rows" name="rows">
-                <option value="indicator_name">Indikator</option>
-                <option value="uploader_name">Pengupload</option>
-                <option value="data_type">Tipe Data</option>
-                <option value="time_period">Periode</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="cols">Kolom (Columns)</label>
-            <select id="cols" name="cols">
-                <option value="data_type">Tipe Data</option>
-                <option value="time_period">Periode</option>
-                <option value="uploader_name">Pengupload</option>
-                <option value="version">Version</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="agg_func">Fungsi Agregasi</label>
-            <select id="agg_func" name="agg_func">
-                <option value="sum">Sum</option>
-                <option value="avg">Average</option>
-                <option value="count">Count</option>
-                <option value="min">Min</option>
-                <option value="max">Max</option>
-            </select>
-        </div>
-        <button type="button" id="generate-pivot" class="primary">Generate Pivot Table</button>
+        <button type="button" id="generate-pivot" class="primary">Generate Period Analysis</button>
         <button type="button" id="reset-pivot" class="secondary">Reset</button>
     </form>
 </section>
@@ -123,92 +84,262 @@ const sampleData = [
     {% endfor %}
 ];
 
-// Function to populate uploader and version dropdowns
-function populateFilters() {
-    // This would normally fetch from API, but for now we'll use sample data
-    const uploaders = new Set(['john_doe', 'admin', 'bps_user']);
-    const versions = new Set(['v1.0', 'v1.1', 'v2.0']);
+// Period analysis functionality
 
-    const uploaderSelect = document.getElementById('pivot_uploader');
-    const versionSelect = document.getElementById('pivot_version');
-
-    uploaders.forEach(uploader => {
-        const option = document.createElement('option');
-        option.value = uploader;
-        option.textContent = uploader;
-        uploaderSelect.appendChild(option);
-    });
-
-    versions.forEach(version => {
-        const option = document.createElement('option');
-        option.value = version;
-        option.textContent = version;
-        versionSelect.appendChild(option);
-    });
-}
-
-// Generate pivot table
+// Generate period analysis
 document.getElementById('generate-pivot').addEventListener('click', function() {
-    const rows = document.getElementById('rows').value;
-    const cols = document.getElementById('cols').value;
-    const aggFunc = document.getElementById('agg_func').value;
+    const indicator = document.getElementById('analysis_indicator').value;
+    const year = document.getElementById('analysis_year').value;
 
-    // In a real implementation, this would make an AJAX call to get filtered data
-    // For now, we'll show a sample pivot table
-    generateSamplePivot(rows, cols, aggFunc);
+    if (!indicator) {
+        alert('Pilih indikator terlebih dahulu');
+        return;
+    }
+
+    const resultDiv = document.getElementById('pivot-result');
+    resultDiv.innerHTML = '<div class="loading">Generating period analysis...</div>';
+
+    // Send request to generate analysis
+    const formData = new URLSearchParams();
+    formData.append('indicator', indicator);
+    formData.append('year', year);
+
+    fetch('/generate-period-analysis', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div class="error">' + data.error + '</div>';
+            return;
+        }
+
+        const analysis = data.analysis;
+        const analysisHTML = generatePeriodAnalysisHTML(analysis);
+        resultDiv.innerHTML = analysisHTML;
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="error">Failed to generate analysis: ' + error.message + '</div>';
+    });
 });
 
-function generateSamplePivot(rows, cols, aggFunc) {
-    const resultDiv = document.getElementById('pivot-result');
+function generatePeriodAnalysisHTML(analysis) {
+    let html = `
+        <h4>Period Analysis: ${analysis.indicator}</h4>
+        <p class="analysis-info"><strong>Tahun Analisis:</strong> ${analysis.analysis_year}</p>
+    `;
 
-    // Sample pivot table HTML
-    const pivotHTML = `
-        <h4>Pivot Table: ${rows} vs ${cols} (${aggFunc})</h4>
-        <table class="data-table">
-            <thead>
+    // Quarterly Comparison (Q to Q)
+    if (analysis.quarterly_comparison && analysis.quarterly_comparison.length > 0) {
+        html += `
+            <h5>Quarter to Quarter (Q to Q) Comparison</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Quarter</th>
+                        <th>Current Value</th>
+                        <th>Previous Value</th>
+                        <th>Change %</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        analysis.quarterly_comparison.forEach(item => {
+            const trendClass = item.change_type === 'increase' ? 'trend-up' : 'trend-down';
+            const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+
+            html += `
                 <tr>
-                    <th>${rows}</th>
-                    <th>Flow - ${aggFunc}</th>
-                    <th>Stock - ${aggFunc}</th>
-                    <th>Total - ${aggFunc}</th>
+                    <td>${item.period}</td>
+                    <td>${item.current_value.toLocaleString()}</td>
+                    <td>${item.previous_value.toLocaleString()}</td>
+                    <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+                    <td>${trendSymbol}</td>
                 </tr>
-            </thead>
-            <tbody>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+    }
+
+    // Monthly Comparison (M to M)
+    if (analysis.monthly_comparison && analysis.monthly_comparison.length > 0) {
+        html += `
+            <h5>Month to Month (M to M) Comparison</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Current Value</th>
+                        <th>Previous Value</th>
+                        <th>Change %</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        analysis.monthly_comparison.forEach(item => {
+            const trendClass = item.change_type === 'increase' ? 'trend-up' : 'trend-down';
+            const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+
+            html += `
                 <tr>
-                    <td>GDP</td>
-                    <td>1,250,000</td>
-                    <td>850,000</td>
-                    <td>2,100,000</td>
+                    <td>${item.period}</td>
+                    <td>${item.current_value.toLocaleString()}</td>
+                    <td>${item.previous_value.toLocaleString()}</td>
+                    <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+                    <td>${trendSymbol}</td>
                 </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+    }
+
+    // Yearly Comparison (Y to Y)
+    if (analysis.yearly_comparison && analysis.yearly_comparison.length > 0) {
+        html += `
+            <h5>Year to Year (Y to Y) Comparison</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Current Value</th>
+                        <th>Previous Value</th>
+                        <th>Change %</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        analysis.yearly_comparison.forEach(item => {
+            const trendClass = item.change_type === 'increase' ? 'trend-up' : 'trend-down';
+            const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+
+            html += `
                 <tr>
-                    <td>Inflation</td>
-                    <td>2.1</td>
-                    <td>1.8</td>
-                    <td>1.95</td>
+                    <td>${item.period}</td>
+                    <td>${item.current_value.toLocaleString()}</td>
+                    <td>${item.previous_value.toLocaleString()}</td>
+                    <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+                    <td>${trendSymbol}</td>
                 </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+    }
+
+    // YTD Analysis
+    if (analysis.ytd_comparison && analysis.ytd_comparison.length > 0) {
+        html += `
+            <h5>Year to Date (YTD) Analysis</h5>
+        `;
+
+        analysis.ytd_comparison.forEach(yearData => {
+            if (yearData.monthly_ytd && yearData.monthly_ytd.length > 0) {
+                html += `
+                    <h6>YTD Monthly - ${yearData.year}</h6>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>YTD Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                yearData.monthly_ytd.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.period}</td>
+                            <td>${item.ytd_value.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+        });
+    }
+
+    // Current to Current (C to C)
+    if (analysis.current_to_current && analysis.current_to_current.length > 0) {
+        html += `
+            <h5>Current to Current (C to C) Comparison</h5>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th>Current Year Value</th>
+                        <th>Previous Year Value</th>
+                        <th>Change %</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        analysis.current_to_current.forEach(item => {
+            const trendClass = item.change_type === 'increase' ? 'trend-up' : 'trend-down';
+            const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+
+            html += `
                 <tr>
-                    <td>Unemployment</td>
-                    <td>5.2</td>
-                    <td>4.8</td>
-                    <td>5.0</td>
+                    <td>${item.period}</td>
+                    <td>${item.current_value.toLocaleString()}</td>
+                    <td>${item.previous_year_value.toLocaleString()}</td>
+                    <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+                    <td>${trendSymbol}</td>
                 </tr>
-            </tbody>
-        </table>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+    }
+
+    // Export button
+    html += `
         <div class="export-actions" style="margin-top: 16px;">
-            <button class="secondary" onclick="exportPivotTable()">Export Pivot</button>
+            <button class="secondary" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Export Analysis</button>
         </div>
     `;
 
-    resultDiv.innerHTML = pivotHTML;
+    return html;
 }
 
-function exportPivotTable() {
-    alert('Pivot table export functionality would be implemented here');
+function exportPeriodAnalysis(indicator, year) {
+    alert('Period analysis export functionality would be implemented here');
+    console.log('Exporting analysis for:', indicator, 'Year:', year);
 }
 
-// Reset pivot table
+// Reset analysis
 document.getElementById('reset-pivot').addEventListener('click', function() {
-    document.getElementById('pivot-result').innerHTML = '<p>Klik "Generate Pivot Table" untuk melihat analisis data.</p>';
+    document.getElementById('pivot-result').innerHTML = '<p>Pilih indikator dan klik "Generate Period Analysis" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
 });
 
@@ -318,10 +449,7 @@ function handlePlotGeneration() {
     });
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    populateFilters();
-});
+// Period analysis initialized
 </script>
 
 <style>
@@ -412,6 +540,24 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 40px;
     color: #666;
     font-style: italic;
+}
+
+.trend-up {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.trend-down {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.analysis-info {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #e1e7ee;
 }
 </style>
 {% endblock %}

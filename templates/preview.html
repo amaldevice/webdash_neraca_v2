@@ -45,21 +45,37 @@
             </datalist>
         </div>
         <div class="form-row">
-            <label for="limit">Jumlah Baris per Halaman</label>
-            <select id="limit" name="limit">
-                <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
-                <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
-                <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
-            </select>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="limit" style="font-size: 14px; font-weight: 500;">Rows per page:</label>
+                <select id="limit" name="limit" onchange="changeLimit(this.value)" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 60px;">
+                    <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
+                    <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
+                    <option value="30" {% if filters.limit == 30 %}selected{% endif %}>30</option>
+                    <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
         </div>
-        <button type="submit" class="primary">Apply Filter</button>
+        <div class="form-row" style="display: flex; gap: 12px; align-items: flex-end;">
+            <button type="submit" class="primary">Apply Filter</button>
+            <a href="{{ url_for('preview_data') }}" class="secondary" style="text-decoration: none; padding: 12px 18px; border-radius: 4px; border: 1px solid #95aac9;">Reset Filter</a>
+        </div>
     </form>
 
     <div class="export-actions">
-        <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
+        <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
             class="secondary">Export CSV</a>
-        <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
+        <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
             class="secondary">Export Excel</a>
+    </div>
+
+    <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 4px; border: 1px solid #e1e7ee; font-size: 14px; color: #666;">
+        <strong>Tips:</strong>
+        • <kbd>Ctrl</kbd>+<kbd>Enter</kbd> untuk apply filter cepat
+        • Limit otomatis apply saat diubah
+        • Reset Filter untuk clear semua dan mulai fresh
     </div>
 </section>
 
@@ -106,7 +122,7 @@
         {% set end_page = [filters.total_pages, filters.page + 2]|min %}
 
         {% if filters.page > 1 %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page-1) }}"
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}"
            class="pagination-link">&laquo; Previous</a>
         {% endif %}
 
@@ -114,13 +130,13 @@
         {% if page_num == filters.page %}
         <span class="pagination-current">{{ page_num }}</span>
         {% else %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=page_num) }}"
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=page_num) }}"
            class="pagination-link">{{ page_num }}</a>
         {% endif %}
         {% endfor %}
 
         {% if filters.page < filters.total_pages %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page+1) }}"
+        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}"
            class="pagination-link">Next &raquo;</a>
         {% endif %}
     </div>
@@ -130,4 +146,98 @@
     <p>Tidak ada data untuk filter saat ini.</p>
     {% endif %}
 </section>
+
+<script>
+// Filter management functions
+function resetForm() {
+    // Reset all form fields
+    document.getElementById('data_type').value = '';
+    document.getElementById('time_period').value = '';
+    document.getElementById('uploader').value = '';
+    document.getElementById('indicator').value = '';
+    document.getElementById('limit').value = '20';
+
+    // Show confirmation
+    if (confirm('Reset semua filter?')) {
+        // Submit form with empty values
+        const form = document.querySelector('.filter-card form');
+        form.submit();
+    }
+}
+
+function clearField(fieldId) {
+    document.getElementById(fieldId).value = '';
+}
+
+function setLimitAndSubmit(limitValue) {
+    document.getElementById('limit').value = limitValue;
+    const form = document.querySelector('.filter-card form');
+    form.submit();
+}
+
+// Add keyboard shortcuts
+document.addEventListener('DOMContentLoaded', function() {
+    // Ctrl+Enter to apply filters
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.querySelector('.filter-card form');
+            form.submit();
+        }
+    });
+});
+
+function changeLimit(newLimit) {
+    // Get current URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Update limit parameter
+    urlParams.set('limit', newLimit);
+
+    // Reset page to 1 when changing limit
+    urlParams.set('page', '1');
+
+    // Redirect with new parameters
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+</script>
+
+<style>
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.pagination-link {
+    padding: 8px 12px;
+    border: 1px solid #95aac9;
+    color: #0d3b66;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.pagination-link:hover {
+    background: #0d3b66;
+    color: white;
+}
+
+.pagination-current {
+    padding: 8px 12px;
+    background: #0d3b66;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+#limit {
+    font-size: 14px;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 60px;
+}
+</style>
 {% endblock %}

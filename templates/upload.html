@@ -45,11 +45,14 @@
         </select>
 
         <label for="time_period">Periode</label>
-        <select id="time_period" name="time_period">
+        <select id="time_period" name="time_period" onchange="updatePeriodFormat()">
             <option value="monthly">Bulanan</option>
             <option value="quarterly">Triwulanan</option>
             <option value="yearly">Tahunan</option>
         </select>
+
+        <label for="period_date">Tanggal Periode</label>
+        <input id="period_date" name="period_date" type="text" placeholder="YYYY-MM untuk bulanan, YYYY untuk tahunan" required>
 
         <label for="indicator">Indikator</label>
         <input id="indicator" name="indicator" required>
@@ -60,5 +63,35 @@
         <button type="submit" class="primary">Simpan Manual</button>
     </form>
     {% endif %}
+
+    <script>
+    function updatePeriodFormat() {
+        const timePeriod = document.getElementById('time_period').value;
+        const periodInput = document.getElementById('period_date');
+
+        switch(timePeriod) {
+            case 'monthly':
+                periodInput.placeholder = 'Format: YYYY-MM (contoh: 2024-01)';
+                periodInput.pattern = '\\d{4}-\\d{2}';
+                periodInput.title = 'Format: YYYY-MM';
+                break;
+            case 'quarterly':
+                periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 (contoh: 2024-Q1)';
+                periodInput.pattern = '\\d{4}-Q[1-4]';
+                periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4';
+                break;
+            case 'yearly':
+                periodInput.placeholder = 'Format: YYYY (contoh: 2024)';
+                periodInput.pattern = '\\d{4}';
+                periodInput.title = 'Format: YYYY';
+                break;
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePeriodFormat();
+    });
+    </script>
 </section>
 {% endblock %}

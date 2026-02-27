@@ -19,7 +19,8 @@ from excel_parser import parse_excel
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, delete_data_by_filter, update_data_entry, insert_single_entry,
-    get_filter_options, update_data_entry_full, get_unique_indicators
+    get_filter_options, update_data_entry_full, get_unique_indicators,
+    bulk_delete_entries, bulk_update_entries, calculate_period_comparisons
 )
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -110,10 +111,11 @@ def manual_input():
         version = request.form.get("version", "").strip()
         data_type = request.form.get("data_type", "flow").strip()
         time_period = request.form.get("time_period", "monthly").strip()
+        period_date = request.form.get("period_date", "").strip()
         indicator = request.form.get("indicator", "").strip()
         value = request.form.get("value", "").strip()
 
-        if not uploader or not version or not indicator or not value:
+        if not uploader or not version or not indicator or not value or not period_date:
             flash("Semua field metadata dan data harus diisi.", "error")
         else:
             validation_errors = validate_metadata(data_type, time_period)
@@ -122,7 +124,7 @@ def manual_input():
                     flash(err, "error")
             else:
                 manual_entry = _build_manual_entry(
-                    uploader, version, data_type, time_period, indicator, value
+                    uploader, version, data_type, time_period, period_date, indicator, value
                 )
                 if manual_entry is None:
                     flash("Nilai indikator tidak valid.", "error")
@@ -135,11 +137,40 @@ def manual_input():
     return render_template("upload.html", mode="manual")
 
 
+def _parse_period_date(time_period: str, period_date: str) -> tuple[int | None, int | None, int | None]:
+    """Parse period_date string into year, month, quarter based on time_period format."""
+    try:
+        if time_period.lower() == 'monthly':
+            # Format: YYYY-MM
+            if '-' in period_date and len(period_date.split('-')) == 2:
+                year_str, month_str = period_date.split('-')
+                year = int(year_str)
+                month = int(month_str)
+                quarter = (month - 1) // 3 + 1  # Calculate quarter from month
+                return year, month, quarter
+        elif time_period.lower() == 'quarterly':
+            # Format: YYYY-Q1/Q2/Q3/Q4
+            if '-Q' in period_date:
+                year_str, quarter_str = period_date.split('-Q')
+                year = int(year_str)
+                quarter = int(quarter_str)
+                return year, None, quarter
+        elif time_period.lower() == 'yearly':
+            # Format: YYYY
+            year = int(period_date)
+            return year, None, None
+    except (ValueError, IndexError):
+        pass
+
+    return None, None, None
+
+
 def _build_manual_entry(
     uploader: str,
     version: str,
     data_type: str,
     time_period: str,
+    period_date: str,
     indicator: str,
     value: str,
 ) -> dict | None:
@@ -147,6 +178,10 @@ def _build_manual_entry(
         parsed_value = float(value)
     except ValueError:
         return None
+
+    # Parse period_date based on time_period
+    year, month, quarter = _parse_period_date(time_period, period_date)
+
     return {
         "uploader_name": uploader,
         "version": version,
@@ -157,9 +192,9 @@ def _build_manual_entry(
         "value": parsed_value,
         "unit": None,
         "region_code": None,
-        "year": None,
-        "month": None,
-        "quarter": None,
+        "year": year,
+        "month": month,
+        "quarter": quarter,
         "created_at": datetime.utcnow().isoformat(),
     }
 
@@ -177,27 +212,31 @@ def preview_data():
     limit = int(request.args.get("limit", 20))  # Default 20 rows
 
     # Validate limit options
-    if limit not in [10, 20, 50]:
+    if limit not in [5, 10, 15, 20, 30, 50, 100]:
         limit = 20
 
     # Calculate offset for pagination
     offset = (page - 1) * limit
 
     summary = fetch_aggregated_summary()
-    entries = query_data_entries(data_type=data_type or None, time_period=time_period or None,
-                               limit=limit, offset=offset)
 
-    # Apply additional filters if provided
-    if uploader:
-        entries = [e for e in entries if uploader.lower() in e["uploader_name"].lower()]
-    if indicator:
-        entries = [e for e in entries if indicator.lower() in e["indicator_name"].lower()]
+    # Query data with all filters at SQL level
+    entries = query_data_entries(
+        data_type=data_type or None,
+        time_period=time_period or None,
+        uploader=uploader or None,
+        indicator=indicator or None,
+        limit=limit,
+        offset=offset
+    )
 
     # Get total count for pagination (considering all filters)
-    total_entries = get_total_entries_count(data_type=data_type or None, time_period=time_period or None)
-    # Adjust total for additional filters (simplified approach)
-    if uploader or indicator:
-        total_entries = len(entries) + offset  # Approximate for pagination
+    total_entries = get_total_entries_count(
+        data_type=data_type or None,
+        time_period=time_period or None,
+        uploader=uploader or None,
+        indicator=indicator or None
+    )
 
     total_pages = (total_entries + limit - 1) // limit  # Ceiling division
 
@@ -225,7 +264,15 @@ def export_data():
     fmt = request.args.get("format", "csv").lower()
     data_type = request.args.get("data_type")
     time_period = request.args.get("time_period")
-    entries = query_data_entries(data_type=data_type, time_period=time_period, limit=1000)
+    uploader = request.args.get("uploader")
+    indicator = request.args.get("indicator")
+    entries = query_data_entries(
+        data_type=data_type,
+        time_period=time_period,
+        uploader=uploader,
+        indicator=indicator,
+        limit=1000
+    )
     if fmt == "excel":
         df = pd.DataFrame(entries)
         output = io.BytesIO()
@@ -280,6 +327,22 @@ def generate_plot():
 
     fig_json = generate_indicator_line_chart(indicator, time_range)
     return jsonify({"plot_json": fig_json})
+
+
+@app.route("/generate-period-analysis", methods=["POST"])
+def generate_period_analysis():
+    indicator = request.form.get("indicator", "").strip()
+    analysis_year = request.form.get("year", "").strip()
+
+    if not indicator:
+        return jsonify({"error": "Pilih indikator terlebih dahulu"})
+
+    results = calculate_period_comparisons(indicator, analysis_year or None)
+
+    if "error" in results:
+        return jsonify({"error": results["error"]})
+
+    return jsonify({"analysis": results})
 
 
 def generate_indicator_line_chart(indicator, time_range="all"):
@@ -362,6 +425,17 @@ def data_management():
     uploader = request.args.get("uploader", "")
     indicator = request.args.get("indicator", "")
 
+    # Handle pagination parameters
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 20))  # Default 20 rows for management
+
+    # Validate limit options for data management
+    if limit not in [5, 10, 15, 20, 30, 50, 100]:
+        limit = 20
+
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+
     # Handle CRUD operations
     if request.method == "POST":
         action = request.form.get("action")
@@ -408,21 +482,68 @@ def data_management():
                 except Exception as e:
                     flash(f"Error updating data: {str(e)}", "error")
 
+        elif action == "bulk_delete":
+            selected_ids = request.form.getlist("selected_ids[]")
+            if selected_ids:
+                deleted_count = bulk_delete_entries(selected_ids)
+                flash(f"{deleted_count} data berhasil dihapus.", "success")
+                refresh_aggregated_summary()
+            else:
+                flash("Tidak ada data yang dipilih untuk dihapus.", "error")
+
+        elif action == "bulk_update":
+            selected_ids = request.form.getlist("selected_ids[]")
+            if not selected_ids:
+                flash("Tidak ada data yang dipilih untuk diperbarui.", "error")
+            else:
+                # Get update values (only non-empty fields will be updated)
+                updates = {}
+                update_uploader = request.form.get("bulk_update_uploader", "").strip()
+                update_version = request.form.get("bulk_update_version", "").strip()
+                update_data_type = request.form.get("bulk_update_data_type", "").strip()
+                update_time_period = request.form.get("bulk_update_time_period", "").strip()
+                update_value = request.form.get("bulk_update_value", "").strip()
+
+                if update_uploader:
+                    updates["uploader_name"] = update_uploader
+                if update_version:
+                    updates["version"] = update_version
+                if update_data_type:
+                    updates["data_type"] = update_data_type
+                if update_time_period:
+                    updates["time_period"] = update_time_period
+                if update_value:
+                    try:
+                        updates["value"] = float(update_value)
+                    except ValueError:
+                        flash("Nilai harus berupa angka.", "error")
+                        return redirect(url_for("data_management", data_type=data_type, time_period=time_period,
+                                              uploader=uploader, indicator=indicator))
+
+                if updates:
+                    updated_count = bulk_update_entries(selected_ids, updates)
+                    flash(f"{updated_count} data berhasil diperbarui.", "success")
+                    refresh_aggregated_summary()
+                else:
+                    flash("Tidak ada field yang diisi untuk diperbarui.", "error")
+
         elif action == "insert":
             insert_uploader = request.form.get("insert_uploader", "").strip()
             insert_version = request.form.get("insert_version", "").strip()
             insert_data_type = request.form.get("insert_data_type", "").strip()
             insert_time_period = request.form.get("insert_time_period", "").strip()
+            insert_period_date = request.form.get("insert_period_date", "").strip()
             insert_indicator = request.form.get("insert_indicator", "").strip()
             insert_value = request.form.get("insert_value", "").strip()
 
-            if all([insert_uploader, insert_version, insert_indicator, insert_value]):
+            if all([insert_uploader, insert_version, insert_indicator, insert_value, insert_period_date]):
                 try:
                     insert_single_entry(
                         uploader=insert_uploader,
                         version=insert_version,
                         data_type=insert_data_type,
                         time_period=insert_time_period,
+                        period_date=insert_period_date,
                         indicator=insert_indicator,
                         value=float(insert_value)
                     )
@@ -437,21 +558,35 @@ def data_management():
         return redirect(url_for("data_management", data_type=data_type, time_period=time_period,
                               uploader=uploader, indicator=indicator))
 
-    # Get data for display
-    entries = query_data_entries(data_type=data_type or None, time_period=time_period or None,
-                               limit=50)  # Show more for management
+    # Get data for display with proper pagination
+    entries = query_data_entries(
+        data_type=data_type or None,
+        time_period=time_period or None,
+        uploader=uploader or None,
+        indicator=indicator or None,
+        limit=limit,
+        offset=offset
+    )
 
-    # Apply additional filters if provided
-    if uploader:
-        entries = [e for e in entries if uploader.lower() in e["uploader_name"].lower()]
-    if indicator:
-        entries = [e for e in entries if indicator.lower() in e["indicator_name"].lower()]
+    # Get total count for pagination
+    total_entries = get_total_entries_count(
+        data_type=data_type or None,
+        time_period=time_period or None,
+        uploader=uploader or None,
+        indicator=indicator or None
+    )
+
+    total_pages = (total_entries + limit - 1) // limit  # Ceiling division
 
     filters = {
         "data_type": data_type,
         "time_period": time_period,
         "uploader": uploader,
-        "indicator": indicator
+        "indicator": indicator,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "total_entries": total_entries
     }
 
     return render_template("data_management.html", entries=entries, filters=filters)

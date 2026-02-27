@@ -178,9 +178,9 @@ Ringkasan:
 
 ## Work Completed
 
-- Flask shell with routes (`landing_page`, `upload_data`, `manual_input`, `dashboard`, `aggregated_summary`) plus flash messaging.
+- Flask shell with routes (`landing_page`, `upload_data`, `manual_input`, `dashboard`, `aggregated_summary`, `data_management`, `generate-period-analysis`) plus flash messaging.
 - Aggregator stub returning placeholder cards and metadata.
-- Templates (`base.html`, `landing.html`, `upload.html`, `dashboard.html`, `aggregated.html`) and CSS skeleton added.
+- Templates (`base.html`, `landing.html`, `upload.html`, `dashboard.html`, `aggregated.html`, `data_management.html`) and CSS skeleton added.
 - Directories `templates/`, `static/css/`, and `uploads/` created; `requirements.txt` tracks dependencies.
 - Aggregation cache table + refresh helpers now persist summary data; every data insert triggers a re-aggregation.
 - Dashboard UI now exposes filter controls and a data table that reports the persisted entries.
@@ -188,6 +188,10 @@ Ringkasan:
 - Export route streams raw CSV/Excel prior to aggregation so analysts can download first-pass data.
 - SQLite schema + insert helpers ready for uploader/version metadata and normalized time breakdowns.
 - Excel parser + manual normalization written so both flows reuse the same persistence path.
+- **Bulk operations implemented**: Added checkbox selection, bulk delete, and bulk update functionality in data management page for efficient multi-record operations.
+- **Period comparison analysis implemented**: Added Q to Q, M to M, Y to Y, YTD, and C to C analysis with interactive pivot tables for indicator analysis.
+- **Data management pagination implemented**: Added configurable rows per page (5, 10, 15, 20, 30, 50, 100) with persistent checkbox state across page changes.
+- **Preview data pagination implemented**: Added configurable rows per page (5, 10, 15, 20, 30, 50, 100) with full pagination controls.
 
 ## Project Rule
 
