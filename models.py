@@ -239,7 +239,7 @@ def query_data_entries(
 
     base_query = """
         SELECT id, uploader_name, version, indicator_name, value, data_type, time_period, created_at,
-               year, month
+               year, month, quarter
         FROM data_entries
     """
     if clauses:
@@ -262,6 +262,7 @@ def query_data_entries(
             "created_at": row["created_at"],
             "year": row["year"],
             "month": row["month"],
+            "quarter": row["quarter"],
             "tanggal_data": f"{row['year']}-{row['month']:02d}" if row["year"] and row["month"] else "N/A",
         }
         for row in rows
@@ -335,6 +336,19 @@ def delete_data_entry(entry_id: str) -> bool:
             conn.commit()
             return cursor.rowcount > 0
     except Exception:
+        return False
+
+
+def clear_all_data() -> bool:
+    """Clear all data from database tables (for testing)"""
+    try:
+        with closing(get_conn()) as conn:
+            conn.execute("DELETE FROM data_entries")
+            conn.execute("DELETE FROM aggregated_summary")
+            conn.commit()
+            return True
+    except Exception as e:
+        print(f"Error clearing data: {e}")
         return False
 
 

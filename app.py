@@ -274,7 +274,9 @@ def export_data():
         limit=1000
     )
     if fmt == "excel":
-        df = pd.DataFrame(entries)
+        # Ensure proper column structure even for empty data
+        columns = ["id", "uploader_name", "version", "indicator_name", "value", "data_type", "time_period", "created_at", "year", "month", "quarter"]
+        df = pd.DataFrame(entries, columns=columns) if entries else pd.DataFrame(columns=columns)
         output = io.BytesIO()
         df.to_excel(output, index=False)
         output.seek(0)

@@ -14,6 +14,7 @@
 - **Validation layer**: Upload/manual forms now check `data_type` and `time_period` against allowed values before inserting data, ensuring consistent metadata for downstream analytics.
 - **Export links**: Added `/export` route with CSV and Excel options that stream the same filtered rows shown on the dashboard, giving analysts access to raw data prior to aggregation.
 - **Planning sync rule**: Introduced `.cursor/rules/planning-sync.mdc` so contributors always update `planning.md` and the cursor plan alongside any code change.
+- **Simple Testing Suite**: Comprehensive testing framework created with functional tests (61 passed), security testing (68 vulnerabilities identified), and UI testing framework (MCP dependency issue noted).
 
 ### Previous Snapshot (before latest changes)
 - **Excel parser + normalization**: Handler identified layout type, normalized rows into the shared schema, and stored uploader/version metadata plus derived year/month/quarter values.

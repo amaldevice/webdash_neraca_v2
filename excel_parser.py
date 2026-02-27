@@ -5,6 +5,8 @@ import pandas as pd
 
 
 def detect_template_format(df: pd.DataFrame) -> str:
+    if df.empty:
+        return "horizontal"  # Default for empty files
     first_col = df.iloc[:, 0].astype(str)
     if first_col.str.contains(r"\d{4}", na=False).any():
         return "vertical"
@@ -117,6 +119,9 @@ def parse_excel(
     time_period: str,
 ) -> List[Dict]:
     df = pd.read_excel(file_path, engine="openpyxl")
+    if df.empty:
+        return []  # Return empty list for empty Excel files
+
     layout = detect_template_format(df)
     kwargs = {
         "uploader": uploader,
