@@ -134,7 +134,11 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
         tabEls.forEach(tab => {
             tab.addEventListener('click', () => {
                 const key = tab.getAttribute('data-tab');
-                tabEls.forEach(t => t.classList.toggle('tab-active', t === tab));
+                tabEls.forEach(t => {
+                    const active = (t === tab);
+                    t.classList.toggle('btn-primary', active);
+                    t.classList.toggle('btn-ghost', !active);
+                });
                 sectionEls.forEach(sec => {
                     sec.classList.toggle('hidden', sec.getAttribute('data-section') !== key);
                 });
@@ -175,8 +179,14 @@ function generatePeriodAnalysisHTML(analysis) {
 
     html += `
       <div class="mt-6">
-        <div class="tabs tabs-boxed flex flex-wrap gap-2">
-          ${tabs.map(t => `<a class="tab ${t.key===defaultTab?'tab-active':''}" data-tab="${t.key}">${t.label}</a>`).join('')}
+        <div class="bg-base-200/40 border border-base-200 rounded-box p-2">
+          <div class="join flex flex-wrap gap-2">
+            ${tabs.map(t => `
+              <button type="button" class="btn btn-sm join-item ${t.key===defaultTab?'btn-primary':'btn-ghost'}" data-tab="${t.key}">
+                <span>${t.label}</span>
+              </button>
+            `).join('')}
+          </div>
         </div>
 
         <div class="mt-4 space-y-3" id="analysis-sections">
