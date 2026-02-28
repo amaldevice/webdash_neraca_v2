@@ -1,31 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h2 class="card-title h4">Dasbor Ringkasan</h2>
-        <p class="card-text text-muted">Ringkasan data terbaru dari proses agregasi.</p>
-    </div>
-</section>
-
-<section class="mb-4">
-    <div class="row g-3">
-        {% for card in summary.cards %}
-        <div class="col-sm-6 col-lg-4">
-            <article class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h4 class="h6 text-uppercase text-muted">{{ card.title }}</h4>
-                    <p class="display-6 fw-semibold mb-1">{{ card.value }}</p>
-                    <span class="text-muted">{{ card.label }}</span>
-                </div>
-            </article>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h2 class="text-2xl font-semibold">Dasbor Ringkasan</h2>
+            <p class="text-slate-500">Ringkasan data terbaru dari proses agregasi dan unggahan BPS.</p>
         </div>
-        {% endfor %}
+        <div class="flex flex-wrap gap-2">
+            <span class="badge badge-primary badge-outline">Terbaru</span>
+            <span class="badge badge-accent badge-outline">Terverifikasi</span>
+        </div>
     </div>
 </section>
 
-<section class="d-flex flex-wrap gap-2">
-    <a class="btn btn-primary" href="{{ url_for('upload_data') }}">Unggah Excel</a>
-    <a class="btn btn-primary" href="{{ url_for('manual_input') }}">Input Manual</a>
-    <a class="btn btn-outline-primary" href="{{ url_for('aggregated_summary') }}">Lihat Ringkasan Agregat</a>
+<section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+    {% for card in summary.cards %}
+    <article class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body">
+            <p class="text-xs uppercase tracking-widest text-slate-500">{{ card.title }}</p>
+            <p class="text-3xl font-semibold text-slate-900">{{ card.value }}</p>
+            <p class="text-sm text-slate-500">{{ card.label }}</p>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h3 class="text-lg font-semibold">Mulai kelola data neraca</h3>
+            <p class="text-slate-500">Unggah file Excel atau input manual, lalu cek ringkasan agregat.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a class="btn btn-primary" href="{{ url_for('upload_data') }}">Unggah Excel</a>
+            <a class="btn btn-primary btn-outline" href="{{ url_for('manual_input') }}">Input Manual</a>
+            <a class="btn btn-ghost" href="{{ url_for('aggregated_summary') }}">Lihat Ringkasan Agregat</a>
+        </div>
+    </div>
 </section>
 {% endblock %}

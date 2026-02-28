@@ -3,11 +3,8 @@
 }
 
 body {
-    background-color: #f4f5f7;
-}
-
-.card {
-    border: 0;
+    background-color: #F8FAFC;
+    color: #0F172A;
 }
 
 .table th {

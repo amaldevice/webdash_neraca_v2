@@ -63,7 +63,7 @@ data_entries (N) → aggregated_summary (1 cached snapshot per refresh)
 
 ### Frontend
 - **Templating**: Jinja2
-- **Styling**: Custom CSS
+- **Styling**: Tailwind CSS + DaisyUI (CLI build) + minimal custom CSS
 - **Asset delivery**: Flask static serving (CSS + JS placeholders)
 
 ### Backend
@@ -103,6 +103,14 @@ No `.env` yet; configure `FLASK_SECRET_KEY` or `FLASK_RUN_PORT` via environment 
 python -c "from models import init_db; init_db()"
 ```
 
+
+### Tailwind CSS build
+```bash
+npm install
+npm run build:css   # builds static/css/tailwind.css
+npm run watch:css   # rebuild on change
+```
+
 ### Start development server
 ```bash
 python app.py
@@ -120,8 +128,10 @@ This project uses plain Python, so run:
 python app.py       # start server
 pytest              # run unit tests
 python -m py_compile app.py models.py excel_parser.py aggregator.py
-```
 
+# Frontend assets
+npm run build:css
+```
 ## Usage
 
 ### Basic Usage
