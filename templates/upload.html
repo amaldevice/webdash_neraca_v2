@@ -1,130 +1,190 @@
-{% extends "base_bootstrap.html" %}
+{% extends "base_tailwind.html" %}
 {% block content %}
-<section class="card shadow-sm">
-    <div class="card-body">
-        <h2 class="h4">{{ "Unggah Excel" if mode == "upload" else "Input Manual" }}</h2>
-        <p class="text-muted">Pastikan Pengunggah dan Versi selalu diisi.</p>
-
-        {% if mode == "upload" %}
-        <form method="POST" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="uploader" class="form-label">Pengunggah</label>
-                <input id="uploader" name="uploader" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="version" class="form-label">Versi</label>
-                <input id="version" name="version" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="data_type" class="form-label">Jenis Data</label>
-                <select id="data_type" name="data_type" class="form-select">
-                    <option value="flow">Flow</option>
-                    <option value="stock">Stock</option>
-                </select>
-                <div class="form-text">Flow = arus, Stock = posisi.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="time_period" class="form-label">Periode</label>
-                <select id="time_period" name="time_period" class="form-select">
-                    <option value="monthly">Bulanan</option>
-                    <option value="quarterly">Triwulanan</option>
-                    <option value="yearly">Tahunan</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label for="excel_file" class="form-label">File Excel</label>
-                <input id="excel_file" name="excel_file" type="file" class="form-control" accept=".xls,.xlsx" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Unggah</button>
-        </form>
-        {% else %}
-        <form method="POST">
-            <div class="mb-3">
-                <label for="uploader" class="form-label">Pengunggah</label>
-                <input id="uploader" name="uploader" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="version" class="form-label">Versi</label>
-                <input id="version" name="version" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="data_type" class="form-label">Jenis Data</label>
-                <select id="data_type" name="data_type" class="form-select">
-                    <option value="flow">Flow</option>
-                    <option value="stock">Stock</option>
-                </select>
-                <div class="form-text">Flow = arus, Stock = posisi.</div>
-            </div>
-
-            <div class="mb-3">
-                <label for="time_period" class="form-label">Periode</label>
-                <select id="time_period" name="time_period" class="form-select" onchange="updatePeriodFormat()">
-                    <option value="monthly">Bulanan</option>
-                    <option value="quarterly">Triwulanan</option>
-                    <option value="yearly">Tahunan</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label for="period_date" class="form-label">Periode Data</label>
-                <input id="period_date" name="period_date" type="text" class="form-control" placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="indicator" class="form-label">Indikator</label>
-                <input id="indicator" name="indicator" class="form-control" required>
-            </div>
-
-            <div class="mb-3">
-                <label for="value" class="form-label">Nilai</label>
-                <input id="value" name="value" type="number" step="any" class="form-control" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Simpan Entri Manual</button>
-        </form>
-        {% endif %}
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h2 class="text-2xl font-semibold">{{ "Unggah Excel" if mode == "upload" else "Input Manual" }}</h2>
+            <p class="text-slate-500">Pastikan Pengunggah dan Versi selalu diisi.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="badge badge-outline">{{ "Unggah" if mode == "upload" else "Manual" }}</span>
+            <span class="badge badge-primary badge-outline">BPS</span>
+        </div>
     </div>
+</section>
 
-    <script>
-    function updatePeriodFormat() {
-        const timePeriodSelect = document.getElementById('time_period');
-        const periodInput = document.getElementById('period_date');
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+    {% if mode == "upload" %}
+    <form method="POST" enctype="multipart/form-data" class="grid gap-4">
+        <div class="form-control">
+            <label for="uploader" class="label">
+                <span class="label-text">Pengunggah</span>
+            </label>
+            <input id="uploader" name="uploader" class="input input-bordered w-full" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Nama penanggung jawab unggahan.</span>
+            </label>
+        </div>
 
-        if (!timePeriodSelect || !periodInput) {
-            return;
-        }
+        <div class="form-control">
+            <label for="version" class="label">
+                <span class="label-text">Versi</span>
+            </label>
+            <input id="version" name="version" class="input input-bordered w-full" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Gunakan format v1.0, v2.0, dll.</span>
+            </label>
+        </div>
 
-        const timePeriod = timePeriodSelect.value;
+        <div class="form-control">
+            <label for="data_type" class="label">
+                <span class="label-text">Jenis Data</span>
+            </label>
+            <select id="data_type" name="data_type" class="select select-bordered w-full">
+                <option value="flow">Flow</option>
+                <option value="stock">Stock</option>
+            </select>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            </label>
+        </div>
 
-        switch(timePeriod) {
-            case 'monthly':
-                periodInput.placeholder = 'Format: YYYY-MM (contoh: 2024-01)';
-                periodInput.pattern = '\\d{4}-\\d{2}';
-                periodInput.title = 'Format: YYYY-MM';
-                break;
-            case 'quarterly':
-                periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 (contoh: 2024-Q1)';
-                periodInput.pattern = '\\d{4}-Q[1-4]';
-                periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4';
-                break;
-            case 'yearly':
-                periodInput.placeholder = 'Format: YYYY (contoh: 2024)';
-                periodInput.pattern = '\\d{4}';
-                periodInput.title = 'Format: YYYY';
-                break;
-        }
+        <div class="form-control">
+            <label for="time_period" class="label">
+                <span class="label-text">Periode</span>
+            </label>
+            <select id="time_period" name="time_period" class="select select-bordered w-full">
+                <option value="monthly">Bulanan</option>
+                <option value="quarterly">Triwulanan</option>
+                <option value="yearly">Tahunan</option>
+            </select>
+        </div>
+
+        <div class="form-control">
+            <label for="excel_file" class="label">
+                <span class="label-text">File Excel</span>
+            </label>
+            <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered w-full" accept=".xls,.xlsx" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Format .xls atau .xlsx.</span>
+            </label>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">Unggah</button>
+            <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
+        </div>
+    </form>
+    {% else %}
+    <form method="POST" class="grid gap-4">
+        <div class="form-control">
+            <label for="uploader" class="label">
+                <span class="label-text">Pengunggah</span>
+            </label>
+            <input id="uploader" name="uploader" class="input input-bordered w-full" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Nama penanggung jawab unggahan.</span>
+            </label>
+        </div>
+
+        <div class="form-control">
+            <label for="version" class="label">
+                <span class="label-text">Versi</span>
+            </label>
+            <input id="version" name="version" class="input input-bordered w-full" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Gunakan format v1.0, v2.0, dll.</span>
+            </label>
+        </div>
+
+        <div class="form-control">
+            <label for="data_type" class="label">
+                <span class="label-text">Jenis Data</span>
+            </label>
+            <select id="data_type" name="data_type" class="select select-bordered w-full">
+                <option value="flow">Flow</option>
+                <option value="stock">Stock</option>
+            </select>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            </label>
+        </div>
+
+        <div class="form-control">
+            <label for="time_period" class="label">
+                <span class="label-text">Periode</span>
+            </label>
+            <select id="time_period" name="time_period" class="select select-bordered w-full" onchange="updatePeriodFormat()">
+                <option value="monthly">Bulanan</option>
+                <option value="quarterly">Triwulanan</option>
+                <option value="yearly">Tahunan</option>
+            </select>
+        </div>
+
+        <div class="form-control">
+            <label for="period_date" class="label">
+                <span class="label-text">Periode Data</span>
+            </label>
+            <input id="period_date" name="period_date" type="text" class="input input-bordered w-full" placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan" required>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Gunakan format periode sesuai pilihan di atas.</span>
+            </label>
+        </div>
+
+        <div class="form-control">
+            <label for="indicator" class="label">
+                <span class="label-text">Indikator</span>
+            </label>
+            <input id="indicator" name="indicator" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="form-control">
+            <label for="value" class="label">
+                <span class="label-text">Nilai</span>
+            </label>
+            <input id="value" name="value" type="number" step="any" class="input input-bordered w-full" required>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">Simpan Entri Manual</button>
+            <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
+        </div>
+    </form>
+    {% endif %}
+</section>
+
+<script>
+function updatePeriodFormat() {
+    const timePeriodSelect = document.getElementById('time_period');
+    const periodInput = document.getElementById('period_date');
+
+    if (!timePeriodSelect || !periodInput) {
+        return;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        updatePeriodFormat();
-    });
-    </script>
-</section>
+    const timePeriod = timePeriodSelect.value;
+
+    switch(timePeriod) {
+        case 'monthly':
+            periodInput.placeholder = 'Format: YYYY-MM (contoh: 2024-01)';
+            periodInput.pattern = '\\d{4}-\\d{2}';
+            periodInput.title = 'Format: YYYY-MM';
+            break;
+        case 'quarterly':
+            periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 (contoh: 2024-Q1)';
+            periodInput.pattern = '\\d{4}-Q[1-4]';
+            periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4';
+            break;
+        case 'yearly':
+            periodInput.placeholder = 'Format: YYYY (contoh: 2024)';
+            periodInput.pattern = '\\d{4}';
+            periodInput.title = 'Format: YYYY';
+            break;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updatePeriodFormat();
+});
+</script>
 {% endblock %}

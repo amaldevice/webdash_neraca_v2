@@ -1,88 +1,88 @@
-{% extends "base_bootstrap.html" %}
+{% extends "base_tailwind.html" %}
 {% block content %}
-<section class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h2 class="h4">Analisis Data & Tabel Pivot</h2>
-        <p class="text-muted mb-0">Analisis data agregat melalui tabel pivot dan berbagai filter untuk wawasan yang lebih mendalam.</p>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <div>
+        <h2 class="text-2xl font-semibold">Analisis Data & Tabel Pivot</h2>
+        <p class="text-slate-500">Analisis data agregat melalui tabel pivot dan berbagai filter untuk wawasan yang lebih mendalam.</p>
     </div>
 </section>
 
-<section class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h3 class="h5">Analisis Perbandingan Periode</h3>
-        <p class="text-muted">Pilih indikator untuk melihat analisis perbandingan periode (Q ke Q, M ke M, Y ke Y, YTD, C ke C).</p>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold">Analisis Perbandingan Periode</h3>
+    <p class="text-slate-500">Pilih indikator untuk melihat analisis perbandingan periode (Q ke Q, M ke M, Y ke Y, YTD, C ke C).</p>
 
-        <form id="pivot-form" class="row g-3 align-items-end">
-            <div class="col-sm-6 col-lg-4">
-                <label for="analysis_indicator" class="form-label">Pilih Indikator</label>
-                <select id="analysis_indicator" name="analysis_indicator" class="form-select" required>
-                    <option value="">Pilih indikator...</option>
-                    {% for indicator in summary.indicators %}
-                    <option value="{{ indicator }}">{{ indicator }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <label for="analysis_year" class="form-label">Tahun Analisis</label>
-                <select id="analysis_year" name="analysis_year" class="form-select">
-                    <option value="">Semua Tahun</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                    <option value="2022">2022</option>
-                    <option value="2021">2021</option>
-                    <option value="2020">2020</option>
-                </select>
-            </div>
-            <div class="col-12 d-flex flex-wrap gap-2">
-                <button type="button" id="generate-pivot" class="btn btn-primary">Hasilkan Analisis Periode</button>
-                <button type="button" id="reset-pivot" class="btn btn-outline-secondary">Atur Ulang</button>
-            </div>
-        </form>
-    </div>
+    <form id="pivot-form" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+        <div class="form-control">
+            <label for="analysis_indicator" class="label">
+                <span class="label-text">Pilih Indikator</span>
+            </label>
+            <select id="analysis_indicator" name="analysis_indicator" class="select select-bordered w-full" required>
+                <option value="">Pilih indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="analysis_year" class="label">
+                <span class="label-text">Tahun Analisis</span>
+            </label>
+            <select id="analysis_year" name="analysis_year" class="select select-bordered w-full">
+                <option value="">Semua Tahun</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
+            </select>
+        </div>
+        <div class="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
+            <button type="button" id="generate-pivot" class="btn btn-primary">Hasilkan Analisis Periode</button>
+            <button type="button" id="reset-pivot" class="btn btn-outline">Atur Ulang</button>
+        </div>
+    </form>
 </section>
 
-<section class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h3 class="h5">Visualisasi Grafik Garis</h3>
-        <p class="text-muted">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold">Visualisasi Grafik Garis</h3>
+    <p class="text-slate-500">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
 
-        <div class="row g-3 align-items-end">
-            <div class="col-sm-6 col-lg-4">
-                <label for="indicator_filter" class="form-label">Pilih Indikator</label>
-                <select id="indicator_filter" name="indicator_filter" class="form-select">
-                    <option value="">Pilih indikator...</option>
-                    {% for indicator in summary.indicators %}
-                    <option value="{{ indicator }}">{{ indicator }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <label for="time_range" class="form-label">Rentang Waktu</label>
-                <select id="time_range" name="time_range" class="form-select">
-                    <option value="all">Semua Periode</option>
-                    <option value="2020">Tahun 2020</option>
-                    <option value="2021">Tahun 2021</option>
-                    <option value="2022">Tahun 2022</option>
-                </select>
-            </div>
-            <div class="col-12">
-                <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
-            </div>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+        <div class="form-control">
+            <label for="indicator_filter" class="label">
+                <span class="label-text">Pilih Indikator</span>
+            </label>
+            <select id="indicator_filter" name="indicator_filter" class="select select-bordered w-full">
+                <option value="">Pilih indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="time_range" class="label">
+                <span class="label-text">Rentang Waktu</span>
+            </label>
+            <select id="time_range" name="time_range" class="select select-bordered w-full">
+                <option value="all">Semua Periode</option>
+                <option value="2020">Tahun 2020</option>
+                <option value="2021">Tahun 2021</option>
+                <option value="2022">Tahun 2022</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
         </div>
     </div>
 </section>
 
-<section class="card shadow-sm mb-4 plot-container" id="plot-container" style="display: none;">
-    <div class="card-body">
-        <div id="plot-display"></div>
-    </div>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6 plot-container" id="plot-container" style="display: none;">
+    <div id="plot-display"></div>
 </section>
 
-<section class="card shadow-sm">
-    <div class="card-body">
-        <div id="pivot-result">
-            <p class="mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
-        </div>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+    <div id="pivot-result">
+        <p class="text-slate-500 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
     </div>
 </section>
 
@@ -104,7 +104,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     }
 
     const resultDiv = document.getElementById('pivot-result');
-    resultDiv.innerHTML = '<div class="text-center text-muted py-4">Sedang memproses analisis periode...</div>';
+    resultDiv.innerHTML = '<div class="text-center text-slate-500 py-4">Sedang memproses analisis periode...</div>';
 
     const formData = new URLSearchParams();
     formData.append('indicator', indicator);
@@ -120,7 +120,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            resultDiv.innerHTML = '<div class="text-center text-danger py-4">' + data.error + '</div>';
+            resultDiv.innerHTML = '<div class="text-center text-error py-4">' + data.error + '</div>';
             return;
         }
 
@@ -129,23 +129,27 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
         resultDiv.innerHTML = analysisHTML;
     })
     .catch(error => {
-        resultDiv.innerHTML = '<div class="text-center text-danger py-4">Gagal menghasilkan analisis: ' + error.message + '</div>';
+        resultDiv.innerHTML = '<div class="text-center text-error py-4">Gagal menghasilkan analisis: ' + error.message + '</div>';
     });
 });
 
 function generatePeriodAnalysisHTML(analysis) {
     let html = `
-        <h4 class="h5">Analisis Periode: ${analysis.indicator}</h4>
-        <p class="alert alert-light border">\n            <strong>Tahun Analisis:</strong> ${analysis.analysis_year}\n        </p>
+        <div class="flex flex-col gap-2">
+            <h4 class="text-lg font-semibold">Analisis Periode: ${analysis.indicator}</h4>
+            <div class="alert alert-info text-sm">
+                <span><strong>Tahun Analisis:</strong> ${analysis.analysis_year}</span>
+            </div>
+        </div>
     `;
 
     if (analysis.quarterly_comparison && analysis.quarterly_comparison.length > 0) {
         html += `
-            <h5 class="h6 mt-4">Perbandingan Kuartal ke Kuartal (Q ke Q)</h5>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
+            <h5 class="text-base font-semibold mt-6">Perbandingan Kuartal ke Kuartal (Q ke Q)</h5>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="text-slate-500">
                             <th>Kuartal</th>
                             <th>Nilai Saat Ini</th>
                             <th>Nilai Sebelumnya</th>
@@ -157,7 +161,7 @@ function generatePeriodAnalysisHTML(analysis) {
         `;
 
         analysis.quarterly_comparison.forEach(item => {
-            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-danger';
+            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
             const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
 
             html += `
@@ -180,11 +184,11 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (analysis.monthly_comparison && analysis.monthly_comparison.length > 0) {
         html += `
-            <h5 class="h6 mt-4">Perbandingan Bulan ke Bulan (M ke M)</h5>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
+            <h5 class="text-base font-semibold mt-6">Perbandingan Bulan ke Bulan (M ke M)</h5>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="text-slate-500">
                             <th>Bulan</th>
                             <th>Nilai Saat Ini</th>
                             <th>Nilai Sebelumnya</th>
@@ -196,7 +200,7 @@ function generatePeriodAnalysisHTML(analysis) {
         `;
 
         analysis.monthly_comparison.forEach(item => {
-            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-danger';
+            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
             const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
 
             html += `
@@ -219,11 +223,11 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (analysis.yearly_comparison && analysis.yearly_comparison.length > 0) {
         html += `
-            <h5 class="h6 mt-4">Perbandingan Tahun ke Tahun (Y ke Y)</h5>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
+            <h5 class="text-base font-semibold mt-6">Perbandingan Tahun ke Tahun (Y ke Y)</h5>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="text-slate-500">
                             <th>Tahun</th>
                             <th>Nilai Saat Ini</th>
                             <th>Nilai Sebelumnya</th>
@@ -235,7 +239,7 @@ function generatePeriodAnalysisHTML(analysis) {
         `;
 
         analysis.yearly_comparison.forEach(item => {
-            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-danger';
+            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
             const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
 
             html += `
@@ -258,17 +262,17 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (analysis.ytd_comparison && analysis.ytd_comparison.length > 0) {
         html += `
-            <h5 class="h6 mt-4">Analisis Tahun Berjalan (YTD)</h5>
+            <h5 class="text-base font-semibold mt-6">Analisis Tahun Berjalan (YTD)</h5>
         `;
 
         analysis.ytd_comparison.forEach(yearData => {
             if (yearData.monthly_ytd && yearData.monthly_ytd.length > 0) {
                 html += `
-                    <h6 class="mt-3">YTD Bulanan - ${yearData.year}</h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
+                    <h6 class="text-sm font-semibold mt-4">YTD Bulanan - ${yearData.year}</h6>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra w-full">
+                            <thead>
+                                <tr class="text-slate-500">
                                     <th>Bulan</th>
                                     <th>Nilai YTD</th>
                                 </tr>
@@ -296,11 +300,11 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (analysis.current_to_current && analysis.current_to_current.length > 0) {
         html += `
-            <h5 class="h6 mt-4">Perbandingan Periode Berjalan ke Periode Sejenis (C ke C)</h5>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
+            <h5 class="text-base font-semibold mt-6">Perbandingan Periode Berjalan ke Periode Sejenis (C ke C)</h5>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr class="text-slate-500">
                             <th>Periode</th>
                             <th>Nilai Tahun Berjalan</th>
                             <th>Nilai Tahun Sebelumnya</th>
@@ -312,7 +316,7 @@ function generatePeriodAnalysisHTML(analysis) {
         `;
 
         analysis.current_to_current.forEach(item => {
-            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-danger';
+            const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
             const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
 
             html += `
@@ -334,8 +338,8 @@ function generatePeriodAnalysisHTML(analysis) {
     }
 
     html += `
-        <div class="mt-3">
-            <button class="btn btn-outline-primary" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Ekspor Analisis</button>
+        <div class="mt-4">
+            <button class="btn btn-outline btn-primary" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Ekspor Analisis</button>
         </div>
     `;
 
@@ -348,7 +352,7 @@ function exportPeriodAnalysis(indicator, year) {
 }
 
 document.getElementById('reset-pivot').addEventListener('click', function() {
-    document.getElementById('pivot-result').innerHTML = '<p class="mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
+    document.getElementById('pivot-result').innerHTML = '<p class="text-slate-500 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
 });
 
@@ -383,7 +387,7 @@ function handlePlotGeneration() {
         return;
     }
 
-    plotDisplay.innerHTML = '<div class="text-center text-muted py-5">Sedang membuat grafik garis...</div>';
+    plotDisplay.innerHTML = '<div class="text-center text-slate-500 py-5">Sedang membuat grafik garis...</div>';
     plotContainer.style.display = 'block';
 
     const formData = new URLSearchParams();
@@ -411,12 +415,12 @@ function handlePlotGeneration() {
     })
     .then(data => {
         if (data && data.error) {
-            plotDisplay.innerHTML = '<div class="text-center text-danger py-5">' + data.error + '</div>';
+            plotDisplay.innerHTML = '<div class="text-center text-error py-5">' + data.error + '</div>';
             return;
         }
 
         if (!data || !data.plot_json) {
-            plotDisplay.innerHTML = '<div class="text-center text-danger py-5">Kesalahan: data grafik tidak tersedia.</div>';
+            plotDisplay.innerHTML = '<div class="text-center text-error py-5">Kesalahan: data grafik tidak tersedia.</div>';
             return;
         }
 
@@ -425,7 +429,7 @@ function handlePlotGeneration() {
         Plotly.newPlot(plotDisplay, fig.data, fig.layout, fig.config || {});
     })
     .catch(error => {
-        plotDisplay.innerHTML = '<div class="text-center text-danger py-5">Gagal membuat grafik: ' + error.message + '</div>';
+        plotDisplay.innerHTML = '<div class="text-center text-error py-5">Gagal membuat grafik: ' + error.message + '</div>';
     });
 }
 </script>
