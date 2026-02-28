@@ -28,8 +28,26 @@ module.exports = {
           "warning": "#F59E0B",
           "error": "#EF4444"
         }
+      },
+      {
+        "bps-dark": {
+          "primary": "#0B5ED7",
+          "primary-content": "#ffffff",
+          "accent": "#F97316",
+          "accent-content": "#0B1220",
+          "neutral": "#1F2937",
+          "neutral-content": "#E5E7EB",
+          "base-100": "#0B1220",
+          "base-200": "#111827",
+          "base-300": "#1F2937",
+          "base-content": "#E5E7EB",
+          "info": "#38BDF8",
+          "success": "#22C55E",
+          "warning": "#F59E0B",
+          "error": "#EF4444"
+        }
       }
     ],
-    darkTheme: "bps"
+    darkTheme: "bps-dark"
   }
 };
