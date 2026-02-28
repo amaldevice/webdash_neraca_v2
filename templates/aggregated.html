@@ -41,6 +41,12 @@
             <button type="button" id="reset-pivot" class="btn btn-outline">Atur Ulang</button>
         </div>
     </form>
+
+        <div class="mt-6 border-t border-base-200 pt-6">
+            <div id="pivot-result">
+                <p class="text-slate-500 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
+            </div>
+        </div>
 </section>
 
 <section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
@@ -74,15 +80,9 @@
             <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
         </div>
     </div>
-</section>
 
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6 plot-container" id="plot-container" style="display: none;">
-    <div id="plot-display"></div>
-</section>
-
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
-    <div id="pivot-result">
-        <p class="text-slate-500 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
+    <div class="mt-6 border-t border-base-200 pt-6 plot-container" id="plot-container" style="display: none;">
+        <div id="plot-display"></div>
     </div>
 </section>
 
