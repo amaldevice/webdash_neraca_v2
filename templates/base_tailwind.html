@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title or "Sistem Data BPS" }}</title>
-    {# Tailwind pilot: do NOT load Bootstrap. Bootstrap CSS will override DaisyUI/Tailwind styles. #}
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -76,6 +76,5 @@
             <small>Prototipe sederhana berbasis Flask + SQLite untuk BPS.</small>
         </div>
     </footer>
-
 </body>
 </html>
