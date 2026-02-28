@@ -2,8 +2,8 @@
 {% block content %}
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-        <h2 class="card-title h4">Landing Dashboard</h2>
-        <p class="card-text text-muted">Summary data terbaru dari proses agregasi.</p>
+        <h2 class="card-title h4">Dasbor Ringkasan</h2>
+        <p class="card-text text-muted">Ringkasan data terbaru dari proses agregasi.</p>
     </div>
 </section>
 
@@ -24,8 +24,8 @@
 </section>
 
 <section class="d-flex flex-wrap gap-2">
-    <a class="btn btn-primary" href="{{ url_for('upload_data') }}">Upload Excel</a>
-    <a class="btn btn-primary" href="{{ url_for('manual_input') }}">Manual Input</a>
-    <a class="btn btn-outline-primary" href="{{ url_for('aggregated_summary') }}">View Aggregated Summary</a>
+    <a class="btn btn-primary" href="{{ url_for('upload_data') }}">Unggah Excel</a>
+    <a class="btn btn-primary" href="{{ url_for('manual_input') }}">Input Manual</a>
+    <a class="btn btn-outline-primary" href="{{ url_for('aggregated_summary') }}">Lihat Ringkasan Agregat</a>
 </section>
 {% endblock %}

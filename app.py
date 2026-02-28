@@ -43,7 +43,7 @@ def allowed_file(filename: str) -> bool:
 def validate_metadata(data_type: str, time_period: str) -> list[str]:
     errors = []
     if data_type.lower() not in ALLOWED_DATA_TYPES:
-        errors.append("Tipe data tidak valid.")
+        errors.append("Jenis data tidak valid.")
     if time_period.lower() not in ALLOWED_TIME_PERIODS:
         errors.append("Periode tidak valid.")
     return errors
@@ -66,9 +66,9 @@ def upload_data():
         errors = []
 
         if not uploader:
-            errors.append("Nama pengupload wajib diisi.")
+            errors.append("Nama pengunggah wajib diisi.")
         if not version:
-            errors.append("Versioning wajib diisi.")
+            errors.append("Versi wajib diisi.")
         if not file or not allowed_file(file.filename):
             errors.append("Harus mengunggah file Excel (.xls/.xlsx).")
         errors.extend(validate_metadata(data_type, time_period))
@@ -93,7 +93,7 @@ def upload_data():
                     # Handle database constraint violations
                     error_msg = str(e)
                     if "UNIQUE constraint failed" in error_msg:
-                        flash("Data dengan uploader, versi, dan indikator yang sama sudah ada. Gunakan versi yang berbeda atau periksa file Excel Anda.", "error")
+                        flash("Data dengan pengunggah, versi, dan indikator yang sama sudah ada. Gunakan versi yang berbeda atau periksa file Excel Anda.", "error")
                     else:
                         flash(f"Terjadi kesalahan database: {error_msg}", "error")
                 except Exception as e:
@@ -116,7 +116,7 @@ def manual_input():
         value = request.form.get("value", "").strip()
 
         if not uploader or not version or not indicator or not value or not period_date:
-            flash("Semua field metadata dan data harus diisi.", "error")
+            flash("Semua kolom metadata dan data wajib diisi.", "error")
         else:
             validation_errors = validate_metadata(data_type, time_period)
             if validation_errors:
@@ -131,7 +131,7 @@ def manual_input():
                 else:
                     insert_entries([manual_entry])
                     refresh_aggregated_summary()
-                    flash("Input manual dicatat dan disimpan.", "success")
+                    flash("Entri manual berhasil dicatat dan disimpan.", "success")
                     return redirect(url_for("manual_input"))
 
     return render_template("upload.html", mode="manual")
@@ -482,7 +482,7 @@ def data_management():
                 except ValueError:
                     flash("Nilai harus berupa angka.", "error")
                 except Exception as e:
-                    flash(f"Error updating data: {str(e)}", "error")
+                    flash(f"Terjadi kesalahan saat memperbarui data: {str(e)}", "error")
 
         elif action == "bulk_delete":
             selected_ids = request.form.getlist("selected_ids[]")
@@ -527,7 +527,7 @@ def data_management():
                     flash(f"{updated_count} data berhasil diperbarui.", "success")
                     refresh_aggregated_summary()
                 else:
-                    flash("Tidak ada field yang diisi untuk diperbarui.", "error")
+                    flash("Tidak ada kolom yang diisi untuk diperbarui.", "error")
 
         elif action == "insert":
             insert_uploader = request.form.get("insert_uploader", "").strip()
@@ -555,7 +555,7 @@ def data_management():
                 except ValueError:
                     flash("Nilai harus berupa angka.", "error")
             else:
-                flash("Semua field harus diisi.", "error")
+                flash("Semua kolom wajib diisi.", "error")
 
         return redirect(url_for("data_management", data_type=data_type, time_period=time_period,
                               uploader=uploader, indicator=indicator))

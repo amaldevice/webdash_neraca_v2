@@ -2,27 +2,28 @@
 {% block content %}
 <section class="card shadow-sm">
     <div class="card-body">
-        <h2 class="h4">{{ "Upload Excel" if mode == "upload" else "Manual Input" }}</h2>
-        <p class="text-muted">Pastikan pengupload dan versioning selalu diisi.</p>
+        <h2 class="h4">{{ "Unggah Excel" if mode == "upload" else "Input Manual" }}</h2>
+        <p class="text-muted">Pastikan Pengunggah dan Versi selalu diisi.</p>
 
         {% if mode == "upload" %}
         <form method="POST" enctype="multipart/form-data">
             <div class="mb-3">
-                <label for="uploader" class="form-label">Pengupload</label>
+                <label for="uploader" class="form-label">Pengunggah</label>
                 <input id="uploader" name="uploader" class="form-control" required>
             </div>
 
             <div class="mb-3">
-                <label for="version" class="form-label">Versioning</label>
+                <label for="version" class="form-label">Versi</label>
                 <input id="version" name="version" class="form-control" required>
             </div>
 
             <div class="mb-3">
-                <label for="data_type" class="form-label">Tipe Data</label>
+                <label for="data_type" class="form-label">Jenis Data</label>
                 <select id="data_type" name="data_type" class="form-select">
                     <option value="flow">Flow</option>
                     <option value="stock">Stock</option>
                 </select>
+                <div class="form-text">Flow = arus, Stock = posisi.</div>
             </div>
 
             <div class="mb-3">
@@ -39,26 +40,27 @@
                 <input id="excel_file" name="excel_file" type="file" class="form-control" accept=".xls,.xlsx" required>
             </div>
 
-            <button type="submit" class="btn btn-primary">Upload</button>
+            <button type="submit" class="btn btn-primary">Unggah</button>
         </form>
         {% else %}
         <form method="POST">
             <div class="mb-3">
-                <label for="uploader" class="form-label">Pengupload</label>
+                <label for="uploader" class="form-label">Pengunggah</label>
                 <input id="uploader" name="uploader" class="form-control" required>
             </div>
 
             <div class="mb-3">
-                <label for="version" class="form-label">Versioning</label>
+                <label for="version" class="form-label">Versi</label>
                 <input id="version" name="version" class="form-control" required>
             </div>
 
             <div class="mb-3">
-                <label for="data_type" class="form-label">Tipe Data</label>
+                <label for="data_type" class="form-label">Jenis Data</label>
                 <select id="data_type" name="data_type" class="form-select">
                     <option value="flow">Flow</option>
                     <option value="stock">Stock</option>
                 </select>
+                <div class="form-text">Flow = arus, Stock = posisi.</div>
             </div>
 
             <div class="mb-3">
@@ -71,8 +73,8 @@
             </div>
 
             <div class="mb-3">
-                <label for="period_date" class="form-label">Tanggal Periode</label>
-                <input id="period_date" name="period_date" type="text" class="form-control" placeholder="YYYY-MM untuk bulanan, YYYY untuk tahunan" required>
+                <label for="period_date" class="form-label">Periode Data</label>
+                <input id="period_date" name="period_date" type="text" class="form-control" placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan" required>
             </div>
 
             <div class="mb-3">
@@ -85,7 +87,7 @@
                 <input id="value" name="value" type="number" step="any" class="form-control" required>
             </div>
 
-            <button type="submit" class="btn btn-primary">Simpan Manual</button>
+            <button type="submit" class="btn btn-primary">Simpan Entri Manual</button>
         </form>
         {% endif %}
     </div>

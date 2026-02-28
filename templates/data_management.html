@@ -2,8 +2,8 @@
 {% block content %}
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-        <h2 class="h4">Data Management</h2>
-        <p class="text-muted mb-0">Kelola data BPS dengan operasi CRUD (Create, Read, Update, Delete) secara langsung.</p>
+        <h2 class="h4">Manajemen Data</h2>
+        <p class="text-muted mb-0">Kelola data BPS melalui operasi CRUD (Create, Read, Update, Delete) secara langsung.</p>
     </div>
 </section>
 
@@ -12,12 +12,13 @@
         <h3 class="h5 mb-3">Filter Data</h3>
         <form method="GET" class="row g-3 align-items-end">
             <div class="col-sm-6 col-lg-3">
-                <label for="data_type" class="form-label">Tipe Data</label>
+                <label for="data_type" class="form-label">Jenis Data</label>
                 <select id="data_type" name="data_type" class="form-select">
                     <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
                     <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
                     <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
                 </select>
+                <div class="form-text">Flow = arus, Stock = posisi.</div>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <label for="time_period" class="form-label">Periode</label>
@@ -29,16 +30,16 @@
                 </select>
             </div>
             <div class="col-sm-6 col-lg-3">
-                <label for="uploader" class="form-label">Pengupload</label>
-                <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}" class="form-control" placeholder="Cari pengupload...">
+                <label for="uploader" class="form-label">Pengunggah</label>
+                <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}" class="form-control" placeholder="Cari pengunggah...">
             </div>
             <div class="col-sm-6 col-lg-3">
                 <label for="indicator" class="form-label">Indikator</label>
                 <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}" class="form-control" placeholder="Cari indikator...">
             </div>
             <div class="col-12 d-flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ url_for('data_management') }}" class="btn btn-outline-secondary">Reset</a>
+                <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+                <a href="{{ url_for('data_management') }}" class="btn btn-outline-secondary">Atur Ulang</a>
             </div>
         </form>
     </div>
@@ -50,19 +51,20 @@
         <form method="POST" class="row g-3">
             <input type="hidden" name="action" value="insert">
             <div class="col-sm-6 col-lg-3">
-                <label for="insert_uploader" class="form-label">Pengupload *</label>
-                <input type="text" id="insert_uploader" name="insert_uploader" class="form-control" required placeholder="Nama pengupload">
+                <label for="insert_uploader" class="form-label">Pengunggah *</label>
+                <input type="text" id="insert_uploader" name="insert_uploader" class="form-control" required placeholder="Nama pengunggah">
             </div>
             <div class="col-sm-6 col-lg-3">
-                <label for="insert_version" class="form-label">Version *</label>
-                <input type="text" id="insert_version" name="insert_version" class="form-control" required placeholder="v1.0, v2.0, dll">
+                <label for="insert_version" class="form-label">Versi *</label>
+                <input type="text" id="insert_version" name="insert_version" class="form-control" required placeholder="v1.0, v2.0, dll.">
             </div>
             <div class="col-sm-6 col-lg-2">
-                <label for="insert_data_type" class="form-label">Tipe Data</label>
+                <label for="insert_data_type" class="form-label">Jenis Data</label>
                 <select id="insert_data_type" name="insert_data_type" class="form-select">
                     <option value="flow" selected>Flow</option>
                     <option value="stock">Stock</option>
                 </select>
+                <div class="form-text">Flow = arus, Stock = posisi.</div>
             </div>
             <div class="col-sm-6 col-lg-2">
                 <label for="insert_time_period" class="form-label">Periode</label>
@@ -73,16 +75,16 @@
                 </select>
             </div>
             <div class="col-sm-6 col-lg-2">
-                <label for="insert_period_date" class="form-label">Tanggal Periode *</label>
-                <input type="text" id="insert_period_date" name="insert_period_date" class="form-control" required placeholder="YYYY-MM untuk bulanan, YYYY untuk tahunan">
+                <label for="insert_period_date" class="form-label">Periode Data *</label>
+                <input type="text" id="insert_period_date" name="insert_period_date" class="form-control" required placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan">
             </div>
             <div class="col-sm-6 col-lg-3">
                 <label for="insert_indicator" class="form-label">Indikator *</label>
-                <input type="text" id="insert_indicator" name="insert_indicator" class="form-control" required placeholder="GDP, Inflasi, dll">
+                <input type="text" id="insert_indicator" name="insert_indicator" class="form-control" required placeholder="GDP, Inflasi, dll.">
             </div>
             <div class="col-sm-6 col-lg-2">
                 <label for="insert_value" class="form-label">Nilai *</label>
-                <input type="number" step="0.01" id="insert_value" name="insert_value" class="form-control" required placeholder="123.45">
+                <input type="number" step="0.01" id="insert_value" name="insert_value" class="form-control" required placeholder="123,45">
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary">Tambah Data</button>
@@ -96,7 +98,7 @@
         {% if entries %}
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <div>
-                <h3 class="h5 mb-1">Data Entries ({{ entries|length }} ditampilkan)</h3>
+                <h3 class="h5 mb-1">Entri Data ({{ entries|length }} ditampilkan)</h3>
                 <div class="text-muted">
                     Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
                     (Halaman {{ filters.page }} dari {{ filters.total_pages }})
@@ -104,7 +106,7 @@
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-end">
                 <div>
-                    <label for="limit-selector" class="form-label mb-1">Rows per page</label>
+                    <label for="limit-selector" class="form-label mb-1">Baris per halaman</label>
                     <select id="limit-selector" onchange="changeLimit(this.value)" class="form-select form-select-sm">
                         <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                         <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
@@ -122,17 +124,17 @@
                     <input type="hidden" name="time_period" value="{{ filters.time_period }}">
                     <input type="hidden" name="uploader" value="{{ filters.uploader }}">
                     <input type="hidden" name="indicator" value="{{ filters.indicator }}">
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus semua data yang sesuai filter?')">Hapus berdasarkan Filter</button>
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin menghapus semua data yang sesuai filter?')">Hapus Berdasarkan Filter</button>
                 </form>
                 {% endif %}
             </div>
         </div>
 
         <div id="bulk-actions" class="alert alert-light border d-flex flex-wrap gap-2 align-items-center" style="display: none;" hidden>
-            <strong class="me-2">Bulk Actions</strong>
+            <strong class="me-2">Aksi Massal</strong>
             <button type="button" id="bulk-delete-btn" class="btn btn-danger btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
-            <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Update Terpilih</button>
-            <span id="selected-count" class="text-muted">0 item dipilih</span>
+            <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
+            <span id="selected-count" class="text-muted">0 data dipilih</span>
         </div>
 
         <div class="table-responsive">
@@ -141,11 +143,11 @@
                     <tr>
                         <th style="width: 40px;"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
                         <th>ID</th>
-                        <th>Pengupload</th>
-                        <th>Version</th>
+                        <th>Pengunggah</th>
+                        <th>Versi</th>
                         <th>Indikator</th>
                         <th>Nilai</th>
-                        <th>Tipe</th>
+                        <th>Jenis Data</th>
                         <th>Periode</th>
                         <th>Periode Data</th>
                         <th>Aksi</th>
@@ -168,9 +170,9 @@
                         </td>
                         <td>
                             <select name="update_time_period_{{ entry.id }}" class="form-select form-select-sm">
-                                <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Monthly</option>
-                                <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Quarterly</option>
-                                <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Yearly</option>
+                                <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                                <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                                <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
                             </select>
                         </td>
                         <td>{{ entry.tanggal_data }}</td>
@@ -185,12 +187,12 @@
                                     <input type="hidden" name="update_value" value="">
                                     <input type="hidden" name="update_data_type" value="">
                                     <input type="hidden" name="update_time_period" value="">
-                                    <button type="submit" class="btn btn-primary btn-sm" onclick="prepareUpdate(this, {{ entry.id }})">Update</button>
+                                    <button type="submit" class="btn btn-primary btn-sm" onclick="prepareUpdate(this, {{ entry.id }})">Perbarui</button>
                                 </form>
                                 <form method="POST" class="d-inline">
                                     <input type="hidden" name="action" value="delete_single">
                                     <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin hapus data ini?')">Hapus</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin menghapus data ini?')">Hapus</button>
                                 </form>
                             </div>
                         </td>
@@ -201,14 +203,14 @@
         </div>
 
         {% if filters.total_pages > 1 %}
-        <nav aria-label="Data management pagination">
+        <nav aria-label="Paginasi manajemen data">
             <ul class="pagination justify-content-center flex-wrap">
                 {% set start_page = [1, filters.page - 2]|max %}
                 {% set end_page = [filters.total_pages, filters.page + 2]|min %}
 
                 {% if filters.page > 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('data_management', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}">&laquo; Previous</a>
+                    <a class="page-link" href="{{ url_for('data_management', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}">&laquo; Sebelumnya</a>
                 </li>
                 {% endif %}
 
@@ -222,7 +224,7 @@
 
                 {% if filters.page < filters.total_pages %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('data_management', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}">Next &raquo;</a>
+                    <a class="page-link" href="{{ url_for('data_management', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}">Berikutnya &raquo;</a>
                 </li>
                 {% endif %}
             </ul>
@@ -238,21 +240,21 @@
         <div class="modal-dialog-custom">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h3 class="h5">Update Data Terpilih</h3>
-                    <p class="text-muted small">Isi field yang ingin diubah. Field yang kosong tidak akan diubah.</p>
+                    <h3 class="h5">Perbarui Data Terpilih</h3>
+                    <p class="text-muted small">Isi kolom yang ingin diubah. Kolom yang kosong tidak akan diperbarui.</p>
 
                     <form id="bulk-update-form" method="POST" class="row g-3">
                         <input type="hidden" name="action" value="bulk_update">
                         <div class="col-12">
-                            <label for="bulk_update_uploader" class="form-label">Pengupload Baru (opsional)</label>
+                            <label for="bulk_update_uploader" class="form-label">Pengunggah Baru (opsional)</label>
                             <input type="text" id="bulk_update_uploader" name="bulk_update_uploader" class="form-control" placeholder="Biarkan kosong jika tidak ingin mengubah">
                         </div>
                         <div class="col-12">
-                            <label for="bulk_update_version" class="form-label">Version Baru (opsional)</label>
+                            <label for="bulk_update_version" class="form-label">Versi Baru (opsional)</label>
                             <input type="text" id="bulk_update_version" name="bulk_update_version" class="form-control" placeholder="Biarkan kosong jika tidak ingin mengubah">
                         </div>
                         <div class="col-12">
-                            <label for="bulk_update_data_type" class="form-label">Tipe Data Baru (opsional)</label>
+                            <label for="bulk_update_data_type" class="form-label">Jenis Data Baru (opsional)</label>
                             <select id="bulk_update_data_type" name="bulk_update_data_type" class="form-select">
                                 <option value="">-- Tidak diubah --</option>
                                 <option value="flow">Flow</option>
@@ -263,9 +265,9 @@
                             <label for="bulk_update_time_period" class="form-label">Periode Baru (opsional)</label>
                             <select id="bulk_update_time_period" name="bulk_update_time_period" class="form-select">
                                 <option value="">-- Tidak diubah --</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="quarterly">Quarterly</option>
-                                <option value="yearly">Yearly</option>
+                                <option value="monthly">Bulanan</option>
+                                <option value="quarterly">Triwulanan</option>
+                                <option value="yearly">Tahunan</option>
                             </select>
                         </div>
                         <div class="col-12">
@@ -274,7 +276,7 @@
                         </div>
                         <div class="col-12 d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-outline-secondary" onclick="closeBulkUpdateModal()">Batal</button>
-                            <button type="submit" class="btn btn-primary">Update Data</button>
+                            <button type="submit" class="btn btn-primary">Perbarui Data</button>
                         </div>
                     </form>
                 </div>
@@ -305,7 +307,7 @@ function updateBulkActions() {
 
     if (checkboxes.length > 0) {
         bulkActions.style.display = 'flex';
-        selectedCount.textContent = `${checkboxes.length} item dipilih`;
+        selectedCount.textContent = `${checkboxes.length} data dipilih`;
     } else {
         bulkActions.style.display = 'none';
     }
@@ -343,7 +345,7 @@ function confirmBulkDelete() {
         return;
     }
 
-    if (confirm(`Yakin hapus ${checkboxes.length} data yang dipilih?`)) {
+    if (confirm(`Yakin menghapus ${checkboxes.length} data yang dipilih?`)) {
         const form = document.getElementById('bulk-delete-form');
         checkboxes.forEach(cb => {
             const input = document.createElement('input');
