@@ -1,23 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-    <h2>Landing Dashboard</h2>
-    <p>Summary data terbaru dari proses agregasi.</p>
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="card-title h4">Landing Dashboard</h2>
+        <p class="card-text text-muted">Summary data terbaru dari proses agregasi.</p>
+    </div>
 </section>
 
-<section class="cards-grid">
-    {% for card in summary.cards %}
-    <article class="card">
-        <h4>{{ card.title }}</h4>
-        <p class="value">{{ card.value }}</p>
-        <span>{{ card.label }}</span>
-    </article>
-    {% endfor %}
+<section class="mb-4">
+    <div class="row g-3">
+        {% for card in summary.cards %}
+        <div class="col-sm-6 col-lg-4">
+            <article class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h4 class="h6 text-uppercase text-muted">{{ card.title }}</h4>
+                    <p class="display-6 fw-semibold mb-1">{{ card.value }}</p>
+                    <span class="text-muted">{{ card.label }}</span>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
 </section>
 
-<section class="actions">
-    <a class="primary" href="{{ url_for('upload_data') }}">Upload Excel</a>
-    <a class="primary" href="{{ url_for('manual_input') }}">Manual Input</a>
-    <a class="secondary" href="{{ url_for('aggregated_summary') }}">View Aggregated Summary</a>
+<section class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" href="{{ url_for('upload_data') }}">Upload Excel</a>
+    <a class="btn btn-primary" href="{{ url_for('manual_input') }}">Manual Input</a>
+    <a class="btn btn-outline-primary" href="{{ url_for('aggregated_summary') }}">View Aggregated Summary</a>
 </section>
 {% endblock %}

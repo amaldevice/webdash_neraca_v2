@@ -1,53 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-    <h2>Preview Data</h2>
-    <p>Periksa, query, dan export data BPS yang telah diupload.</p>
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h4">Preview Data</h2>
+        <p class="text-muted mb-0">Periksa, query, dan export data BPS yang telah diupload.</p>
+    </div>
 </section>
 
-<section class="filter-card">
-    <form method="GET">
-        <div class="form-row">
-            <label for="data_type">Filter Tipe Data</label>
-            <select id="data_type" name="data_type">
-                <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
-                <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
-                <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="time_period">Filter Periode</label>
-            <select id="time_period" name="time_period">
-                <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
-                <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
-                <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
-                <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="uploader">Pengupload</label>
-            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
-                   placeholder="Cari pengupload..." list="uploader-options">
-            <datalist id="uploader-options">
-                {% for uploader in filter_options.uploaders %}
-                <option value="{{ uploader }}">
-                {% endfor %}
-            </datalist>
-        </div>
-        <div class="form-row">
-            <label for="indicator">Indikator</label>
-            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
-                   placeholder="Cari indikator..." list="indicator-options">
-            <datalist id="indicator-options">
-                {% for indicator in filter_options.indicators %}
-                <option value="{{ indicator }}">
-                {% endfor %}
-            </datalist>
-        </div>
-        <div class="form-row">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="limit" style="font-size: 14px; font-weight: 500;">Rows per page:</label>
-                <select id="limit" name="limit" onchange="changeLimit(this.value)" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; min-width: 60px;">
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-sm-6 col-lg-3">
+                <label for="data_type" class="form-label">Filter Tipe Data</label>
+                <select id="data_type" name="data_type" class="form-select">
+                    <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
+                    <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
+                    <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="time_period" class="form-label">Filter Periode</label>
+                <select id="time_period" name="time_period" class="form-select">
+                    <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
+                    <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                    <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                    <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="uploader" class="form-label">Pengupload</label>
+                <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
+                       class="form-control" placeholder="Cari pengupload..." list="uploader-options">
+                <datalist id="uploader-options">
+                    {% for uploader in filter_options.uploaders %}
+                    <option value="{{ uploader }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="indicator" class="form-label">Indikator</label>
+                <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
+                       class="form-control" placeholder="Cari indikator..." list="indicator-options">
+                <datalist id="indicator-options">
+                    {% for indicator in filter_options.indicators %}
+                    <option value="{{ indicator }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="limit" class="form-label">Rows per page</label>
+                <select id="limit" name="limit" onchange="changeLimit(this.value)" class="form-select">
                     <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                     <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
                     <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
@@ -57,110 +59,112 @@
                     <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
                 </select>
             </div>
-        </div>
-        <div class="form-row" style="display: flex; gap: 12px; align-items: flex-end;">
-            <button type="submit" class="primary">Apply Filter</button>
-            <a href="{{ url_for('preview_data') }}" class="secondary" style="text-decoration: none; padding: 12px 18px; border-radius: 4px; border: 1px solid #95aac9;">Reset Filter</a>
-        </div>
-    </form>
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">Apply Filter</button>
+                <a href="{{ url_for('preview_data') }}" class="btn btn-outline-secondary">Reset Filter</a>
+            </div>
+        </form>
 
-    <div class="export-actions">
-        <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
-            class="secondary">Export CSV</a>
-        <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
-            class="secondary">Export Excel</a>
-    </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
+                class="btn btn-outline-primary">Export CSV</a>
+            <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
+                class="btn btn-outline-primary">Export Excel</a>
+        </div>
 
-    <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 4px; border: 1px solid #e1e7ee; font-size: 14px; color: #666;">
-        <strong>Tips:</strong>
-        • <kbd>Ctrl</kbd>+<kbd>Enter</kbd> untuk apply filter cepat
-        • Limit otomatis apply saat diubah
-        • Reset Filter untuk clear semua dan mulai fresh
+        <div class="alert alert-info small mt-3 mb-0">
+            <strong>Tips:</strong>
+            <span class="ms-1">Ctrl+Enter untuk apply filter cepat, limit otomatis apply saat diubah, Reset Filter untuk clear semua.</span>
+        </div>
     </div>
 </section>
 
-<section class="table-placeholder">
-    {% if entries %}
-    <div class="table-info">
-        <p>Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
-           (Halaman {{ filters.page }} dari {{ filters.total_pages }})</p>
-    </div>
+<section class="card shadow-sm">
+    <div class="card-body">
+        {% if entries %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div class="text-muted">
+                Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
+                (Halaman {{ filters.page }} dari {{ filters.total_pages }})
+            </div>
+        </div>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Pengupload</th>
-                <th>Version</th>
-                <th>Indikator</th>
-                <th>Value</th>
-                <th>Tipe</th>
-                <th>Periode</th>
-                <th>Periode Data</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in entries %}
-            <tr>
-                <td>{{ row.id }}</td>
-                <td>{{ row.uploader_name }}</td>
-                <td>{{ row.version }}</td>
-                <td>{{ row.indicator_name }}</td>
-                <td>{{ row.value }}</td>
-                <td>{{ row.data_type }}</td>
-                <td>{{ row.time_period }}</td>
-                <td>{{ row.tanggal_data }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Pengupload</th>
+                        <th>Version</th>
+                        <th>Indikator</th>
+                        <th>Value</th>
+                        <th>Tipe</th>
+                        <th>Periode</th>
+                        <th>Periode Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in entries %}
+                    <tr>
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.uploader_name }}</td>
+                        <td>{{ row.version }}</td>
+                        <td>{{ row.indicator_name }}</td>
+                        <td>{{ row.value }}</td>
+                        <td>{{ row.data_type }}</td>
+                        <td>{{ row.time_period }}</td>
+                        <td>{{ row.tanggal_data }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Pagination -->
-    {% if filters.total_pages > 1 %}
-    <div class="pagination">
-        {% set start_page = [1, filters.page - 2]|max %}
-        {% set end_page = [filters.total_pages, filters.page + 2]|min %}
+        {% if filters.total_pages > 1 %}
+        <nav aria-label="Preview pagination">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% set start_page = [1, filters.page - 2]|max %}
+                {% set end_page = [filters.total_pages, filters.page + 2]|min %}
 
-        {% if filters.page > 1 %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}"
-           class="pagination-link">&laquo; Previous</a>
+                {% if filters.page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}">&laquo; Previous</a>
+                </li>
+                {% endif %}
+
+                {% for page_num in range(start_page, end_page + 1) %}
+                {% if page_num == filters.page %}
+                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if filters.page < filters.total_pages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}">Next &raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
         {% endif %}
 
-        {% for page_num in range(start_page, end_page + 1) %}
-        {% if page_num == filters.page %}
-        <span class="pagination-current">{{ page_num }}</span>
         {% else %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=page_num) }}"
-           class="pagination-link">{{ page_num }}</a>
-        {% endif %}
-        {% endfor %}
-
-        {% if filters.page < filters.total_pages %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}"
-           class="pagination-link">Next &raquo;</a>
+        <p class="mb-0">Tidak ada data untuk filter saat ini.</p>
         {% endif %}
     </div>
-    {% endif %}
-
-    {% else %}
-    <p>Tidak ada data untuk filter saat ini.</p>
-    {% endif %}
 </section>
 
 <script>
-// Filter management functions
 function resetForm() {
-    // Reset all form fields
     document.getElementById('data_type').value = '';
     document.getElementById('time_period').value = '';
     document.getElementById('uploader').value = '';
     document.getElementById('indicator').value = '';
     document.getElementById('limit').value = '20';
 
-    // Show confirmation
     if (confirm('Reset semua filter?')) {
-        // Submit form with empty values
-        const form = document.querySelector('.filter-card form');
+        const form = document.querySelector('.card form');
         form.submit();
     }
 }
@@ -171,73 +175,25 @@ function clearField(fieldId) {
 
 function setLimitAndSubmit(limitValue) {
     document.getElementById('limit').value = limitValue;
-    const form = document.querySelector('.filter-card form');
+    const form = document.querySelector('.card form');
     form.submit();
 }
 
-// Add keyboard shortcuts
 document.addEventListener('DOMContentLoaded', function() {
-    // Ctrl+Enter to apply filters
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
-            const form = document.querySelector('.filter-card form');
+            const form = document.querySelector('.card form');
             form.submit();
         }
     });
 });
 
 function changeLimit(newLimit) {
-    // Get current URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-
-    // Update limit parameter
     urlParams.set('limit', newLimit);
-
-    // Reset page to 1 when changing limit
     urlParams.set('page', '1');
-
-    // Redirect with new parameters
     window.location.href = window.location.pathname + '?' + urlParams.toString();
 }
 </script>
-
-<style>
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 24px;
-    flex-wrap: wrap;
-}
-
-.pagination-link {
-    padding: 8px 12px;
-    border: 1px solid #95aac9;
-    color: #0d3b66;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.pagination-link:hover {
-    background: #0d3b66;
-    color: white;
-}
-
-.pagination-current {
-    padding: 8px 12px;
-    background: #0d3b66;
-    color: white;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-#limit {
-    font-size: 14px;
-    padding: 4px 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    min-width: 60px;
-}
-</style>
 {% endblock %}

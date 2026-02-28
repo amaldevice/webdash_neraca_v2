@@ -1,73 +1,105 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="form-card">
-    <h2>{{ "Upload Excel" if mode == "upload" else "Manual Input" }}</h2>
-    <p>Pastikan pengupload dan versioning selalu diisi.</p>
+<section class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h4">{{ "Upload Excel" if mode == "upload" else "Manual Input" }}</h2>
+        <p class="text-muted">Pastikan pengupload dan versioning selalu diisi.</p>
 
-    {% if mode == "upload" %}
-    <form method="POST" enctype="multipart/form-data">
-        <label for="uploader">Pengupload</label>
-        <input id="uploader" name="uploader" required>
+        {% if mode == "upload" %}
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="uploader" class="form-label">Pengupload</label>
+                <input id="uploader" name="uploader" class="form-control" required>
+            </div>
 
-        <label for="version">Versioning</label>
-        <input id="version" name="version" required>
+            <div class="mb-3">
+                <label for="version" class="form-label">Versioning</label>
+                <input id="version" name="version" class="form-control" required>
+            </div>
 
-        <label for="data_type">Tipe Data</label>
-        <select id="data_type" name="data_type">
-            <option value="flow">Flow</option>
-            <option value="stock">Stock</option>
-        </select>
+            <div class="mb-3">
+                <label for="data_type" class="form-label">Tipe Data</label>
+                <select id="data_type" name="data_type" class="form-select">
+                    <option value="flow">Flow</option>
+                    <option value="stock">Stock</option>
+                </select>
+            </div>
 
-        <label for="time_period">Periode</label>
-        <select id="time_period" name="time_period">
-            <option value="monthly">Bulanan</option>
-            <option value="quarterly">Triwulanan</option>
-            <option value="yearly">Tahunan</option>
-        </select>
+            <div class="mb-3">
+                <label for="time_period" class="form-label">Periode</label>
+                <select id="time_period" name="time_period" class="form-select">
+                    <option value="monthly">Bulanan</option>
+                    <option value="quarterly">Triwulanan</option>
+                    <option value="yearly">Tahunan</option>
+                </select>
+            </div>
 
-        <label for="excel_file">File Excel</label>
-        <input id="excel_file" name="excel_file" type="file" accept=".xls,.xlsx" required>
+            <div class="mb-3">
+                <label for="excel_file" class="form-label">File Excel</label>
+                <input id="excel_file" name="excel_file" type="file" class="form-control" accept=".xls,.xlsx" required>
+            </div>
 
-        <button type="submit" class="primary">Upload</button>
-    </form>
-    {% else %}
-    <form method="POST">
-        <label for="uploader">Pengupload</label>
-        <input id="uploader" name="uploader" required>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+        {% else %}
+        <form method="POST">
+            <div class="mb-3">
+                <label for="uploader" class="form-label">Pengupload</label>
+                <input id="uploader" name="uploader" class="form-control" required>
+            </div>
 
-        <label for="version">Versioning</label>
-        <input id="version" name="version" required>
+            <div class="mb-3">
+                <label for="version" class="form-label">Versioning</label>
+                <input id="version" name="version" class="form-control" required>
+            </div>
 
-        <label for="data_type">Tipe Data</label>
-        <select id="data_type" name="data_type">
-            <option value="flow">Flow</option>
-            <option value="stock">Stock</option>
-        </select>
+            <div class="mb-3">
+                <label for="data_type" class="form-label">Tipe Data</label>
+                <select id="data_type" name="data_type" class="form-select">
+                    <option value="flow">Flow</option>
+                    <option value="stock">Stock</option>
+                </select>
+            </div>
 
-        <label for="time_period">Periode</label>
-        <select id="time_period" name="time_period" onchange="updatePeriodFormat()">
-            <option value="monthly">Bulanan</option>
-            <option value="quarterly">Triwulanan</option>
-            <option value="yearly">Tahunan</option>
-        </select>
+            <div class="mb-3">
+                <label for="time_period" class="form-label">Periode</label>
+                <select id="time_period" name="time_period" class="form-select" onchange="updatePeriodFormat()">
+                    <option value="monthly">Bulanan</option>
+                    <option value="quarterly">Triwulanan</option>
+                    <option value="yearly">Tahunan</option>
+                </select>
+            </div>
 
-        <label for="period_date">Tanggal Periode</label>
-        <input id="period_date" name="period_date" type="text" placeholder="YYYY-MM untuk bulanan, YYYY untuk tahunan" required>
+            <div class="mb-3">
+                <label for="period_date" class="form-label">Tanggal Periode</label>
+                <input id="period_date" name="period_date" type="text" class="form-control" placeholder="YYYY-MM untuk bulanan, YYYY untuk tahunan" required>
+            </div>
 
-        <label for="indicator">Indikator</label>
-        <input id="indicator" name="indicator" required>
+            <div class="mb-3">
+                <label for="indicator" class="form-label">Indikator</label>
+                <input id="indicator" name="indicator" class="form-control" required>
+            </div>
 
-        <label for="value">Nilai</label>
-        <input id="value" name="value" type="number" step="any" required>
+            <div class="mb-3">
+                <label for="value" class="form-label">Nilai</label>
+                <input id="value" name="value" type="number" step="any" class="form-control" required>
+            </div>
 
-        <button type="submit" class="primary">Simpan Manual</button>
-    </form>
-    {% endif %}
+            <button type="submit" class="btn btn-primary">Simpan Manual</button>
+        </form>
+        {% endif %}
+    </div>
 
     <script>
     function updatePeriodFormat() {
-        const timePeriod = document.getElementById('time_period').value;
+        const timePeriodSelect = document.getElementById('time_period');
         const periodInput = document.getElementById('period_date');
+
+        if (!timePeriodSelect || !periodInput) {
+            return;
+        }
+
+        const timePeriod = timePeriodSelect.value;
 
         switch(timePeriod) {
             case 'monthly':
@@ -88,7 +120,6 @@
         }
     }
 
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         updatePeriodFormat();
     });
