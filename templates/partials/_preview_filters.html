@@ -1,0 +1,74 @@
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <form method="GET" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="form-control">
+            <label for="data_type" class="label">
+                <span class="label-text">Filter Jenis Data</span>
+            </label>
+            <select id="data_type" name="data_type" class="select select-bordered w-full">
+                <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
+                <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
+                <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
+            </select>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            </label>
+        </div>
+        <div class="form-control">
+            <label for="time_period" class="label">
+                <span class="label-text">Filter Periode</span>
+            </label>
+            <select id="time_period" name="time_period" class="select select-bordered w-full">
+                <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
+                <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="uploader" class="label">
+                <span class="label-text">Pengunggah</span>
+            </label>
+            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
+                   class="input input-bordered w-full" placeholder="Cari pengunggah..." list="uploader-options">
+            <datalist id="uploader-options">
+                {% for uploader in filter_options.uploaders %}
+                <option value="{{ uploader }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-control">
+            <label for="indicator" class="label">
+                <span class="label-text">Indikator</span>
+            </label>
+            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
+                   class="input input-bordered w-full" placeholder="Cari indikator..." list="indicator-options">
+            <datalist id="indicator-options">
+                {% for indicator in filter_options.indicators %}
+                <option value="{{ indicator }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="form-control">
+            <label for="limit" class="label">
+                <span class="label-text">Baris per halaman</span>
+            </label>
+            <select id="limit" name="limit" onchange="changeLimit(this.value)" class="select select-bordered w-full">
+                <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
+                <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
+                <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
+                <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
+                <option value="30" {% if filters.limit == 30 %}selected{% endif %}>30</option>
+                <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
+            </select>
+        </div>
+        <div class="flex flex-wrap gap-2 xl:col-span-3">
+            <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+            <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Atur Ulang Filter</a>
+        </div>
+    </form>
+
+    <div class="alert alert-info text-sm mt-4">
+        <span><strong>Tips:</strong> Ctrl+Enter untuk menerapkan filter dengan cepat, batas baris otomatis diterapkan saat diubah, Atur Ulang Filter untuk membersihkan semua pilihan.</span>
+    </div>
+</section>
