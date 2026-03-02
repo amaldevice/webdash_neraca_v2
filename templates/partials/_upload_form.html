@@ -1,0 +1,60 @@
+<form method="POST" enctype="multipart/form-data" class="grid gap-4">
+    <div class="form-control">
+        <label for="uploader" class="label">
+            <span class="label-text">Pengunggah</span>
+        </label>
+        <input id="uploader" name="uploader" class="input input-bordered w-full" required>
+        <label class="label">
+            <span class="label-text-alt text-slate-400">Nama penanggung jawab unggahan.</span>
+        </label>
+    </div>
+
+    <div class="form-control">
+        <label for="version" class="label">
+            <span class="label-text">Versi</span>
+        </label>
+        <input id="version" name="version" class="input input-bordered w-full" required>
+        <label class="label">
+            <span class="label-text-alt text-slate-400">Gunakan format v1.0, v2.0, dll.</span>
+        </label>
+    </div>
+
+    <div class="form-control">
+        <label for="data_type" class="label">
+            <span class="label-text">Jenis Data</span>
+        </label>
+        <select id="data_type" name="data_type" class="select select-bordered w-full">
+            <option value="flow">Flow</option>
+            <option value="stock">Stock</option>
+        </select>
+        <label class="label">
+            <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+        </label>
+    </div>
+
+    <div class="form-control">
+        <label for="time_period" class="label">
+            <span class="label-text">Periode</span>
+        </label>
+        <select id="time_period" name="time_period" class="select select-bordered w-full">
+            <option value="monthly">Bulanan</option>
+            <option value="quarterly">Triwulanan</option>
+            <option value="yearly">Tahunan</option>
+        </select>
+    </div>
+
+    <div class="form-control">
+        <label for="excel_file" class="label">
+            <span class="label-text">File Excel</span>
+        </label>
+        <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered w-full" accept=".xls,.xlsx" required>
+        <label class="label">
+            <span class="label-text-alt text-slate-400">Format .xls atau .xlsx.</span>
+        </label>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">Unggah</button>
+        <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
+    </div>
+</form>
