@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-base-100 text-base-content font-sans;
+  }
+}
+
+@layer components {
+  .table th {
+    @apply font-semibold;
+  }
+
+  .table td,
+  .table th {
+    vertical-align: middle;
+  }
+}

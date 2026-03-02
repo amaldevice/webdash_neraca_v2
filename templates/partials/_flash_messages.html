@@ -1,0 +1,22 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<section class="container mx-auto px-4 mt-4">
+    <div class="space-y-2">
+        {% for category, msg in messages %}
+            {% if category == 'error' %}
+                {% set alert_class = 'alert-error' %}
+            {% elif category == 'success' %}
+                {% set alert_class = 'alert-success' %}
+            {% elif category == 'warning' %}
+                {% set alert_class = 'alert-warning' %}
+            {% else %}
+                {% set alert_class = 'alert-info' %}
+            {% endif %}
+            <div class="alert {{ alert_class }} shadow-sm">
+                <span>{{ msg }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endwith %}

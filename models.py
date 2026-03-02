@@ -187,6 +187,8 @@ def get_aggregated_cards(limit: int = 5) -> List[Dict]:
 def get_total_entries_count(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
+    uploader: Optional[str] = None,
+    indicator: Optional[str] = None,
 ) -> int:
     clauses = []
     params: List = []
@@ -196,6 +198,12 @@ def get_total_entries_count(
     if time_period:
         clauses.append("LOWER(time_period) = LOWER(?)")
         params.append(time_period)
+    if uploader:
+        clauses.append("LOWER(uploader_name) LIKE LOWER(?)")
+        params.append(f"%{uploader}%")
+    if indicator:
+        clauses.append("LOWER(indicator_name) LIKE LOWER(?)")
+        params.append(f"%{indicator}%")
 
     base_query = "SELECT COUNT(*) FROM data_entries"
     if clauses:
@@ -209,6 +217,8 @@ def get_total_entries_count(
 def query_data_entries(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
+    uploader: Optional[str] = None,
+    indicator: Optional[str] = None,
     limit: int = 100,
     offset: Optional[int] = 0,
 ) -> List[Dict]:
@@ -220,10 +230,16 @@ def query_data_entries(
     if time_period:
         clauses.append("LOWER(time_period) = LOWER(?)")
         params.append(time_period)
+    if uploader:
+        clauses.append("LOWER(uploader_name) LIKE LOWER(?)")
+        params.append(f"%{uploader}%")
+    if indicator:
+        clauses.append("LOWER(indicator_name) LIKE LOWER(?)")
+        params.append(f"%{indicator}%")
 
     base_query = """
         SELECT id, uploader_name, version, indicator_name, value, data_type, time_period, created_at,
-               year, month
+               year, month, quarter
         FROM data_entries
     """
     if clauses:
@@ -246,6 +262,7 @@ def query_data_entries(
             "created_at": row["created_at"],
             "year": row["year"],
             "month": row["month"],
+            "quarter": row["quarter"],
             "tanggal_data": f"{row['year']}-{row['month']:02d}" if row["year"] and row["month"] else "N/A",
         }
         for row in rows
@@ -319,6 +336,19 @@ def delete_data_entry(entry_id: str) -> bool:
             conn.commit()
             return cursor.rowcount > 0
     except Exception:
+        return False
+
+
+def clear_all_data() -> bool:
+    """Clear all data from database tables (for testing)"""
+    try:
+        with closing(get_conn()) as conn:
+            conn.execute("DELETE FROM data_entries")
+            conn.execute("DELETE FROM aggregated_summary")
+            conn.commit()
+            return True
+    except Exception as e:
+        print(f"Error clearing data: {e}")
         return False
 
 
@@ -401,16 +431,277 @@ def update_data_entry_full(entry_id: str, data: Dict) -> bool:
         return False
 
 
+def calculate_period_comparisons(indicator: str, analysis_year: str = None) -> Dict:
+    """Calculate period comparisons for an indicator (Q to Q, M to M, Y to Y, YTD, C to C)"""
+    try:
+        with closing(get_conn()) as conn:
+            # Base query to get all data for the indicator
+            base_query = """
+                SELECT year, month, quarter, value, time_period, data_type
+                FROM data_entries
+                WHERE indicator_name = ? AND year IS NOT NULL
+            """
+
+            params = [indicator]
+
+            if analysis_year:
+                base_query += " AND year = ?"
+                params.append(int(analysis_year))
+
+            base_query += " ORDER BY year, month, quarter"
+
+            rows = conn.execute(base_query, params).fetchall()
+
+            if not rows:
+                return {"error": "Tidak ada data untuk indikator ini"}
+
+            # Convert to list of dicts
+            data = []
+            for row in rows:
+                data.append({
+                    'year': row['year'],
+                    'month': row['month'],
+                    'quarter': row['quarter'],
+                    'value': row['value'],
+                    'time_period': row['time_period'],
+                    'data_type': row['data_type']
+                })
+
+            # Calculate different comparisons
+            results = {
+                'indicator': indicator,
+                'analysis_year': analysis_year or 'All Years',
+                'quarterly_comparison': calculate_quarterly_comparison(data),
+                'monthly_comparison': calculate_monthly_comparison(data),
+                'yearly_comparison': calculate_yearly_comparison(data),
+                'ytd_comparison': calculate_ytd_comparison(data),
+                'current_to_current': calculate_current_to_current(data)
+            }
+
+            return results
+
+    except Exception as e:
+        return {"error": f"Error calculating comparisons: {str(e)}"}
+
+
+def calculate_quarterly_comparison(data):
+    """Calculate Q to Q (Quarter to Quarter) comparison"""
+    quarterly_data = {}
+
+    # Group by year and quarter
+    for item in data:
+        if item['quarter'] is not None:
+            key = f"{item['year']}-Q{item['quarter']}"
+            if key not in quarterly_data:
+                quarterly_data[key] = 0
+            quarterly_data[key] += item['value']
+
+    # Calculate Q to Q comparison
+    quarters = sorted(quarterly_data.keys())
+    comparison = []
+
+    for i in range(1, len(quarters)):
+        current_quarter = quarters[i]
+        prev_quarter = quarters[i-1]
+        current_value = quarterly_data[current_quarter]
+        prev_value = quarterly_data[prev_quarter]
+
+        if prev_value != 0:
+            change = ((current_value - prev_value) / prev_value) * 100
+            comparison.append({
+                'period': current_quarter,
+                'current_value': round(current_value, 2),
+                'previous_value': round(prev_value, 2),
+                'change_percent': round(change, 2),
+                'change_type': 'increase' if change > 0 else 'decrease'
+            })
+
+    return comparison
+
+
+def calculate_monthly_comparison(data):
+    """Calculate M to M (Month to Month) comparison"""
+    monthly_data = {}
+
+    # Group by year and month
+    for item in data:
+        if item['month'] is not None:
+            key = f"{item['year']}-{item['month']:02d}"
+            if key not in monthly_data:
+                monthly_data[key] = 0
+            monthly_data[key] += item['value']
+
+    # Calculate M to M comparison
+    months = sorted(monthly_data.keys())
+    comparison = []
+
+    for i in range(1, len(months)):
+        current_month = months[i]
+        prev_month = months[i-1]
+        current_value = monthly_data[current_month]
+        prev_value = monthly_data[prev_month]
+
+        if prev_value != 0:
+            change = ((current_value - prev_value) / prev_value) * 100
+            comparison.append({
+                'period': current_month,
+                'current_value': round(current_value, 2),
+                'previous_value': round(prev_value, 2),
+                'change_percent': round(change, 2),
+                'change_type': 'increase' if change > 0 else 'decrease'
+            })
+
+    return comparison
+
+
+def calculate_yearly_comparison(data):
+    """Calculate Y to Y (Year to Year) comparison"""
+    yearly_data = {}
+
+    # Group by year
+    for item in data:
+        year = item['year']
+        if year not in yearly_data:
+            yearly_data[year] = 0
+        yearly_data[year] += item['value']
+
+    # Calculate Y to Y comparison
+    years = sorted(yearly_data.keys())
+    comparison = []
+
+    for i in range(1, len(years)):
+        current_year = years[i]
+        prev_year = years[i-1]
+        current_value = yearly_data[current_year]
+        prev_value = yearly_data[prev_year]
+
+        if prev_value != 0:
+            change = ((current_value - prev_value) / prev_value) * 100
+            comparison.append({
+                'period': str(current_year),
+                'current_value': round(current_value, 2),
+                'previous_value': round(prev_value, 2),
+                'change_percent': round(change, 2),
+                'change_type': 'increase' if change > 0 else 'decrease'
+            })
+
+    return comparison
+
+
+def calculate_ytd_comparison(data):
+    """Calculate YTD (Year to Date) accumulation"""
+    ytd_data = {}
+
+    # Group by year and accumulate monthly/quarterly data
+    for item in data:
+        year = item['year']
+        if year not in ytd_data:
+            ytd_data[year] = {'monthly': {}, 'quarterly': {}}
+
+        if item['month'] is not None:
+            month_key = item['month']
+            if month_key not in ytd_data[year]['monthly']:
+                ytd_data[year]['monthly'][month_key] = 0
+            ytd_data[year]['monthly'][month_key] += item['value']
+
+        if item['quarter'] is not None:
+            quarter_key = item['quarter']
+            if quarter_key not in ytd_data[year]['quarterly']:
+                ytd_data[year]['quarterly'][quarter_key] = 0
+            ytd_data[year]['quarterly'][quarter_key] += item['value']
+
+    # Calculate YTD accumulation for each year
+    ytd_results = []
+    for year, year_data in ytd_data.items():
+        # Monthly YTD
+        monthly_ytd = []
+        cumulative = 0
+        for month in sorted(year_data['monthly'].keys()):
+            cumulative += year_data['monthly'][month]
+            monthly_ytd.append({
+                'period': f"{year}-{month:02d}",
+                'ytd_value': round(cumulative, 2)
+            })
+
+        # Quarterly YTD
+        quarterly_ytd = []
+        cumulative = 0
+        for quarter in sorted(year_data['quarterly'].keys()):
+            cumulative += year_data['quarterly'][quarter]
+            quarterly_ytd.append({
+                'period': f"{year}-Q{quarter}",
+                'ytd_value': round(cumulative, 2)
+            })
+
+        ytd_results.append({
+            'year': year,
+            'monthly_ytd': monthly_ytd,
+            'quarterly_ytd': quarterly_ytd
+        })
+
+    return ytd_results
+
+
+def calculate_current_to_current(data):
+    """Calculate C to C (Current period vs same period last year)"""
+    period_data = {}
+
+    # Group by year and period (month or quarter)
+    for item in data:
+        year = item['year']
+        if item['month'] is not None:
+            period = f"M{item['month']:02d}"
+        elif item['quarter'] is not None:
+            period = f"Q{item['quarter']}"
+        else:
+            continue
+
+        key = f"{year}-{period}"
+        if key not in period_data:
+            period_data[key] = 0
+        period_data[key] += item['value']
+
+    # Calculate current to current comparison
+    comparison = []
+    periods = sorted(period_data.keys())
+
+    for current_period_key in periods:
+        year, period = current_period_key.split('-')
+        current_year = int(year)
+        prev_year = current_year - 1
+        prev_period_key = f"{prev_year}-{period}"
+
+        if prev_period_key in period_data:
+            current_value = period_data[current_period_key]
+            prev_value = period_data[prev_period_key]
+
+            if prev_value != 0:
+                change = ((current_value - prev_value) / prev_value) * 100
+                comparison.append({
+                    'period': current_period_key,
+                    'current_value': round(current_value, 2),
+                    'previous_year_value': round(prev_value, 2),
+                    'change_percent': round(change, 2),
+                    'change_type': 'increase' if change > 0 else 'decrease'
+                })
+
+    return comparison
+
+
 def insert_single_entry(
     uploader: str,
     version: str,
     data_type: str,
     time_period: str,
+    period_date: str,
     indicator: str,
     value: float
 ) -> bool:
     """Insert a single data entry"""
     try:
+        # Parse period_date based on time_period
+        year, month, quarter = _parse_period_date(time_period, period_date)
+
         with closing(get_conn()) as conn:
             cursor = conn.execute(
                 """
@@ -429,9 +720,9 @@ def insert_single_entry(
                     value,
                     None,  # unit
                     None,  # region_code
-                    None,  # year (will be parsed from period if needed)
-                    None,  # month
-                    None,  # quarter
+                    year,  # parsed year
+                    month,  # parsed month
+                    quarter,  # parsed quarter
                     datetime.utcnow().isoformat()
                 )
             )
@@ -439,3 +730,86 @@ def insert_single_entry(
             return cursor.rowcount > 0
     except Exception:
         return False
+
+
+def _parse_period_date(time_period: str, period_date: str) -> tuple[int | None, int | None, int | None]:
+    """Parse period_date string into year, month, quarter based on time_period format."""
+    try:
+        if time_period.lower() == 'monthly':
+            # Format: YYYY-MM
+            if '-' in period_date and len(period_date.split('-')) == 2:
+                year_str, month_str = period_date.split('-')
+                year = int(year_str)
+                month = int(month_str)
+                quarter = (month - 1) // 3 + 1  # Calculate quarter from month
+                return year, month, quarter
+        elif time_period.lower() == 'quarterly':
+            # Format: YYYY-Q1/Q2/Q3/Q4
+            if '-Q' in period_date:
+                year_str, quarter_str = period_date.split('-Q')
+                year = int(year_str)
+                quarter = int(quarter_str)
+                return year, None, quarter
+        elif time_period.lower() == 'yearly':
+            # Format: YYYY
+            year = int(period_date)
+            return year, None, None
+    except (ValueError, IndexError):
+        pass
+
+    return None, None, None
+
+
+def bulk_delete_entries(entry_ids: List[str]) -> int:
+    """Delete multiple data entries by their IDs"""
+    if not entry_ids:
+        return 0
+
+    try:
+        with closing(get_conn()) as conn:
+            # Create placeholders for SQL query
+            placeholders = ','.join('?' * len(entry_ids))
+            query = f"DELETE FROM data_entries WHERE id IN ({placeholders})"
+
+            cursor = conn.execute(query, entry_ids)
+            conn.commit()
+            return cursor.rowcount
+    except Exception:
+        return 0
+
+
+def bulk_update_entries(entry_ids: List[str], updates: Dict) -> int:
+    """Update multiple data entries with the same values"""
+    if not entry_ids or not updates:
+        return 0
+
+    try:
+        with closing(get_conn()) as conn:
+            # Build SET clause dynamically based on updates
+            set_parts = []
+            params = []
+
+            for field, value in updates.items():
+                if field in ['uploader_name', 'version', 'indicator_name', 'data_type', 'time_period']:
+                    set_parts.append(f"{field} = ?")
+                    params.append(value)
+                elif field == 'value':
+                    set_parts.append("value = ?")
+                    params.append(float(value))
+
+            if not set_parts:
+                return 0
+
+            set_clause = ", ".join(set_parts)
+
+            # Create placeholders for WHERE IN clause
+            placeholders = ','.join('?' * len(entry_ids))
+            params.extend(entry_ids)
+
+            query = f"UPDATE data_entries SET {set_clause} WHERE id IN ({placeholders})"
+
+            cursor = conn.execute(query, params)
+            conn.commit()
+            return cursor.rowcount
+    except Exception:
+        return 0

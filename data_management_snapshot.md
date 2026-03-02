@@ -1,0 +1,1346 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "BPS Data System" [level=1] [ref=e4]
+      - navigation [ref=e5]:
+        - link "Landing" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Upload" [ref=e7] [cursor=pointer]:
+          - /url: /upload
+        - link "Manual Input" [ref=e8] [cursor=pointer]:
+          - /url: /manual
+        - link "Preview Data" [ref=e9] [cursor=pointer]:
+          - /url: /preview-data
+        - link "Data Management" [ref=e10] [cursor=pointer]:
+          - /url: /data-management
+        - link "Aggregated Summary" [ref=e11] [cursor=pointer]:
+          - /url: /aggregated
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - heading "Data Management" [level=2] [ref=e14]
+      - paragraph [ref=e15]: Kelola data BPS dengan operasi CRUD (Create, Read, Update, Delete) secara langsung.
+    - generic [ref=e16]:
+      - heading "Filter Data" [level=3] [ref=e17]
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - generic [ref=e20]: Tipe Data
+          - combobox "Tipe Data" [ref=e21]:
+            - option "Semua" [selected]
+            - option "Flow"
+            - option "Stock"
+        - generic [ref=e22]:
+          - generic [ref=e23]: Periode
+          - combobox "Periode" [ref=e24]:
+            - option "Semua" [selected]
+            - option "Bulanan"
+            - option "Triwulanan"
+            - option "Tahunan"
+        - generic [ref=e25]:
+          - generic [ref=e26]: Pengupload
+          - textbox "Pengupload" [ref=e27]:
+            - /placeholder: Cari pengupload...
+        - generic [ref=e28]:
+          - generic [ref=e29]: Indikator
+          - textbox "Indikator" [ref=e30]:
+            - /placeholder: Cari indikator...
+        - button "Filter" [ref=e31] [cursor=pointer]
+        - link "Reset" [ref=e32] [cursor=pointer]:
+          - /url: /data-management
+      - heading "Tambah Data Baru" [level=3] [ref=e33]
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e36]: Pengupload *
+          - textbox "Pengupload *" [ref=e37]:
+            - /placeholder: Nama pengupload
+        - generic [ref=e38]:
+          - generic [ref=e39]: Version *
+          - textbox "Version *" [ref=e40]:
+            - /placeholder: v1.0, v2.0, dll
+        - generic [ref=e41]:
+          - generic [ref=e42]: Tipe Data
+          - combobox "Tipe Data" [ref=e43]:
+            - option "Flow" [selected]
+            - option "Stock"
+        - generic [ref=e44]:
+          - generic [ref=e45]: Periode
+          - combobox "Periode" [ref=e46]:
+            - option "Bulanan" [selected]
+            - option "Triwulanan"
+            - option "Tahunan"
+        - generic [ref=e47]:
+          - generic [ref=e48]: Indikator *
+          - textbox "Indikator *" [ref=e49]:
+            - /placeholder: GDP, Inflasi, dll
+        - generic [ref=e50]:
+          - generic [ref=e51]: Nilai *
+          - spinbutton "Nilai *" [ref=e52]
+        - button "Tambah Data" [ref=e53] [cursor=pointer]
+    - generic [ref=e54]:
+      - heading "Data Entries (50 ditampilkan)" [level=3] [ref=e56]
+      - table [ref=e57]:
+        - rowgroup [ref=e58]:
+          - row "ID Pengupload Version Indikator Nilai Tipe Periode Periode Data Aksi" [ref=e59]:
+            - columnheader [ref=e60]:
+              - checkbox [ref=e61]
+            - columnheader "ID" [ref=e62]
+            - columnheader "Pengupload" [ref=e63]
+            - columnheader "Version" [ref=e64]
+            - columnheader "Indikator" [ref=e65]
+            - columnheader "Nilai" [ref=e66]
+            - columnheader "Tipe" [ref=e67]
+            - columnheader "Periode" [ref=e68]
+            - columnheader "Periode Data" [ref=e69]
+            - columnheader "Aksi" [ref=e70]
+        - rowgroup [ref=e71]:
+          - row "19 Amal_Dummy 1 NTP 3.26 Flow Monthly 2020-01 Update Hapus" [ref=e72]:
+            - cell [ref=e73]:
+              - checkbox [ref=e74]
+            - cell "19" [ref=e75]
+            - cell "Amal_Dummy" [ref=e76]:
+              - textbox [ref=e77]: Amal_Dummy
+            - cell "1" [ref=e78]:
+              - textbox [ref=e79]: "1"
+            - cell "NTP" [ref=e80]:
+              - textbox [ref=e81]: NTP
+            - cell "3.26" [ref=e82]:
+              - spinbutton [ref=e83]: "3.26"
+            - cell "Flow" [ref=e84]:
+              - combobox [ref=e85]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e86]:
+              - combobox [ref=e87]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-01" [ref=e88]
+            - cell "Update Hapus" [ref=e89]:
+              - button "Update" [ref=e90] [cursor=pointer]
+              - button "Hapus" [ref=e91]
+          - row "20 Amal_Dummy 1 NTP 4.51 Flow Monthly 2020-02 Update Hapus" [ref=e92]:
+            - cell [ref=e93]:
+              - checkbox [ref=e94]
+            - cell "20" [ref=e95]
+            - cell "Amal_Dummy" [ref=e96]:
+              - textbox [ref=e97]: Amal_Dummy
+            - cell "1" [ref=e98]:
+              - textbox [ref=e99]: "1"
+            - cell "NTP" [ref=e100]:
+              - textbox [ref=e101]: NTP
+            - cell "4.51" [ref=e102]:
+              - spinbutton [ref=e103]: "4.51"
+            - cell "Flow" [ref=e104]:
+              - combobox [ref=e105]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e106]:
+              - combobox [ref=e107]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-02" [ref=e108]
+            - cell "Update Hapus" [ref=e109]:
+              - button "Update" [ref=e110] [cursor=pointer]
+              - button "Hapus" [ref=e111]
+          - row "21 Amal_Dummy 1 NTP 4.21 Flow Monthly 2020-03 Update Hapus" [ref=e112]:
+            - cell [ref=e113]:
+              - checkbox [ref=e114]
+            - cell "21" [ref=e115]
+            - cell "Amal_Dummy" [ref=e116]:
+              - textbox [ref=e117]: Amal_Dummy
+            - cell "1" [ref=e118]:
+              - textbox [ref=e119]: "1"
+            - cell "NTP" [ref=e120]:
+              - textbox [ref=e121]: NTP
+            - cell "4.21" [ref=e122]:
+              - spinbutton [ref=e123]: "4.21"
+            - cell "Flow" [ref=e124]:
+              - combobox [ref=e125]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e126]:
+              - combobox [ref=e127]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-03" [ref=e128]
+            - cell "Update Hapus" [ref=e129]:
+              - button "Update" [ref=e130] [cursor=pointer]
+              - button "Hapus" [ref=e131]
+          - row "22 Amal_Dummy 1 NTP 4.33 Flow Monthly 2020-04 Update Hapus" [ref=e132]:
+            - cell [ref=e133]:
+              - checkbox [ref=e134]
+            - cell "22" [ref=e135]
+            - cell "Amal_Dummy" [ref=e136]:
+              - textbox [ref=e137]: Amal_Dummy
+            - cell "1" [ref=e138]:
+              - textbox [ref=e139]: "1"
+            - cell "NTP" [ref=e140]:
+              - textbox [ref=e141]: NTP
+            - cell "4.33" [ref=e142]:
+              - spinbutton [ref=e143]: "4.33"
+            - cell "Flow" [ref=e144]:
+              - combobox [ref=e145]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e146]:
+              - combobox [ref=e147]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-04" [ref=e148]
+            - cell "Update Hapus" [ref=e149]:
+              - button "Update" [ref=e150] [cursor=pointer]
+              - button "Hapus" [ref=e151]
+          - row "23 Amal_Dummy 1 NTP 3.99 Flow Monthly 2020-05 Update Hapus" [ref=e152]:
+            - cell [ref=e153]:
+              - checkbox [ref=e154]
+            - cell "23" [ref=e155]
+            - cell "Amal_Dummy" [ref=e156]:
+              - textbox [ref=e157]: Amal_Dummy
+            - cell "1" [ref=e158]:
+              - textbox [ref=e159]: "1"
+            - cell "NTP" [ref=e160]:
+              - textbox [ref=e161]: NTP
+            - cell "3.99" [ref=e162]:
+              - spinbutton [ref=e163]: "3.99"
+            - cell "Flow" [ref=e164]:
+              - combobox [ref=e165]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e166]:
+              - combobox [ref=e167]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-05" [ref=e168]
+            - cell "Update Hapus" [ref=e169]:
+              - button "Update" [ref=e170] [cursor=pointer]
+              - button "Hapus" [ref=e171]
+          - row "24 Amal_Dummy 1 NTP 4.51 Flow Monthly 2020-06 Update Hapus" [ref=e172]:
+            - cell [ref=e173]:
+              - checkbox [ref=e174]
+            - cell "24" [ref=e175]
+            - cell "Amal_Dummy" [ref=e176]:
+              - textbox [ref=e177]: Amal_Dummy
+            - cell "1" [ref=e178]:
+              - textbox [ref=e179]: "1"
+            - cell "NTP" [ref=e180]:
+              - textbox [ref=e181]: NTP
+            - cell "4.51" [ref=e182]:
+              - spinbutton [ref=e183]: "4.51"
+            - cell "Flow" [ref=e184]:
+              - combobox [ref=e185]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e186]:
+              - combobox [ref=e187]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-06" [ref=e188]
+            - cell "Update Hapus" [ref=e189]:
+              - button "Update" [ref=e190] [cursor=pointer]
+              - button "Hapus" [ref=e191]
+          - row "25 Amal_Dummy 1 NTP 5.61 Flow Monthly 2020-07 Update Hapus" [ref=e192]:
+            - cell [ref=e193]:
+              - checkbox [ref=e194]
+            - cell "25" [ref=e195]
+            - cell "Amal_Dummy" [ref=e196]:
+              - textbox [ref=e197]: Amal_Dummy
+            - cell "1" [ref=e198]:
+              - textbox [ref=e199]: "1"
+            - cell "NTP" [ref=e200]:
+              - textbox [ref=e201]: NTP
+            - cell "5.61" [ref=e202]:
+              - spinbutton [ref=e203]: "5.61"
+            - cell "Flow" [ref=e204]:
+              - combobox [ref=e205]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e206]:
+              - combobox [ref=e207]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-07" [ref=e208]
+            - cell "Update Hapus" [ref=e209]:
+              - button "Update" [ref=e210] [cursor=pointer]
+              - button "Hapus" [ref=e211]
+          - row "26 Amal_Dummy 1 NTP 5.12 Flow Monthly 2020-08 Update Hapus" [ref=e212]:
+            - cell [ref=e213]:
+              - checkbox [ref=e214]
+            - cell "26" [ref=e215]
+            - cell "Amal_Dummy" [ref=e216]:
+              - textbox [ref=e217]: Amal_Dummy
+            - cell "1" [ref=e218]:
+              - textbox [ref=e219]: "1"
+            - cell "NTP" [ref=e220]:
+              - textbox [ref=e221]: NTP
+            - cell "5.12" [ref=e222]:
+              - spinbutton [ref=e223]: "5.12"
+            - cell "Flow" [ref=e224]:
+              - combobox [ref=e225]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e226]:
+              - combobox [ref=e227]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-08" [ref=e228]
+            - cell "Update Hapus" [ref=e229]:
+              - button "Update" [ref=e230] [cursor=pointer]
+              - button "Hapus" [ref=e231]
+          - row "27 Amal_Dummy 1 NTP 5.1 Flow Monthly 2020-09 Update Hapus" [ref=e232]:
+            - cell [ref=e233]:
+              - checkbox [ref=e234]
+            - cell "27" [ref=e235]
+            - cell "Amal_Dummy" [ref=e236]:
+              - textbox [ref=e237]: Amal_Dummy
+            - cell "1" [ref=e238]:
+              - textbox [ref=e239]: "1"
+            - cell "NTP" [ref=e240]:
+              - textbox [ref=e241]: NTP
+            - cell "5.1" [ref=e242]:
+              - spinbutton [ref=e243]: "5.1"
+            - cell "Flow" [ref=e244]:
+              - combobox [ref=e245]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e246]:
+              - combobox [ref=e247]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-09" [ref=e248]
+            - cell "Update Hapus" [ref=e249]:
+              - button "Update" [ref=e250] [cursor=pointer]
+              - button "Hapus" [ref=e251]
+          - row "28 Amal_Dummy 1 NTP 4.99 Flow Monthly 2020-10 Update Hapus" [ref=e252]:
+            - cell [ref=e253]:
+              - checkbox [ref=e254]
+            - cell "28" [ref=e255]
+            - cell "Amal_Dummy" [ref=e256]:
+              - textbox [ref=e257]: Amal_Dummy
+            - cell "1" [ref=e258]:
+              - textbox [ref=e259]: "1"
+            - cell "NTP" [ref=e260]:
+              - textbox [ref=e261]: NTP
+            - cell "4.99" [ref=e262]:
+              - spinbutton [ref=e263]: "4.99"
+            - cell "Flow" [ref=e264]:
+              - combobox [ref=e265]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e266]:
+              - combobox [ref=e267]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-10" [ref=e268]
+            - cell "Update Hapus" [ref=e269]:
+              - button "Update" [ref=e270] [cursor=pointer]
+              - button "Hapus" [ref=e271]
+          - row "29 Amal_Dummy 1 NTP 4.56 Flow Monthly 2020-11 Update Hapus" [ref=e272]:
+            - cell [ref=e273]:
+              - checkbox [ref=e274]
+            - cell "29" [ref=e275]
+            - cell "Amal_Dummy" [ref=e276]:
+              - textbox [ref=e277]: Amal_Dummy
+            - cell "1" [ref=e278]:
+              - textbox [ref=e279]: "1"
+            - cell "NTP" [ref=e280]:
+              - textbox [ref=e281]: NTP
+            - cell "4.56" [ref=e282]:
+              - spinbutton [ref=e283]: "4.56"
+            - cell "Flow" [ref=e284]:
+              - combobox [ref=e285]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e286]:
+              - combobox [ref=e287]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-11" [ref=e288]
+            - cell "Update Hapus" [ref=e289]:
+              - button "Update" [ref=e290] [cursor=pointer]
+              - button "Hapus" [ref=e291]
+          - row "30 Amal_Dummy 1 NTP 4.33 Flow Monthly 2020-12 Update Hapus" [ref=e292]:
+            - cell [ref=e293]:
+              - checkbox [ref=e294]
+            - cell "30" [ref=e295]
+            - cell "Amal_Dummy" [ref=e296]:
+              - textbox [ref=e297]: Amal_Dummy
+            - cell "1" [ref=e298]:
+              - textbox [ref=e299]: "1"
+            - cell "NTP" [ref=e300]:
+              - textbox [ref=e301]: NTP
+            - cell "4.33" [ref=e302]:
+              - spinbutton [ref=e303]: "4.33"
+            - cell "Flow" [ref=e304]:
+              - combobox [ref=e305]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e306]:
+              - combobox [ref=e307]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2020-12" [ref=e308]
+            - cell "Update Hapus" [ref=e309]:
+              - button "Update" [ref=e310] [cursor=pointer]
+              - button "Hapus" [ref=e311]
+          - row "31 Amal_Dummy 1 NTP 4.56 Flow Monthly 2021-01 Update Hapus" [ref=e312]:
+            - cell [ref=e313]:
+              - checkbox [ref=e314]
+            - cell "31" [ref=e315]
+            - cell "Amal_Dummy" [ref=e316]:
+              - textbox [ref=e317]: Amal_Dummy
+            - cell "1" [ref=e318]:
+              - textbox [ref=e319]: "1"
+            - cell "NTP" [ref=e320]:
+              - textbox [ref=e321]: NTP
+            - cell "4.56" [ref=e322]:
+              - spinbutton [ref=e323]: "4.56"
+            - cell "Flow" [ref=e324]:
+              - combobox [ref=e325]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e326]:
+              - combobox [ref=e327]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-01" [ref=e328]
+            - cell "Update Hapus" [ref=e329]:
+              - button "Update" [ref=e330] [cursor=pointer]
+              - button "Hapus" [ref=e331]
+          - row "32 Amal_Dummy 1 NTP 4.55 Flow Monthly 2021-02 Update Hapus" [ref=e332]:
+            - cell [ref=e333]:
+              - checkbox [ref=e334]
+            - cell "32" [ref=e335]
+            - cell "Amal_Dummy" [ref=e336]:
+              - textbox [ref=e337]: Amal_Dummy
+            - cell "1" [ref=e338]:
+              - textbox [ref=e339]: "1"
+            - cell "NTP" [ref=e340]:
+              - textbox [ref=e341]: NTP
+            - cell "4.55" [ref=e342]:
+              - spinbutton [ref=e343]: "4.55"
+            - cell "Flow" [ref=e344]:
+              - combobox [ref=e345]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e346]:
+              - combobox [ref=e347]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-02" [ref=e348]
+            - cell "Update Hapus" [ref=e349]:
+              - button "Update" [ref=e350] [cursor=pointer]
+              - button "Hapus" [ref=e351]
+          - row "33 Amal_Dummy 1 NTP 4.33 Flow Monthly 2021-03 Update Hapus" [ref=e352]:
+            - cell [ref=e353]:
+              - checkbox [ref=e354]
+            - cell "33" [ref=e355]
+            - cell "Amal_Dummy" [ref=e356]:
+              - textbox [ref=e357]: Amal_Dummy
+            - cell "1" [ref=e358]:
+              - textbox [ref=e359]: "1"
+            - cell "NTP" [ref=e360]:
+              - textbox [ref=e361]: NTP
+            - cell "4.33" [ref=e362]:
+              - spinbutton [ref=e363]: "4.33"
+            - cell "Flow" [ref=e364]:
+              - combobox [ref=e365]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e366]:
+              - combobox [ref=e367]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-03" [ref=e368]
+            - cell "Update Hapus" [ref=e369]:
+              - button "Update" [ref=e370] [cursor=pointer]
+              - button "Hapus" [ref=e371]
+          - row "34 Amal_Dummy 1 NTP 4.77 Flow Monthly 2021-04 Update Hapus" [ref=e372]:
+            - cell [ref=e373]:
+              - checkbox [ref=e374]
+            - cell "34" [ref=e375]
+            - cell "Amal_Dummy" [ref=e376]:
+              - textbox [ref=e377]: Amal_Dummy
+            - cell "1" [ref=e378]:
+              - textbox [ref=e379]: "1"
+            - cell "NTP" [ref=e380]:
+              - textbox [ref=e381]: NTP
+            - cell "4.77" [ref=e382]:
+              - spinbutton [ref=e383]: "4.77"
+            - cell "Flow" [ref=e384]:
+              - combobox [ref=e385]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e386]:
+              - combobox [ref=e387]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-04" [ref=e388]
+            - cell "Update Hapus" [ref=e389]:
+              - button "Update" [ref=e390] [cursor=pointer]
+              - button "Hapus" [ref=e391]
+          - row "35 Amal_Dummy 1 NTP 4.92 Flow Monthly 2021-05 Update Hapus" [ref=e392]:
+            - cell [ref=e393]:
+              - checkbox [ref=e394]
+            - cell "35" [ref=e395]
+            - cell "Amal_Dummy" [ref=e396]:
+              - textbox [ref=e397]: Amal_Dummy
+            - cell "1" [ref=e398]:
+              - textbox [ref=e399]: "1"
+            - cell "NTP" [ref=e400]:
+              - textbox [ref=e401]: NTP
+            - cell "4.92" [ref=e402]:
+              - spinbutton [ref=e403]: "4.92"
+            - cell "Flow" [ref=e404]:
+              - combobox [ref=e405]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e406]:
+              - combobox [ref=e407]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-05" [ref=e408]
+            - cell "Update Hapus" [ref=e409]:
+              - button "Update" [ref=e410] [cursor=pointer]
+              - button "Hapus" [ref=e411]
+          - row "36 Amal_Dummy 1 NTP 5.66 Flow Monthly 2021-06 Update Hapus" [ref=e412]:
+            - cell [ref=e413]:
+              - checkbox [ref=e414]
+            - cell "36" [ref=e415]
+            - cell "Amal_Dummy" [ref=e416]:
+              - textbox [ref=e417]: Amal_Dummy
+            - cell "1" [ref=e418]:
+              - textbox [ref=e419]: "1"
+            - cell "NTP" [ref=e420]:
+              - textbox [ref=e421]: NTP
+            - cell "5.66" [ref=e422]:
+              - spinbutton [ref=e423]: "5.66"
+            - cell "Flow" [ref=e424]:
+              - combobox [ref=e425]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e426]:
+              - combobox [ref=e427]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-06" [ref=e428]
+            - cell "Update Hapus" [ref=e429]:
+              - button "Update" [ref=e430] [cursor=pointer]
+              - button "Hapus" [ref=e431]
+          - row "37 Amal_Dummy 1 NTP 5.88 Flow Monthly 2021-07 Update Hapus" [ref=e432]:
+            - cell [ref=e433]:
+              - checkbox [ref=e434]
+            - cell "37" [ref=e435]
+            - cell "Amal_Dummy" [ref=e436]:
+              - textbox [ref=e437]: Amal_Dummy
+            - cell "1" [ref=e438]:
+              - textbox [ref=e439]: "1"
+            - cell "NTP" [ref=e440]:
+              - textbox [ref=e441]: NTP
+            - cell "5.88" [ref=e442]:
+              - spinbutton [ref=e443]: "5.88"
+            - cell "Flow" [ref=e444]:
+              - combobox [ref=e445]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e446]:
+              - combobox [ref=e447]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-07" [ref=e448]
+            - cell "Update Hapus" [ref=e449]:
+              - button "Update" [ref=e450] [cursor=pointer]
+              - button "Hapus" [ref=e451]
+          - row "38 Amal_Dummy 1 NTP 5.66 Flow Monthly 2021-08 Update Hapus" [ref=e452]:
+            - cell [ref=e453]:
+              - checkbox [ref=e454]
+            - cell "38" [ref=e455]
+            - cell "Amal_Dummy" [ref=e456]:
+              - textbox [ref=e457]: Amal_Dummy
+            - cell "1" [ref=e458]:
+              - textbox [ref=e459]: "1"
+            - cell "NTP" [ref=e460]:
+              - textbox [ref=e461]: NTP
+            - cell "5.66" [ref=e462]:
+              - spinbutton [ref=e463]: "5.66"
+            - cell "Flow" [ref=e464]:
+              - combobox [ref=e465]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e466]:
+              - combobox [ref=e467]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-08" [ref=e468]
+            - cell "Update Hapus" [ref=e469]:
+              - button "Update" [ref=e470] [cursor=pointer]
+              - button "Hapus" [ref=e471]
+          - row "39 Amal_Dummy 1 NTP 4.78 Flow Monthly 2021-09 Update Hapus" [ref=e472]:
+            - cell [ref=e473]:
+              - checkbox [ref=e474]
+            - cell "39" [ref=e475]
+            - cell "Amal_Dummy" [ref=e476]:
+              - textbox [ref=e477]: Amal_Dummy
+            - cell "1" [ref=e478]:
+              - textbox [ref=e479]: "1"
+            - cell "NTP" [ref=e480]:
+              - textbox [ref=e481]: NTP
+            - cell "4.78" [ref=e482]:
+              - spinbutton [ref=e483]: "4.78"
+            - cell "Flow" [ref=e484]:
+              - combobox [ref=e485]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e486]:
+              - combobox [ref=e487]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-09" [ref=e488]
+            - cell "Update Hapus" [ref=e489]:
+              - button "Update" [ref=e490] [cursor=pointer]
+              - button "Hapus" [ref=e491]
+          - row "40 Amal_Dummy 1 NTP 4.98 Flow Monthly 2021-10 Update Hapus" [ref=e492]:
+            - cell [ref=e493]:
+              - checkbox [ref=e494]
+            - cell "40" [ref=e495]
+            - cell "Amal_Dummy" [ref=e496]:
+              - textbox [ref=e497]: Amal_Dummy
+            - cell "1" [ref=e498]:
+              - textbox [ref=e499]: "1"
+            - cell "NTP" [ref=e500]:
+              - textbox [ref=e501]: NTP
+            - cell "4.98" [ref=e502]:
+              - spinbutton [ref=e503]: "4.98"
+            - cell "Flow" [ref=e504]:
+              - combobox [ref=e505]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e506]:
+              - combobox [ref=e507]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-10" [ref=e508]
+            - cell "Update Hapus" [ref=e509]:
+              - button "Update" [ref=e510] [cursor=pointer]
+              - button "Hapus" [ref=e511]
+          - row "41 Amal_Dummy 1 NTP 5.12 Flow Monthly 2021-11 Update Hapus" [ref=e512]:
+            - cell [ref=e513]:
+              - checkbox [ref=e514]
+            - cell "41" [ref=e515]
+            - cell "Amal_Dummy" [ref=e516]:
+              - textbox [ref=e517]: Amal_Dummy
+            - cell "1" [ref=e518]:
+              - textbox [ref=e519]: "1"
+            - cell "NTP" [ref=e520]:
+              - textbox [ref=e521]: NTP
+            - cell "5.12" [ref=e522]:
+              - spinbutton [ref=e523]: "5.12"
+            - cell "Flow" [ref=e524]:
+              - combobox [ref=e525]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e526]:
+              - combobox [ref=e527]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-11" [ref=e528]
+            - cell "Update Hapus" [ref=e529]:
+              - button "Update" [ref=e530] [cursor=pointer]
+              - button "Hapus" [ref=e531]
+          - row "42 Amal_Dummy 1 NTP 5.02 Flow Monthly 2021-12 Update Hapus" [ref=e532]:
+            - cell [ref=e533]:
+              - checkbox [ref=e534]
+            - cell "42" [ref=e535]
+            - cell "Amal_Dummy" [ref=e536]:
+              - textbox [ref=e537]: Amal_Dummy
+            - cell "1" [ref=e538]:
+              - textbox [ref=e539]: "1"
+            - cell "NTP" [ref=e540]:
+              - textbox [ref=e541]: NTP
+            - cell "5.02" [ref=e542]:
+              - spinbutton [ref=e543]: "5.02"
+            - cell "Flow" [ref=e544]:
+              - combobox [ref=e545]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e546]:
+              - combobox [ref=e547]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2021-12" [ref=e548]
+            - cell "Update Hapus" [ref=e549]:
+              - button "Update" [ref=e550] [cursor=pointer]
+              - button "Hapus" [ref=e551]
+          - row "43 Amal_Dummy 1 NTP 5.15 Flow Monthly 2022-01 Update Hapus" [ref=e552]:
+            - cell [ref=e553]:
+              - checkbox [ref=e554]
+            - cell "43" [ref=e555]
+            - cell "Amal_Dummy" [ref=e556]:
+              - textbox [ref=e557]: Amal_Dummy
+            - cell "1" [ref=e558]:
+              - textbox [ref=e559]: "1"
+            - cell "NTP" [ref=e560]:
+              - textbox [ref=e561]: NTP
+            - cell "5.15" [ref=e562]:
+              - spinbutton [ref=e563]: "5.15"
+            - cell "Flow" [ref=e564]:
+              - combobox [ref=e565]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e566]:
+              - combobox [ref=e567]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-01" [ref=e568]
+            - cell "Update Hapus" [ref=e569]:
+              - button "Update" [ref=e570] [cursor=pointer]
+              - button "Hapus" [ref=e571]
+          - row "44 Amal_Dummy 1 NTP 5.67 Flow Monthly 2022-02 Update Hapus" [ref=e572]:
+            - cell [ref=e573]:
+              - checkbox [ref=e574]
+            - cell "44" [ref=e575]
+            - cell "Amal_Dummy" [ref=e576]:
+              - textbox [ref=e577]: Amal_Dummy
+            - cell "1" [ref=e578]:
+              - textbox [ref=e579]: "1"
+            - cell "NTP" [ref=e580]:
+              - textbox [ref=e581]: NTP
+            - cell "5.67" [ref=e582]:
+              - spinbutton [ref=e583]: "5.67"
+            - cell "Flow" [ref=e584]:
+              - combobox [ref=e585]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e586]:
+              - combobox [ref=e587]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-02" [ref=e588]
+            - cell "Update Hapus" [ref=e589]:
+              - button "Update" [ref=e590] [cursor=pointer]
+              - button "Hapus" [ref=e591]
+          - row "45 Amal_Dummy 1 NTP 6.02 Flow Monthly 2022-03 Update Hapus" [ref=e592]:
+            - cell [ref=e593]:
+              - checkbox [ref=e594]
+            - cell "45" [ref=e595]
+            - cell "Amal_Dummy" [ref=e596]:
+              - textbox [ref=e597]: Amal_Dummy
+            - cell "1" [ref=e598]:
+              - textbox [ref=e599]: "1"
+            - cell "NTP" [ref=e600]:
+              - textbox [ref=e601]: NTP
+            - cell "6.02" [ref=e602]:
+              - spinbutton [ref=e603]: "6.02"
+            - cell "Flow" [ref=e604]:
+              - combobox [ref=e605]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e606]:
+              - combobox [ref=e607]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-03" [ref=e608]
+            - cell "Update Hapus" [ref=e609]:
+              - button "Update" [ref=e610] [cursor=pointer]
+              - button "Hapus" [ref=e611]
+          - row "46 Amal_Dummy 1 NTP 5.89 Flow Monthly 2022-04 Update Hapus" [ref=e612]:
+            - cell [ref=e613]:
+              - checkbox [ref=e614]
+            - cell "46" [ref=e615]
+            - cell "Amal_Dummy" [ref=e616]:
+              - textbox [ref=e617]: Amal_Dummy
+            - cell "1" [ref=e618]:
+              - textbox [ref=e619]: "1"
+            - cell "NTP" [ref=e620]:
+              - textbox [ref=e621]: NTP
+            - cell "5.89" [ref=e622]:
+              - spinbutton [ref=e623]: "5.89"
+            - cell "Flow" [ref=e624]:
+              - combobox [ref=e625]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e626]:
+              - combobox [ref=e627]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-04" [ref=e628]
+            - cell "Update Hapus" [ref=e629]:
+              - button "Update" [ref=e630] [cursor=pointer]
+              - button "Hapus" [ref=e631]
+          - row "47 Amal_Dummy 1 NTP 5.11 Flow Monthly 2022-05 Update Hapus" [ref=e632]:
+            - cell [ref=e633]:
+              - checkbox [ref=e634]
+            - cell "47" [ref=e635]
+            - cell "Amal_Dummy" [ref=e636]:
+              - textbox [ref=e637]: Amal_Dummy
+            - cell "1" [ref=e638]:
+              - textbox [ref=e639]: "1"
+            - cell "NTP" [ref=e640]:
+              - textbox [ref=e641]: NTP
+            - cell "5.11" [ref=e642]:
+              - spinbutton [ref=e643]: "5.11"
+            - cell "Flow" [ref=e644]:
+              - combobox [ref=e645]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e646]:
+              - combobox [ref=e647]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-05" [ref=e648]
+            - cell "Update Hapus" [ref=e649]:
+              - button "Update" [ref=e650] [cursor=pointer]
+              - button "Hapus" [ref=e651]
+          - row "48 Amal_Dummy 1 NTP 5.34 Flow Monthly 2022-06 Update Hapus" [ref=e652]:
+            - cell [ref=e653]:
+              - checkbox [ref=e654]
+            - cell "48" [ref=e655]
+            - cell "Amal_Dummy" [ref=e656]:
+              - textbox [ref=e657]: Amal_Dummy
+            - cell "1" [ref=e658]:
+              - textbox [ref=e659]: "1"
+            - cell "NTP" [ref=e660]:
+              - textbox [ref=e661]: NTP
+            - cell "5.34" [ref=e662]:
+              - spinbutton [ref=e663]: "5.34"
+            - cell "Flow" [ref=e664]:
+              - combobox [ref=e665]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e666]:
+              - combobox [ref=e667]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-06" [ref=e668]
+            - cell "Update Hapus" [ref=e669]:
+              - button "Update" [ref=e670] [cursor=pointer]
+              - button "Hapus" [ref=e671]
+          - row "49 Amal_Dummy 1 NTP 5.21 Flow Monthly 2022-07 Update Hapus" [ref=e672]:
+            - cell [ref=e673]:
+              - checkbox [ref=e674]
+            - cell "49" [ref=e675]
+            - cell "Amal_Dummy" [ref=e676]:
+              - textbox [ref=e677]: Amal_Dummy
+            - cell "1" [ref=e678]:
+              - textbox [ref=e679]: "1"
+            - cell "NTP" [ref=e680]:
+              - textbox [ref=e681]: NTP
+            - cell "5.21" [ref=e682]:
+              - spinbutton [ref=e683]: "5.21"
+            - cell "Flow" [ref=e684]:
+              - combobox [ref=e685]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e686]:
+              - combobox [ref=e687]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-07" [ref=e688]
+            - cell "Update Hapus" [ref=e689]:
+              - button "Update" [ref=e690] [cursor=pointer]
+              - button "Hapus" [ref=e691]
+          - row "50 Amal_Dummy 1 NTP 5.64 Flow Monthly 2022-08 Update Hapus" [ref=e692]:
+            - cell [ref=e693]:
+              - checkbox [ref=e694]
+            - cell "50" [ref=e695]
+            - cell "Amal_Dummy" [ref=e696]:
+              - textbox [ref=e697]: Amal_Dummy
+            - cell "1" [ref=e698]:
+              - textbox [ref=e699]: "1"
+            - cell "NTP" [ref=e700]:
+              - textbox [ref=e701]: NTP
+            - cell "5.64" [ref=e702]:
+              - spinbutton [ref=e703]: "5.64"
+            - cell "Flow" [ref=e704]:
+              - combobox [ref=e705]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e706]:
+              - combobox [ref=e707]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-08" [ref=e708]
+            - cell "Update Hapus" [ref=e709]:
+              - button "Update" [ref=e710] [cursor=pointer]
+              - button "Hapus" [ref=e711]
+          - row "51 Amal_Dummy 1 NTP 5.78 Flow Monthly 2022-09 Update Hapus" [ref=e712]:
+            - cell [ref=e713]:
+              - checkbox [ref=e714]
+            - cell "51" [ref=e715]
+            - cell "Amal_Dummy" [ref=e716]:
+              - textbox [ref=e717]: Amal_Dummy
+            - cell "1" [ref=e718]:
+              - textbox [ref=e719]: "1"
+            - cell "NTP" [ref=e720]:
+              - textbox [ref=e721]: NTP
+            - cell "5.78" [ref=e722]:
+              - spinbutton [ref=e723]: "5.78"
+            - cell "Flow" [ref=e724]:
+              - combobox [ref=e725]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e726]:
+              - combobox [ref=e727]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-09" [ref=e728]
+            - cell "Update Hapus" [ref=e729]:
+              - button "Update" [ref=e730] [cursor=pointer]
+              - button "Hapus" [ref=e731]
+          - row "52 Amal_Dummy 1 NTP 5.67 Flow Monthly 2022-10 Update Hapus" [ref=e732]:
+            - cell [ref=e733]:
+              - checkbox [ref=e734]
+            - cell "52" [ref=e735]
+            - cell "Amal_Dummy" [ref=e736]:
+              - textbox [ref=e737]: Amal_Dummy
+            - cell "1" [ref=e738]:
+              - textbox [ref=e739]: "1"
+            - cell "NTP" [ref=e740]:
+              - textbox [ref=e741]: NTP
+            - cell "5.67" [ref=e742]:
+              - spinbutton [ref=e743]: "5.67"
+            - cell "Flow" [ref=e744]:
+              - combobox [ref=e745]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e746]:
+              - combobox [ref=e747]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-10" [ref=e748]
+            - cell "Update Hapus" [ref=e749]:
+              - button "Update" [ref=e750] [cursor=pointer]
+              - button "Hapus" [ref=e751]
+          - row "53 Amal_Dummy 1 NTP 4.23 Flow Monthly 2022-11 Update Hapus" [ref=e752]:
+            - cell [ref=e753]:
+              - checkbox [ref=e754]
+            - cell "53" [ref=e755]
+            - cell "Amal_Dummy" [ref=e756]:
+              - textbox [ref=e757]: Amal_Dummy
+            - cell "1" [ref=e758]:
+              - textbox [ref=e759]: "1"
+            - cell "NTP" [ref=e760]:
+              - textbox [ref=e761]: NTP
+            - cell "4.23" [ref=e762]:
+              - spinbutton [ref=e763]: "4.23"
+            - cell "Flow" [ref=e764]:
+              - combobox [ref=e765]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e766]:
+              - combobox [ref=e767]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-11" [ref=e768]
+            - cell "Update Hapus" [ref=e769]:
+              - button "Update" [ref=e770] [cursor=pointer]
+              - button "Hapus" [ref=e771]
+          - row "54 Amal_Dummy 1 NTP 4.89 Flow Monthly 2022-12 Update Hapus" [ref=e772]:
+            - cell [ref=e773]:
+              - checkbox [ref=e774]
+            - cell "54" [ref=e775]
+            - cell "Amal_Dummy" [ref=e776]:
+              - textbox [ref=e777]: Amal_Dummy
+            - cell "1" [ref=e778]:
+              - textbox [ref=e779]: "1"
+            - cell "NTP" [ref=e780]:
+              - textbox [ref=e781]: NTP
+            - cell "4.89" [ref=e782]:
+              - spinbutton [ref=e783]: "4.89"
+            - cell "Flow" [ref=e784]:
+              - combobox [ref=e785]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e786]:
+              - combobox [ref=e787]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2022-12" [ref=e788]
+            - cell "Update Hapus" [ref=e789]:
+              - button "Update" [ref=e790] [cursor=pointer]
+              - button "Hapus" [ref=e791]
+          - row "10 test_user v1.1771992414 GDP 100.0 Flow Monthly 2024-01 Update Hapus" [ref=e792]:
+            - cell [ref=e793]:
+              - checkbox [ref=e794]
+            - cell "10" [ref=e795]
+            - cell "test_user" [ref=e796]:
+              - textbox [ref=e797]: test_user
+            - cell "v1.1771992414" [ref=e798]:
+              - textbox [ref=e799]: v1.1771992414
+            - cell "GDP" [ref=e800]:
+              - textbox [ref=e801]: GDP
+            - cell "100.0" [ref=e802]:
+              - spinbutton [ref=e803]: "100.0"
+            - cell "Flow" [ref=e804]:
+              - combobox [ref=e805]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e806]:
+              - combobox [ref=e807]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e808]
+            - cell "Update Hapus" [ref=e809]:
+              - button "Update" [ref=e810] [cursor=pointer]
+              - button "Hapus" [ref=e811]
+          - row "11 test_user v1.1771992414 Inflation 2.1 Flow Monthly 2024-01 Update Hapus" [ref=e812]:
+            - cell [ref=e813]:
+              - checkbox [ref=e814]
+            - cell "11" [ref=e815]
+            - cell "test_user" [ref=e816]:
+              - textbox [ref=e817]: test_user
+            - cell "v1.1771992414" [ref=e818]:
+              - textbox [ref=e819]: v1.1771992414
+            - cell "Inflation" [ref=e820]:
+              - textbox [ref=e821]: Inflation
+            - cell "2.1" [ref=e822]:
+              - spinbutton [ref=e823]: "2.1"
+            - cell "Flow" [ref=e824]:
+              - combobox [ref=e825]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e826]:
+              - combobox [ref=e827]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e828]
+            - cell "Update Hapus" [ref=e829]:
+              - button "Update" [ref=e830] [cursor=pointer]
+              - button "Hapus" [ref=e831]
+          - row "12 test_user v1.1771992414 Unemployment 5.2 Flow Monthly 2024-01 Update Hapus" [ref=e832]:
+            - cell [ref=e833]:
+              - checkbox [ref=e834]
+            - cell "12" [ref=e835]
+            - cell "test_user" [ref=e836]:
+              - textbox [ref=e837]: test_user
+            - cell "v1.1771992414" [ref=e838]:
+              - textbox [ref=e839]: v1.1771992414
+            - cell "Unemployment" [ref=e840]:
+              - textbox [ref=e841]: Unemployment
+            - cell "5.2" [ref=e842]:
+              - spinbutton [ref=e843]: "5.2"
+            - cell "Flow" [ref=e844]:
+              - combobox [ref=e845]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e846]:
+              - combobox [ref=e847]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e848]
+            - cell "Update Hapus" [ref=e849]:
+              - button "Update" [ref=e850] [cursor=pointer]
+              - button "Hapus" [ref=e851]
+          - row "13 test_user v1.1771992414 GDP 105.0 Flow Monthly 2024-02 Update Hapus" [ref=e852]:
+            - cell [ref=e853]:
+              - checkbox [ref=e854]
+            - cell "13" [ref=e855]
+            - cell "test_user" [ref=e856]:
+              - textbox [ref=e857]: test_user
+            - cell "v1.1771992414" [ref=e858]:
+              - textbox [ref=e859]: v1.1771992414
+            - cell "GDP" [ref=e860]:
+              - textbox [ref=e861]: GDP
+            - cell "105.0" [ref=e862]:
+              - spinbutton [ref=e863]: "105.0"
+            - cell "Flow" [ref=e864]:
+              - combobox [ref=e865]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e866]:
+              - combobox [ref=e867]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-02" [ref=e868]
+            - cell "Update Hapus" [ref=e869]:
+              - button "Update" [ref=e870] [cursor=pointer]
+              - button "Hapus" [ref=e871]
+          - row "14 test_user v1.1771992414 Inflation 2.3 Flow Monthly 2024-02 Update Hapus" [ref=e872]:
+            - cell [ref=e873]:
+              - checkbox [ref=e874]
+            - cell "14" [ref=e875]
+            - cell "test_user" [ref=e876]:
+              - textbox [ref=e877]: test_user
+            - cell "v1.1771992414" [ref=e878]:
+              - textbox [ref=e879]: v1.1771992414
+            - cell "Inflation" [ref=e880]:
+              - textbox [ref=e881]: Inflation
+            - cell "2.3" [ref=e882]:
+              - spinbutton [ref=e883]: "2.3"
+            - cell "Flow" [ref=e884]:
+              - combobox [ref=e885]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e886]:
+              - combobox [ref=e887]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-02" [ref=e888]
+            - cell "Update Hapus" [ref=e889]:
+              - button "Update" [ref=e890] [cursor=pointer]
+              - button "Hapus" [ref=e891]
+          - row "15 test_user v1.1771992414 Unemployment 5.1 Flow Monthly 2024-02 Update Hapus" [ref=e892]:
+            - cell [ref=e893]:
+              - checkbox [ref=e894]
+            - cell "15" [ref=e895]
+            - cell "test_user" [ref=e896]:
+              - textbox [ref=e897]: test_user
+            - cell "v1.1771992414" [ref=e898]:
+              - textbox [ref=e899]: v1.1771992414
+            - cell "Unemployment" [ref=e900]:
+              - textbox [ref=e901]: Unemployment
+            - cell "5.1" [ref=e902]:
+              - spinbutton [ref=e903]: "5.1"
+            - cell "Flow" [ref=e904]:
+              - combobox [ref=e905]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e906]:
+              - combobox [ref=e907]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-02" [ref=e908]
+            - cell "Update Hapus" [ref=e909]:
+              - button "Update" [ref=e910] [cursor=pointer]
+              - button "Hapus" [ref=e911]
+          - row "16 test_user v1.1771992414 GDP 110.0 Flow Monthly 2024-03 Update Hapus" [ref=e912]:
+            - cell [ref=e913]:
+              - checkbox [ref=e914]
+            - cell "16" [ref=e915]
+            - cell "test_user" [ref=e916]:
+              - textbox [ref=e917]: test_user
+            - cell "v1.1771992414" [ref=e918]:
+              - textbox [ref=e919]: v1.1771992414
+            - cell "GDP" [ref=e920]:
+              - textbox [ref=e921]: GDP
+            - cell "110.0" [ref=e922]:
+              - spinbutton [ref=e923]: "110.0"
+            - cell "Flow" [ref=e924]:
+              - combobox [ref=e925]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e926]:
+              - combobox [ref=e927]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-03" [ref=e928]
+            - cell "Update Hapus" [ref=e929]:
+              - button "Update" [ref=e930] [cursor=pointer]
+              - button "Hapus" [ref=e931]
+          - row "17 test_user v1.1771992414 Inflation 2.0 Flow Monthly 2024-03 Update Hapus" [ref=e932]:
+            - cell [ref=e933]:
+              - checkbox [ref=e934]
+            - cell "17" [ref=e935]
+            - cell "test_user" [ref=e936]:
+              - textbox [ref=e937]: test_user
+            - cell "v1.1771992414" [ref=e938]:
+              - textbox [ref=e939]: v1.1771992414
+            - cell "Inflation" [ref=e940]:
+              - textbox [ref=e941]: Inflation
+            - cell "2.0" [ref=e942]:
+              - spinbutton [ref=e943]: "2.0"
+            - cell "Flow" [ref=e944]:
+              - combobox [ref=e945]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e946]:
+              - combobox [ref=e947]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-03" [ref=e948]
+            - cell "Update Hapus" [ref=e949]:
+              - button "Update" [ref=e950] [cursor=pointer]
+              - button "Hapus" [ref=e951]
+          - row "18 test_user v1.1771992414 Unemployment 4.9 Flow Monthly 2024-03 Update Hapus" [ref=e952]:
+            - cell [ref=e953]:
+              - checkbox [ref=e954]
+            - cell "18" [ref=e955]
+            - cell "test_user" [ref=e956]:
+              - textbox [ref=e957]: test_user
+            - cell "v1.1771992414" [ref=e958]:
+              - textbox [ref=e959]: v1.1771992414
+            - cell "Unemployment" [ref=e960]:
+              - textbox [ref=e961]: Unemployment
+            - cell "4.9" [ref=e962]:
+              - spinbutton [ref=e963]: "4.9"
+            - cell "Flow" [ref=e964]:
+              - combobox [ref=e965]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e966]:
+              - combobox [ref=e967]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-03" [ref=e968]
+            - cell "Update Hapus" [ref=e969]:
+              - button "Update" [ref=e970] [cursor=pointer]
+              - button "Hapus" [ref=e971]
+          - row "1 test_user v1.0 GDP 100.0 Flow Monthly 2024-01 Update Hapus" [ref=e972]:
+            - cell [ref=e973]:
+              - checkbox [ref=e974]
+            - cell "1" [ref=e975]
+            - cell "test_user" [ref=e976]:
+              - textbox [ref=e977]: test_user
+            - cell "v1.0" [ref=e978]:
+              - textbox [ref=e979]: v1.0
+            - cell "GDP" [ref=e980]:
+              - textbox [ref=e981]: GDP
+            - cell "100.0" [ref=e982]:
+              - spinbutton [ref=e983]: "100.0"
+            - cell "Flow" [ref=e984]:
+              - combobox [ref=e985]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e986]:
+              - combobox [ref=e987]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e988]
+            - cell "Update Hapus" [ref=e989]:
+              - button "Update" [ref=e990] [cursor=pointer]
+              - button "Hapus" [ref=e991]
+          - row "2 test_user v1.0 Inflation 2.1 Flow Monthly 2024-01 Update Hapus" [ref=e992]:
+            - cell [ref=e993]:
+              - checkbox [ref=e994]
+            - cell "2" [ref=e995]
+            - cell "test_user" [ref=e996]:
+              - textbox [ref=e997]: test_user
+            - cell "v1.0" [ref=e998]:
+              - textbox [ref=e999]: v1.0
+            - cell "Inflation" [ref=e1000]:
+              - textbox [ref=e1001]: Inflation
+            - cell "2.1" [ref=e1002]:
+              - spinbutton [ref=e1003]: "2.1"
+            - cell "Flow" [ref=e1004]:
+              - combobox [ref=e1005]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e1006]:
+              - combobox [ref=e1007]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e1008]
+            - cell "Update Hapus" [ref=e1009]:
+              - button "Update" [ref=e1010] [cursor=pointer]
+              - button "Hapus" [ref=e1011]
+          - row "3 test_user v1.0 Unemployment 5.2 Flow Monthly 2024-01 Update Hapus" [ref=e1012]:
+            - cell [ref=e1013]:
+              - checkbox [ref=e1014]
+            - cell "3" [ref=e1015]
+            - cell "test_user" [ref=e1016]:
+              - textbox [ref=e1017]: test_user
+            - cell "v1.0" [ref=e1018]:
+              - textbox [ref=e1019]: v1.0
+            - cell "Unemployment" [ref=e1020]:
+              - textbox [ref=e1021]: Unemployment
+            - cell "5.2" [ref=e1022]:
+              - spinbutton [ref=e1023]: "5.2"
+            - cell "Flow" [ref=e1024]:
+              - combobox [ref=e1025]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e1026]:
+              - combobox [ref=e1027]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-01" [ref=e1028]
+            - cell "Update Hapus" [ref=e1029]:
+              - button "Update" [ref=e1030] [cursor=pointer]
+              - button "Hapus" [ref=e1031]
+          - row "4 test_user v1.0 GDP 105.0 Flow Monthly 2024-02 Update Hapus" [ref=e1032]:
+            - cell [ref=e1033]:
+              - checkbox [ref=e1034]
+            - cell "4" [ref=e1035]
+            - cell "test_user" [ref=e1036]:
+              - textbox [ref=e1037]: test_user
+            - cell "v1.0" [ref=e1038]:
+              - textbox [ref=e1039]: v1.0
+            - cell "GDP" [ref=e1040]:
+              - textbox [ref=e1041]: GDP
+            - cell "105.0" [ref=e1042]:
+              - spinbutton [ref=e1043]: "105.0"
+            - cell "Flow" [ref=e1044]:
+              - combobox [ref=e1045]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e1046]:
+              - combobox [ref=e1047]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-02" [ref=e1048]
+            - cell "Update Hapus" [ref=e1049]:
+              - button "Update" [ref=e1050] [cursor=pointer]
+              - button "Hapus" [ref=e1051]
+          - row "5 test_user v1.0 Inflation 2.3 Flow Monthly 2024-02 Update Hapus" [ref=e1052]:
+            - cell [ref=e1053]:
+              - checkbox [ref=e1054]
+            - cell "5" [ref=e1055]
+            - cell "test_user" [ref=e1056]:
+              - textbox [ref=e1057]: test_user
+            - cell "v1.0" [ref=e1058]:
+              - textbox [ref=e1059]: v1.0
+            - cell "Inflation" [ref=e1060]:
+              - textbox [ref=e1061]: Inflation
+            - cell "2.3" [ref=e1062]:
+              - spinbutton [ref=e1063]: "2.3"
+            - cell "Flow" [ref=e1064]:
+              - combobox [ref=e1065]:
+                - option "Flow" [selected]
+                - option "Stock"
+            - cell "Monthly" [ref=e1066]:
+              - combobox [ref=e1067]:
+                - option "Monthly" [selected]
+                - option "Quarterly"
+                - option "Yearly"
+            - cell "2024-02" [ref=e1068]
+            - cell "Update Hapus" [ref=e1069]:
+              - button "Update" [ref=e1070] [cursor=pointer]
+              - button "Hapus" [ref=e1071]
+  - contentinfo [ref=e1072]:
+    - paragraph [ref=e1074]: Simple Flask + SQLite prototype for BPS.

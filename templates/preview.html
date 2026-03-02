@@ -1,133 +1,222 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% block content %}
-<section class="hero">
-    <h2>Preview Data</h2>
-    <p>Periksa, query, dan export data BPS yang telah diupload.</p>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h2 class="text-2xl font-semibold">Pratinjau Data</h2>
+            <p class="text-slate-500">Periksa, telusuri, dan ekspor data BPS yang telah diunggah.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
+               class="btn btn-outline btn-primary">Ekspor CSV</a>
+            <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
+               class="btn btn-outline btn-primary">Ekspor Excel</a>
+        </div>
+    </div>
 </section>
 
-<section class="filter-card">
-    <form method="GET">
-        <div class="form-row">
-            <label for="data_type">Filter Tipe Data</label>
-            <select id="data_type" name="data_type">
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <form method="GET" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="form-control">
+            <label for="data_type" class="label">
+                <span class="label-text">Filter Jenis Data</span>
+            </label>
+            <select id="data_type" name="data_type" class="select select-bordered w-full">
                 <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
                 <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
                 <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
             </select>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            </label>
         </div>
-        <div class="form-row">
-            <label for="time_period">Filter Periode</label>
-            <select id="time_period" name="time_period">
+        <div class="form-control">
+            <label for="time_period" class="label">
+                <span class="label-text">Filter Periode</span>
+            </label>
+            <select id="time_period" name="time_period" class="select select-bordered w-full">
                 <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
                 <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
                 <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
                 <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
             </select>
         </div>
-        <div class="form-row">
-            <label for="uploader">Pengupload</label>
+        <div class="form-control">
+            <label for="uploader" class="label">
+                <span class="label-text">Pengunggah</span>
+            </label>
             <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
-                   placeholder="Cari pengupload..." list="uploader-options">
+                   class="input input-bordered w-full" placeholder="Cari pengunggah..." list="uploader-options">
             <datalist id="uploader-options">
                 {% for uploader in filter_options.uploaders %}
                 <option value="{{ uploader }}">
                 {% endfor %}
             </datalist>
         </div>
-        <div class="form-row">
-            <label for="indicator">Indikator</label>
+        <div class="form-control">
+            <label for="indicator" class="label">
+                <span class="label-text">Indikator</span>
+            </label>
             <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
-                   placeholder="Cari indikator..." list="indicator-options">
+                   class="input input-bordered w-full" placeholder="Cari indikator..." list="indicator-options">
             <datalist id="indicator-options">
                 {% for indicator in filter_options.indicators %}
                 <option value="{{ indicator }}">
                 {% endfor %}
             </datalist>
         </div>
-        <div class="form-row">
-            <label for="limit">Jumlah Baris per Halaman</label>
-            <select id="limit" name="limit">
+        <div class="form-control">
+            <label for="limit" class="label">
+                <span class="label-text">Baris per halaman</span>
+            </label>
+            <select id="limit" name="limit" onchange="changeLimit(this.value)" class="select select-bordered w-full">
+                <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                 <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
+                <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
                 <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
+                <option value="30" {% if filters.limit == 30 %}selected{% endif %}>30</option>
                 <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
             </select>
         </div>
-        <button type="submit" class="primary">Apply Filter</button>
+        <div class="flex flex-wrap gap-2 xl:col-span-3">
+            <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+            <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Atur Ulang Filter</a>
+        </div>
     </form>
 
-    <div class="export-actions">
-        <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
-            class="secondary">Export CSV</a>
-        <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '') }}"
-            class="secondary">Export Excel</a>
+    <div class="alert alert-info text-sm mt-4">
+        <span><strong>Tips:</strong> Ctrl+Enter untuk menerapkan filter dengan cepat, batas baris otomatis diterapkan saat diubah, Atur Ulang Filter untuk membersihkan semua pilihan.</span>
     </div>
 </section>
 
-<section class="table-placeholder">
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
     {% if entries %}
-    <div class="table-info">
-        <p>Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
-           (Halaman {{ filters.page }} dari {{ filters.total_pages }})</p>
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-4 text-sm text-slate-500">
+        <div>
+            Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
+            (Halaman {{ filters.page }} dari {{ filters.total_pages }})
+        </div>
     </div>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Pengupload</th>
-                <th>Version</th>
-                <th>Indikator</th>
-                <th>Value</th>
-                <th>Tipe</th>
-                <th>Periode</th>
-                <th>Periode Data</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in entries %}
-            <tr>
-                <td>{{ row.id }}</td>
-                <td>{{ row.uploader_name }}</td>
-                <td>{{ row.version }}</td>
-                <td>{{ row.indicator_name }}</td>
-                <td>{{ row.value }}</td>
-                <td>{{ row.data_type }}</td>
-                <td>{{ row.time_period }}</td>
-                <td>{{ row.tanggal_data }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr class="text-slate-500">
+                    <th>ID</th>
+                    <th>Pengunggah</th>
+                    <th>Versi</th>
+                    <th>Indikator</th>
+                    <th>Nilai</th>
+                    <th>Jenis Data</th>
+                    <th>Periode</th>
+                    <th>Periode Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in entries %}
+                <tr>
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.uploader_name }}</td>
+                    <td>{{ row.version }}</td>
+                    <td>{{ row.indicator_name }}</td>
+                    <td>{{ row.value }}</td>
+                    <td>
+                        {% if row.data_type == 'flow' %}
+                            <span class="badge badge-primary badge-outline">Flow</span>
+                        {% elif row.data_type == 'stock' %}
+                            <span class="badge badge-accent badge-outline">Stock</span>
+                        {% else %}
+                            <span class="badge badge-outline">{{ row.data_type }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.time_period == 'monthly' %}
+                            <span class="badge badge-outline">Bulanan</span>
+                        {% elif row.time_period == 'quarterly' %}
+                            <span class="badge badge-outline">Triwulanan</span>
+                        {% elif row.time_period == 'yearly' %}
+                            <span class="badge badge-outline">Tahunan</span>
+                        {% else %}
+                            <span class="badge badge-outline">{{ row.time_period }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ row.tanggal_data }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Pagination -->
     {% if filters.total_pages > 1 %}
-    <div class="pagination">
-        {% set start_page = [1, filters.page - 2]|max %}
-        {% set end_page = [filters.total_pages, filters.page + 2]|min %}
+    <nav aria-label="Paginasi pratinjau data" class="mt-6 flex justify-center">
+        <div class="join flex-wrap">
+            {% set start_page = [1, filters.page - 2]|max %}
+            {% set end_page = [filters.total_pages, filters.page + 2]|min %}
 
-        {% if filters.page > 1 %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page-1) }}"
-           class="pagination-link">&laquo; Previous</a>
-        {% endif %}
+            {% if filters.page > 1 %}
+            <a class="join-item btn btn-sm" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}">&laquo; Sebelumnya</a>
+            {% endif %}
 
-        {% for page_num in range(start_page, end_page + 1) %}
-        {% if page_num == filters.page %}
-        <span class="pagination-current">{{ page_num }}</span>
-        {% else %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=page_num) }}"
-           class="pagination-link">{{ page_num }}</a>
-        {% endif %}
-        {% endfor %}
+            {% for page_num in range(start_page, end_page + 1) %}
+            {% if page_num == filters.page %}
+            <span class="join-item btn btn-sm btn-primary btn-disabled">{{ page_num }}</span>
+            {% else %}
+            <a class="join-item btn btn-sm" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=page_num) }}">{{ page_num }}</a>
+            {% endif %}
+            {% endfor %}
 
-        {% if filters.page < filters.total_pages %}
-        <a href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', limit=filters.limit, page=filters.page+1) }}"
-           class="pagination-link">Next &raquo;</a>
-        {% endif %}
-    </div>
+            {% if filters.page < filters.total_pages %}
+            <a class="join-item btn btn-sm" href="{{ url_for('preview_data', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}">Berikutnya &raquo;</a>
+            {% endif %}
+        </div>
+    </nav>
     {% endif %}
 
     {% else %}
-    <p>Tidak ada data untuk filter saat ini.</p>
+    <p class="text-slate-500">Tidak ada data untuk filter saat ini.</p>
     {% endif %}
 </section>
+
+<script>
+function resetForm() {
+    document.getElementById('data_type').value = '';
+    document.getElementById('time_period').value = '';
+    document.getElementById('uploader').value = '';
+    document.getElementById('indicator').value = '';
+    document.getElementById('limit').value = '20';
+
+    if (confirm('Atur ulang semua filter?')) {
+        const form = document.querySelector('form');
+        form.submit();
+    }
+}
+
+function clearField(fieldId) {
+    document.getElementById(fieldId).value = '';
+}
+
+function setLimitAndSubmit(limitValue) {
+    document.getElementById('limit').value = limitValue;
+    const form = document.querySelector('form');
+    form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.querySelector('form');
+            form.submit();
+        }
+    });
+});
+
+function changeLimit(newLimit) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('limit', newLimit);
+    urlParams.set('page', '1');
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+</script>
 {% endblock %}

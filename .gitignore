@@ -65,3 +65,5 @@ logs/
 
 # Static files cache
 # static/
+# Node
+node_modules/

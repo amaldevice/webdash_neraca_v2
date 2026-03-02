@@ -1,268 +1,432 @@
-{% extends "base.html" %}
+{% extends "base_tailwind.html" %}
 {% block content %}
-<section class="hero">
-    <h2>Data Analysis & Pivot Tables</h2>
-    <p>Analisis data agregat dengan pivot table dan berbagai filter untuk insights mendalam.</p>
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <div>
+        <h2 class="text-2xl font-semibold">Analisis Data & Tabel Pivot</h2>
+        <p class="text-slate-500">Analisis data agregat melalui tabel pivot dan berbagai filter untuk wawasan yang lebih mendalam.</p>
+    </div>
 </section>
 
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold">Analisis Perbandingan Periode</h3>
+    <p class="text-slate-500">Pilih indikator untuk melihat analisis perbandingan periode (Q ke Q, M ke M, Y ke Y, YTD, C ke C).</p>
 
-<section class="filter-card">
-    <h3>Pivot Table Analysis</h3>
-    <p>Gunakan filter di bawah untuk membuat pivot table kustom:</p>
-
-    <form id="pivot-form">
-        <div class="form-row">
-            <label for="pivot_data_type">Tipe Data</label>
-            <select id="pivot_data_type" name="pivot_data_type">
-                <option value="">Semua</option>
-                <option value="flow">Flow</option>
-                <option value="stock">Stock</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="pivot_time_period">Periode</label>
-            <select id="pivot_time_period" name="pivot_time_period">
-                <option value="">Semua</option>
-                <option value="monthly">Bulanan</option>
-                <option value="quarterly">Triwulanan</option>
-                <option value="yearly">Tahunan</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="pivot_uploader">Pengupload</label>
-            <select id="pivot_uploader" name="pivot_uploader">
-                <option value="">Semua</option>
-                <!-- Will be populated by JavaScript -->
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="pivot_version">Version</label>
-            <select id="pivot_version" name="pivot_version">
-                <option value="">Semua</option>
-                <!-- Will be populated by JavaScript -->
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="rows">Baris (Rows)</label>
-            <select id="rows" name="rows">
-                <option value="indicator_name">Indikator</option>
-                <option value="uploader_name">Pengupload</option>
-                <option value="data_type">Tipe Data</option>
-                <option value="time_period">Periode</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="cols">Kolom (Columns)</label>
-            <select id="cols" name="cols">
-                <option value="data_type">Tipe Data</option>
-                <option value="time_period">Periode</option>
-                <option value="uploader_name">Pengupload</option>
-                <option value="version">Version</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="agg_func">Fungsi Agregasi</label>
-            <select id="agg_func" name="agg_func">
-                <option value="sum">Sum</option>
-                <option value="avg">Average</option>
-                <option value="count">Count</option>
-                <option value="min">Min</option>
-                <option value="max">Max</option>
-            </select>
-        </div>
-        <button type="button" id="generate-pivot" class="primary">Generate Pivot Table</button>
-        <button type="button" id="reset-pivot" class="secondary">Reset</button>
-    </form>
-</section>
-
-<section class="filter-card">
-    <h3>Line Chart Visualization</h3>
-    <p>Generate line chart tren indikator BPS untuk analisis perubahan waktu.</p>
-
-    <div class="plot-controls">
-        <div class="form-row">
-            <label for="indicator_filter">Pilih Indikator</label>
-            <select id="indicator_filter" name="indicator_filter">
-                <option value="">Pilih Indikator...</option>
+    <form id="pivot-form" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+        <div class="form-control">
+            <label for="analysis_indicator" class="label">
+                <span class="label-text">Pilih Indikator</span>
+            </label>
+            <select id="analysis_indicator" name="analysis_indicator" class="select select-bordered w-full" required>
+                <option value="">Pilih indikator...</option>
                 {% for indicator in summary.indicators %}
                 <option value="{{ indicator }}">{{ indicator }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="form-row">
-            <label for="time_range">Rentang Waktu</label>
-            <select id="time_range" name="time_range">
+        <div class="form-control">
+            <label for="analysis_year" class="label">
+                <span class="label-text">Tahun Analisis</span>
+            </label>
+            <select id="analysis_year" name="analysis_year" class="select select-bordered w-full">
+                <option value="">Semua Tahun</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
+            </select>
+        </div>
+        <div class="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
+            <button type="button" id="generate-pivot" class="btn btn-primary">Hasilkan Analisis Periode</button>
+            <button type="button" id="reset-pivot" class="btn btn-outline">Atur Ulang</button>
+        </div>
+    </form>
+
+        <div class="mt-6 border-t border-base-200 pt-6">
+            <div id="pivot-result">
+                <p class="text-slate-500 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
+            </div>
+        </div>
+</section>
+
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold">Visualisasi Grafik Garis</h3>
+    <p class="text-slate-500">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+        <div class="form-control">
+            <label for="indicator_filter" class="label">
+                <span class="label-text">Pilih Indikator</span>
+            </label>
+            <select id="indicator_filter" name="indicator_filter" class="select select-bordered w-full">
+                <option value="">Pilih indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="time_range" class="label">
+                <span class="label-text">Rentang Waktu</span>
+            </label>
+            <select id="time_range" name="time_range" class="select select-bordered w-full">
                 <option value="all">Semua Periode</option>
                 <option value="2020">Tahun 2020</option>
                 <option value="2021">Tahun 2021</option>
                 <option value="2022">Tahun 2022</option>
             </select>
         </div>
-        <button type="button" id="generate-plot" class="primary">Generate Line Chart</button>
+        <div class="flex items-end">
+            <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
+        </div>
+    </div>
+
+    <div class="mt-6 border-t border-base-200 pt-6 plot-container" id="plot-container" style="display: none;">
+        <div id="plot-display"></div>
     </div>
 </section>
 
-<section class="table-placeholder plot-container" id="plot-container" style="display: none;">
-    <div id="plot-display">
-        <!-- Plot will be displayed here -->
-    </div>
-</section>
-
-<section class="table-placeholder">
-    <div id="pivot-result">
-        <p>Klik "Generate Pivot Table" untuk melihat analisis data.</p>
-    </div>
-</section>
-
+<script src="https://cdn.plot.ly/plotly-3.3.1.min.js" integrity="sha256-4rD3fugVb/nVJYUv5Ky3v+fYXoouHaBSP20WIJuEiWg=" crossorigin="anonymous"></script>
 <script>
-// Sample data for demonstration (in real app, this would come from AJAX)
 const sampleData = [
     {% for card in summary.cards %}
     {type: "{{ card.title }}", value: {{ card.value }}, label: "{{ card.label }}"},
     {% endfor %}
 ];
 
-// Function to populate uploader and version dropdowns
-function populateFilters() {
-    // This would normally fetch from API, but for now we'll use sample data
-    const uploaders = new Set(['john_doe', 'admin', 'bps_user']);
-    const versions = new Set(['v1.0', 'v1.1', 'v2.0']);
-
-    const uploaderSelect = document.getElementById('pivot_uploader');
-    const versionSelect = document.getElementById('pivot_version');
-
-    uploaders.forEach(uploader => {
-        const option = document.createElement('option');
-        option.value = uploader;
-        option.textContent = uploader;
-        uploaderSelect.appendChild(option);
-    });
-
-    versions.forEach(version => {
-        const option = document.createElement('option');
-        option.value = version;
-        option.textContent = version;
-        versionSelect.appendChild(option);
-    });
-}
-
-// Generate pivot table
 document.getElementById('generate-pivot').addEventListener('click', function() {
-    const rows = document.getElementById('rows').value;
-    const cols = document.getElementById('cols').value;
-    const aggFunc = document.getElementById('agg_func').value;
+    const indicator = document.getElementById('analysis_indicator').value;
+    const year = document.getElementById('analysis_year').value;
 
-    // In a real implementation, this would make an AJAX call to get filtered data
-    // For now, we'll show a sample pivot table
-    generateSamplePivot(rows, cols, aggFunc);
+    if (!indicator) {
+        alert('Pilih indikator terlebih dahulu.');
+        return;
+    }
+
+    const resultDiv = document.getElementById('pivot-result');
+    resultDiv.innerHTML = '<div class="text-center text-slate-500 py-4">Sedang memproses analisis periode...</div>';
+
+    const formData = new URLSearchParams();
+    formData.append('indicator', indicator);
+    formData.append('year', year);
+
+    fetch('/generate-period-analysis', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div class="text-center text-error py-4">' + data.error + '</div>';
+            return;
+        }
+
+        const analysis = data.analysis;
+        const analysisHTML = generatePeriodAnalysisHTML(analysis);
+        resultDiv.innerHTML = analysisHTML;
+
+        // Activate tabs behavior (DaisyUI tabs are visual only; we handle content toggling here)
+        const tabEls = resultDiv.querySelectorAll('[data-tab]');
+        const sectionEls = resultDiv.querySelectorAll('[data-section]');
+        tabEls.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const key = tab.getAttribute('data-tab');
+                tabEls.forEach(t => {
+                    const active = (t === tab);
+                    t.classList.toggle('btn-primary', active);
+                    t.classList.toggle('btn-ghost', !active);
+                });
+                sectionEls.forEach(sec => {
+                    sec.classList.toggle('hidden', sec.getAttribute('data-section') !== key);
+                });
+            });
+        });
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="text-center text-error py-4">Gagal menghasilkan analisis: ' + error.message + '</div>';
+    });
 });
 
-function generateSamplePivot(rows, cols, aggFunc) {
-    const resultDiv = document.getElementById('pivot-result');
-
-    // Sample pivot table HTML
-    const pivotHTML = `
-        <h4>Pivot Table: ${rows} vs ${cols} (${aggFunc})</h4>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>${rows}</th>
-                    <th>Flow - ${aggFunc}</th>
-                    <th>Stock - ${aggFunc}</th>
-                    <th>Total - ${aggFunc}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>GDP</td>
-                    <td>1,250,000</td>
-                    <td>850,000</td>
-                    <td>2,100,000</td>
-                </tr>
-                <tr>
-                    <td>Inflation</td>
-                    <td>2.1</td>
-                    <td>1.8</td>
-                    <td>1.95</td>
-                </tr>
-                <tr>
-                    <td>Unemployment</td>
-                    <td>5.2</td>
-                    <td>4.8</td>
-                    <td>5.0</td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="export-actions" style="margin-top: 16px;">
-            <button class="secondary" onclick="exportPivotTable()">Export Pivot</button>
+function generatePeriodAnalysisHTML(analysis) {
+    let html = `
+        <div class="flex flex-col gap-2">
+            <h4 class="text-lg font-semibold">Analisis Periode: ${analysis.indicator}</h4>
+            <div class="alert alert-info text-sm">
+                <span><strong>Tahun Analisis:</strong> ${analysis.analysis_year}</span>
+            </div>
         </div>
     `;
 
-    resultDiv.innerHTML = pivotHTML;
+    // Render panjang → gunakan kombinasi Tabs + Accordion (collapse)
+    // agar halaman tidak terlalu panjang.
+    const hasQQ = analysis.quarterly_comparison && analysis.quarterly_comparison.length > 0;
+    const hasMM = analysis.monthly_comparison && analysis.monthly_comparison.length > 0;
+    const hasYY = analysis.yearly_comparison && analysis.yearly_comparison.length > 0;
+    const hasYTD = analysis.ytd_comparison && analysis.ytd_comparison.length > 0;
+    const hasCC = analysis.current_to_current && analysis.current_to_current.length > 0;
+
+    const tabs = [];
+    if (hasMM) tabs.push({ key: 'mm', label: 'M ke M' });
+    if (hasQQ) tabs.push({ key: 'qq', label: 'Q ke Q' });
+    if (hasYY) tabs.push({ key: 'yy', label: 'Y ke Y' });
+    if (hasYTD) tabs.push({ key: 'ytd', label: 'YTD' });
+    if (hasCC) tabs.push({ key: 'cc', label: 'C ke C' });
+
+    const defaultTab = tabs.length ? tabs[0].key : null;
+
+    html += `
+      <div class="mt-6">
+        <div class="bg-base-200/40 border border-base-200 rounded-box p-2">
+          <div class="join flex flex-wrap gap-2">
+            ${tabs.map(t => `
+              <button type="button" class="btn btn-sm join-item ${t.key===defaultTab?'btn-primary':'btn-ghost'}" data-tab="${t.key}">
+                <span>${t.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="mt-4 space-y-3" id="analysis-sections">
+    `;
+
+    // helper: wrap into collapse
+    function collapse(title, bodyHtml, openByDefault=true) {
+      return `
+        <div class="collapse collapse-arrow bg-base-200/40 border border-base-200 rounded-box">
+          <input type="checkbox" ${openByDefault ? 'checked' : ''} />
+          <div class="collapse-title font-semibold">${title}</div>
+          <div class="collapse-content">${bodyHtml}</div>
+        </div>
+      `;
+    }
+
+    if (hasQQ) {
+      let body = `
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr class="text-slate-500">
+                <th>Kuartal</th>
+                <th>Nilai Saat Ini</th>
+                <th>Nilai Sebelumnya</th>
+                <th>Perubahan (%)</th>
+                <th>Tren</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      analysis.quarterly_comparison.forEach(item => {
+        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
+        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        body += `
+          <tr>
+            <td>${item.period}</td>
+            <td>${item.current_value.toLocaleString()}</td>
+            <td>${item.previous_value.toLocaleString()}</td>
+            <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+            <td>${trendSymbol}</td>
+          </tr>
+        `;
+      });
+
+      body += `</tbody></table></div>`;
+      html += `<div data-section="qq" class="${defaultTab==='qq'?'':'hidden'}">${collapse('Perbandingan Kuartal ke Kuartal (Q ke Q)', body, true)}</div>`;
+    }
+
+    if (hasMM) {
+      let body = `
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr class="text-slate-500">
+                <th>Bulan</th>
+                <th>Nilai Saat Ini</th>
+                <th>Nilai Sebelumnya</th>
+                <th>Perubahan (%)</th>
+                <th>Tren</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      analysis.monthly_comparison.forEach(item => {
+        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
+        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        body += `
+          <tr>
+            <td>${item.period}</td>
+            <td>${item.current_value.toLocaleString()}</td>
+            <td>${item.previous_value.toLocaleString()}</td>
+            <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+            <td>${trendSymbol}</td>
+          </tr>
+        `;
+      });
+
+      body += `</tbody></table></div>`;
+      html += `<div data-section="mm" class="${defaultTab==='mm'?'':'hidden'}">${collapse('Perbandingan Bulan ke Bulan (M ke M)', body, true)}</div>`;
+    }
+
+    if (hasYY) {
+      let body = `
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr class="text-slate-500">
+                <th>Tahun</th>
+                <th>Nilai Saat Ini</th>
+                <th>Nilai Sebelumnya</th>
+                <th>Perubahan (%)</th>
+                <th>Tren</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      analysis.yearly_comparison.forEach(item => {
+        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
+        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        body += `
+          <tr>
+            <td>${item.period}</td>
+            <td>${item.current_value.toLocaleString()}</td>
+            <td>${item.previous_value.toLocaleString()}</td>
+            <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+            <td>${trendSymbol}</td>
+          </tr>
+        `;
+      });
+
+      body += `</tbody></table></div>`;
+      html += `<div data-section="yy" class="${defaultTab==='yy'?'':'hidden'}">${collapse('Perbandingan Tahun ke Tahun (Y ke Y)', body, true)}</div>`;
+    }
+
+    if (hasYTD) {
+      let body = '';
+      analysis.ytd_comparison.forEach(yearData => {
+        if (yearData.monthly_ytd && yearData.monthly_ytd.length > 0) {
+          let table = `
+            <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+              <table class="table table-zebra w-full">
+                <thead>
+                  <tr class="text-slate-500">
+                    <th>Bulan</th>
+                    <th>Nilai YTD</th>
+                  </tr>
+                </thead>
+                <tbody>
+          `;
+          yearData.monthly_ytd.forEach(item => {
+            table += `
+              <tr>
+                <td>${item.period}</td>
+                <td>${item.ytd_value.toLocaleString()}</td>
+              </tr>
+            `;
+          });
+          table += `</tbody></table></div>`;
+          body += collapse(`YTD Bulanan - ${yearData.year}`, table, false);
+        }
+      });
+      html += `<div data-section="ytd" class="${defaultTab==='ytd'?'':'hidden'}">${collapse('Analisis Tahun Berjalan (YTD)', body || '<p class="text-slate-500">Tidak ada data YTD.</p>', true)}</div>`;
+    }
+
+    if (hasCC) {
+      let body = `
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr class="text-slate-500">
+                <th>Periode</th>
+                <th>Nilai Tahun Berjalan</th>
+                <th>Nilai Tahun Sebelumnya</th>
+                <th>Perubahan (%)</th>
+                <th>Tren</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      analysis.current_to_current.forEach(item => {
+        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
+        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        body += `
+          <tr>
+            <td>${item.period}</td>
+            <td>${item.current_value.toLocaleString()}</td>
+            <td>${item.previous_year_value.toLocaleString()}</td>
+            <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
+            <td>${trendSymbol}</td>
+          </tr>
+        `;
+      });
+
+      body += `</tbody></table></div>`;
+      html += `<div data-section="cc" class="${defaultTab==='cc'?'':'hidden'}">${collapse('Perbandingan Periode Berjalan ke Periode Sejenis (C ke C)', body, true)}</div>`;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    html += `
+        <div class="mt-4">
+            <button class="btn btn-outline btn-primary" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Ekspor Analisis</button>
+        </div>
+    `;
+
+    return html;
 }
 
-function exportPivotTable() {
-    alert('Pivot table export functionality would be implemented here');
+function exportPeriodAnalysis(indicator, year) {
+    alert('Fitur ekspor analisis periode akan diimplementasikan di sini.');
+    console.log('Exporting analysis for:', indicator, 'Year:', year);
 }
 
-// Reset pivot table
 document.getElementById('reset-pivot').addEventListener('click', function() {
-    document.getElementById('pivot-result').innerHTML = '<p>Klik "Generate Pivot Table" untuk melihat analisis data.</p>';
+    document.getElementById('pivot-result').innerHTML = '<p class="text-slate-500 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
 });
 
-// Plot generation functionality
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Plot generation script loaded');
-
     const generateBtn = document.getElementById('generate-plot');
     if (generateBtn) {
-        console.log('Generate button found, adding event listener');
         generateBtn.addEventListener('click', handlePlotGeneration);
-    } else {
-        console.error('Generate button not found!');
     }
 });
 
 function handlePlotGeneration() {
-    console.log('Generate plot clicked');
-
     const indicatorFilter = document.getElementById('indicator_filter');
     const timeRange = document.getElementById('time_range');
 
     if (!indicatorFilter || !timeRange) {
-        console.error('Form elements not found');
-        alert('Form elements not found');
+        alert('Elemen formulir tidak ditemukan.');
         return;
     }
 
     const indicatorValue = indicatorFilter.value;
     const timeValue = timeRange.value;
 
-    console.log('Indicator:', indicatorValue, 'Time range:', timeValue);
-
-    // Validate selection
     if (!indicatorValue || indicatorValue === "") {
-        console.log('No indicator selected');
-        alert('Pilih indikator terlebih dahulu');
+        alert('Pilih indikator terlebih dahulu.');
         return;
     }
 
-    // Show loading state
     const plotContainer = document.getElementById('plot-container');
     const plotDisplay = document.getElementById('plot-display');
 
     if (!plotContainer || !plotDisplay) {
-        console.error('Plot container elements not found');
         return;
     }
 
-    console.log('Setting loading state...');
-    plotDisplay.innerHTML = '<div class="loading">Generating line chart...</div>';
+    plotDisplay.innerHTML = '<div class="text-center text-slate-500 py-5">Sedang membuat grafik garis...</div>';
     plotContainer.style.display = 'block';
 
-    // Send request to generate plot
-    console.log('Sending fetch request...');
     const formData = new URLSearchParams();
     formData.append('indicator_filter', indicatorValue);
     formData.append('time_range', timeValue);
@@ -275,124 +439,45 @@ function handlePlotGeneration() {
         body: formData.toString()
     })
     .then(response => {
-        console.log('Response received, status:', response.status, 'ok:', response.ok);
         if (!response.ok) {
-            throw new Error('HTTP error! status: ' + response.status);
+            throw new Error('Kesalahan HTTP, status: ' + response.status);
         }
         return response.text().then(text => {
-            console.log('Raw response text length:', text.length);
-            console.log('First 100 chars:', text.substring(0, 100));
             try {
                 return JSON.parse(text);
             } catch (e) {
-                console.error('JSON parse error:', e);
-                throw new Error('Invalid JSON response: ' + text.substring(0, 200));
+                throw new Error('Respons JSON tidak valid: ' + text.substring(0, 200));
             }
         });
     })
     .then(data => {
-        console.log('Data parsed successfully:', data ? 'has data' : 'no data');
-        if (data && data.plot_html) {
-            console.log('Setting plot HTML, length:', data.plot_html.length);
-            plotDisplay.innerHTML = data.plot_html;
-            console.log('Plot HTML set successfully');
-        } else {
-            console.log('No plot_html in response');
-            plotDisplay.innerHTML = '<div class="error">Error: No plot data received</div>';
+        if (data && data.error) {
+            plotDisplay.innerHTML = '<div class="text-center text-error py-5">' + data.error + '</div>';
+            return;
         }
+
+        if (!data || !data.plot_json) {
+            plotDisplay.innerHTML = '<div class="text-center text-error py-5">Kesalahan: data grafik tidak tersedia.</div>';
+            return;
+        }
+
+        const fig = JSON.parse(data.plot_json);
+        plotDisplay.innerHTML = '';
+        Plotly.newPlot(plotDisplay, fig.data, fig.layout, fig.config || {});
     })
     .catch(error => {
-        console.error('Error in plot generation:', error);
-        plotDisplay.innerHTML = '<div class="error">Failed to generate plot: ' + error.message + '</div>';
+        plotDisplay.innerHTML = '<div class="text-center text-error py-5">Gagal membuat grafik: ' + error.message + '</div>';
     });
 }
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    populateFilters();
-});
 </script>
 
 <style>
-#pivot-result {
-    margin-top: 24px;
-}
-
-#pivot-result h4 {
-    margin-bottom: 16px;
-    color: #0d3b66;
-}
-
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 24px;
-    flex-wrap: wrap;
-}
-
-.pagination-link {
-    padding: 8px 12px;
-    border: 1px solid #95aac9;
-    color: #0d3b66;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
-.pagination-link:hover {
-    background: #0d3b66;
-    color: white;
-}
-
-.pagination-current {
-    padding: 8px 12px;
-    background: #0d3b66;
-    color: white;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-.table-info {
-    margin-bottom: 16px;
-    padding: 12px;
-    background: #f8fafc;
-    border-radius: 4px;
-    border: 1px solid #e1e7ee;
-}
-
 .plot-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    margin-bottom: 24px;
+    min-height: 520px;
 }
 
-.plot-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    align-items: flex-end;
-}
-
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-style: italic;
-}
-
-.error {
-    text-align: center;
-    padding: 40px;
-    color: #dc3545;
-    font-weight: bold;
-}
-
-.no-data {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-    font-style: italic;
+#plot-display {
+    min-height: 480px;
 }
 </style>
 {% endblock %}
