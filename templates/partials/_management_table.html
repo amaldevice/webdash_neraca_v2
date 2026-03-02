@@ -1,0 +1,118 @@
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+    {% if entries %}
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+        <div>
+            <h3 class="text-lg font-semibold mb-1">Entri Data ({{ entries|length }} ditampilkan)</h3>
+            <div class="text-slate-500">
+                Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
+                (Halaman {{ filters.page }} dari {{ filters.total_pages }})
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 items-end">
+            <div class="form-control">
+                <label for="limit-selector" class="label">
+                    <span class="label-text">Baris per halaman</span>
+                </label>
+                <select id="limit-selector" onchange="changeLimit(this.value)" class="select select-bordered select-sm">
+                    <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
+                    <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20</option>
+                    <option value="30" {% if filters.limit == 30 %}selected{% endif %}>30</option>
+                    <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator %}
+            <form method="POST" class="self-end">
+                <input type="hidden" name="action" value="delete_by_filter">
+                <input type="hidden" name="data_type" value="{{ filters.data_type }}">
+                <input type="hidden" name="time_period" value="{{ filters.time_period }}">
+                <input type="hidden" name="uploader" value="{{ filters.uploader }}">
+                <input type="hidden" name="indicator" value="{{ filters.indicator }}">
+                <button type="submit" class="btn btn-error btn-sm" onclick="return confirm('Yakin menghapus semua data yang sesuai filter?')">Hapus Berdasarkan Filter</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="bulk-actions" class="alert bg-base-200 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
+        <span class="font-semibold">Aksi Massal</span>
+        <button type="button" id="bulk-delete-btn" class="btn btn-error btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
+        <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
+        <span id="selected-count" class="text-slate-500">0 data dipilih</span>
+    </div>
+
+    <div class="overflow-x-auto mt-4">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr class="text-slate-500">
+                    <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
+                    <th>ID</th>
+                    <th>Pengunggah</th>
+                    <th>Versi</th>
+                    <th>Indikator</th>
+                    <th>Nilai</th>
+                    <th>Jenis Data</th>
+                    <th>Periode</th>
+                    <th>Periode Data</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr data-entry-id="{{ entry.id }}">
+                    <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
+                    <td>{{ entry.id }}</td>
+                    <td><input type="text" name="update_uploader_{{ entry.id }}" value="{{ entry.uploader_name }}" class="input input-bordered input-sm w-full" required></td>
+                    <td><input type="text" name="update_version_{{ entry.id }}" value="{{ entry.version }}" class="input input-bordered input-sm w-full" required></td>
+                    <td><input type="text" name="update_indicator_{{ entry.id }}" value="{{ entry.indicator_name }}" class="input input-bordered input-sm w-full" required></td>
+                    <td><input type="number" step="0.01" name="update_value_{{ entry.id }}" value="{{ entry.value }}" class="input input-bordered input-sm w-full" required></td>
+                    <td>
+                        <select name="update_data_type_{{ entry.id }}" class="select select-bordered select-sm w-full">
+                            <option value="flow" {% if entry.data_type == "flow" %}selected{% endif %}>Flow</option>
+                            <option value="stock" {% if entry.data_type == "stock" %}selected{% endif %}>Stock</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="update_time_period_{{ entry.id }}" class="select select-bordered select-sm w-full">
+                            <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                            <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                            <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+                        </select>
+                    </td>
+                    <td>{{ entry.tanggal_data }}</td>
+                    <td>
+                        <div class="flex flex-wrap gap-1">
+                            <form method="POST" class="inline">
+                                <input type="hidden" name="action" value="update">
+                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                <input type="hidden" name="update_uploader" value="">
+                                <input type="hidden" name="update_version" value="">
+                                <input type="hidden" name="update_indicator" value="">
+                                <input type="hidden" name="update_value" value="">
+                                <input type="hidden" name="update_data_type" value="">
+                                <input type="hidden" name="update_time_period" value="">
+                                <button type="submit" class="btn btn-primary btn-sm" onclick="prepareUpdate(this, {{ entry.id }})">Perbarui</button>
+                            </form>
+                            <form method="POST" class="inline">
+                                <input type="hidden" name="action" value="delete_single">
+                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                <button type="submit" class="btn btn-outline btn-error btn-sm" onclick="return confirm('Yakin menghapus data ini?')">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% set pagination_aria_label = "Paginasi manajemen data" %}
+    {% set pagination_endpoint = "data_management" %}
+    {% include "partials/_pagination.html" %}
+
+    {% else %}
+    {% include "partials/_empty_state.html" %}
+    {% endif %}
+</section>

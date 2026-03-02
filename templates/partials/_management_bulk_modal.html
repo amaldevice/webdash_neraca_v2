@@ -1,0 +1,59 @@
+<div id="bulk-update-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="bg-base-100 border border-base-200 rounded-2xl shadow-lg w-full max-w-lg">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold">Perbarui Data Terpilih</h3>
+            <p class="text-slate-500 text-sm">Isi kolom yang ingin diubah. Kolom yang kosong tidak akan diperbarui.</p>
+
+            <form id="bulk-update-form" method="POST" class="grid gap-4 mt-4">
+                <input type="hidden" name="action" value="bulk_update">
+                <div class="form-control">
+                    <label for="bulk_update_uploader" class="label">
+                        <span class="label-text">Pengunggah Baru (opsional)</span>
+                    </label>
+                    <input type="text" id="bulk_update_uploader" name="bulk_update_uploader" class="input input-bordered w-full" placeholder="Biarkan kosong jika tidak ingin mengubah">
+                </div>
+                <div class="form-control">
+                    <label for="bulk_update_version" class="label">
+                        <span class="label-text">Versi Baru (opsional)</span>
+                    </label>
+                    <input type="text" id="bulk_update_version" name="bulk_update_version" class="input input-bordered w-full" placeholder="Biarkan kosong jika tidak ingin mengubah">
+                </div>
+                <div class="form-control">
+                    <label for="bulk_update_data_type" class="label">
+                        <span class="label-text">Jenis Data Baru (opsional)</span>
+                    </label>
+                    <select id="bulk_update_data_type" name="bulk_update_data_type" class="select select-bordered w-full">
+                        <option value="">-- Tidak diubah --</option>
+                        <option value="flow">Flow</option>
+                        <option value="stock">Stock</option>
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label for="bulk_update_time_period" class="label">
+                        <span class="label-text">Periode Baru (opsional)</span>
+                    </label>
+                    <select id="bulk_update_time_period" name="bulk_update_time_period" class="select select-bordered w-full">
+                        <option value="">-- Tidak diubah --</option>
+                        <option value="monthly">Bulanan</option>
+                        <option value="quarterly">Triwulanan</option>
+                        <option value="yearly">Tahunan</option>
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label for="bulk_update_value" class="label">
+                        <span class="label-text">Nilai Baru (opsional)</span>
+                    </label>
+                    <input type="number" step="0.01" id="bulk_update_value" name="bulk_update_value" class="input input-bordered w-full" placeholder="Biarkan kosong jika tidak ingin mengubah">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="btn btn-outline" onclick="closeBulkUpdateModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">Perbarui Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form id="bulk-delete-form" method="POST" style="display: none;">
+    <input type="hidden" name="action" value="bulk_delete">
+</form>

@@ -1,0 +1,186 @@
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    updateBulkActions();
+    updateSelectAllState();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const bulkActions = document.getElementById('bulk-actions');
+    const selectedCount = document.getElementById('selected-count');
+
+    if (checkboxes.length > 0) {
+        bulkActions.style.display = 'flex';
+        selectedCount.textContent = `${checkboxes.length} data dipilih`;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+
+    const allCheckboxes = document.querySelectorAll('.row-checkbox');
+    const selectAll = document.getElementById('select-all');
+    selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+    selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+}
+
+function prepareUpdate(button, entryId) {
+    const row = button.closest('tr');
+    const uploader = row.querySelector(`input[name="update_uploader_${entryId}"]`).value;
+    const version = row.querySelector(`input[name="update_version_${entryId}"]`).value;
+    const indicator = row.querySelector(`input[name="update_indicator_${entryId}"]`).value;
+    const value = row.querySelector(`input[name="update_value_${entryId}"]`).value;
+    const dataType = row.querySelector(`select[name="update_data_type_${entryId}"]`).value;
+    const timePeriod = row.querySelector(`select[name="update_time_period_${entryId}"]`).value;
+
+    const form = button.closest('form');
+    form.querySelector('input[name="update_uploader"]').value = uploader;
+    form.querySelector('input[name="update_version"]').value = version;
+    form.querySelector('input[name="update_indicator"]').value = indicator;
+    form.querySelector('input[name="update_value"]').value = value;
+    form.querySelector('input[name="update_data_type"]').value = dataType;
+    form.querySelector('input[name="update_time_period"]').value = timePeriod;
+
+    return true;
+}
+
+function confirmBulkDelete() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Pilih data yang ingin dihapus terlebih dahulu.');
+        return;
+    }
+
+    if (confirm(`Yakin menghapus ${checkboxes.length} data yang dipilih?`)) {
+        const form = document.getElementById('bulk-delete-form');
+        checkboxes.forEach(cb => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_ids[]';
+            input.value = cb.value;
+            form.appendChild(input);
+        });
+        form.submit();
+    }
+}
+
+function openBulkUpdateModal() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Pilih data yang ingin diperbarui terlebih dahulu.');
+        return;
+    }
+
+    const modal = document.getElementById('bulk-update-modal');
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+}
+
+function closeBulkUpdateModal() {
+    const modal = document.getElementById('bulk-update-modal');
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    document.getElementById('bulk-update-form').reset();
+}
+
+document.getElementById('bulk-update-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeBulkUpdateModal();
+    }
+});
+
+function updateInsertPeriodFormat() {
+    const timePeriod = document.getElementById('insert_time_period').value;
+    const periodInput = document.getElementById('insert_period_date');
+
+    switch(timePeriod) {
+        case 'monthly':
+            periodInput.placeholder = 'Format: YYYY-MM (contoh: 2024-01)';
+            periodInput.pattern = '\\d{4}-\\d{2}';
+            periodInput.title = 'Format: YYYY-MM';
+            break;
+        case 'quarterly':
+            periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 (contoh: 2024-Q1)';
+            periodInput.pattern = '\\d{4}-Q[1-4]';
+            periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4';
+            break;
+        case 'yearly':
+            periodInput.placeholder = 'Format: YYYY (contoh: 2024)';
+            periodInput.pattern = '\\d{4}';
+            periodInput.title = 'Format: YYYY';
+            break;
+    }
+}
+
+function changeLimit(newLimit) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('limit', newLimit);
+    urlParams.set('page', '1');
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+
+function saveCheckboxState() {
+    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    const checkedIds = Array.from(checkedBoxes).map(cb => cb.value);
+    localStorage.setItem('dataManagementSelectedIds', JSON.stringify(checkedIds));
+}
+
+function restoreCheckboxState() {
+    const savedIds = localStorage.getItem('dataManagementSelectedIds');
+    if (savedIds) {
+        const selectedIds = JSON.parse(savedIds);
+        selectedIds.forEach(id => {
+            const checkbox = document.querySelector(`.row-checkbox[value="${id}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateInsertPeriodFormat();
+    restoreCheckboxState();
+    updateSelectAllState();
+
+    const bulkActions = document.getElementById('bulk-actions');
+    if (bulkActions) {
+        bulkActions.style.display = 'none';
+        bulkActions.removeAttribute('hidden');
+    }
+
+    updateBulkActions();
+
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActions();
+            saveCheckboxState();
+        });
+    });
+
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            toggleSelectAll();
+            saveCheckboxState();
+        });
+    }
+});
+
+function updateSelectAllState() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const selectAll = document.getElementById('select-all');
+
+    if (!selectAll) return;
+
+    const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+    const totalCount = checkboxes.length;
+
+    selectAll.checked = checkedCount === totalCount && totalCount > 0;
+    selectAll.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+}
+</script>

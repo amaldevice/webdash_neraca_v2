@@ -1,0 +1,45 @@
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold mb-4">Filter Data</h3>
+    <form method="GET" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="form-control">
+            <label for="data_type" class="label">
+                <span class="label-text">Jenis Data</span>
+            </label>
+            <select id="data_type" name="data_type" class="select select-bordered w-full">
+                <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
+                <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
+                <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
+            </select>
+            <label class="label">
+                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            </label>
+        </div>
+        <div class="form-control">
+            <label for="time_period" class="label">
+                <span class="label-text">Periode</span>
+            </label>
+            <select id="time_period" name="time_period" class="select select-bordered w-full">
+                <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
+                <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
+                <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
+                <option value="yearly" {% if filters.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="uploader" class="label">
+                <span class="label-text">Pengunggah</span>
+            </label>
+            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}" class="input input-bordered w-full" placeholder="Cari pengunggah...">
+        </div>
+        <div class="form-control">
+            <label for="indicator" class="label">
+                <span class="label-text">Indikator</span>
+            </label>
+            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}" class="input input-bordered w-full" placeholder="Cari indikator...">
+        </div>
+        <div class="flex flex-wrap gap-2 xl:col-span-4">
+            <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+            <a href="{{ url_for('data_management') }}" class="btn btn-outline">Atur Ulang</a>
+        </div>
+    </form>
+</section>
