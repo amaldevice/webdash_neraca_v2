@@ -4,12 +4,18 @@
 {% set page_header_description = "Pastikan Pengunggah dan Versi selalu diisi." %}
 {% set page_header_actions %}
 <span class="badge badge-outline">{{ "Unggah" if mode == "upload" else "Manual" }}</span>
-<span class="badge badge-primary badge-outline">BPS</span>
+<a href="{{ url_for('preview_data') }}" class="btn btn-outline btn-primary">Lihat Pratinjau</a>
 {% endset %}
 {{ super() }}
 {% endblock %}
 {% block content %}
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+<section class="panel">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">{{ "Unggah Berkas Excel" if mode == "upload" else "Input Data Manual" }}</h3>
+            <p class="hint">Lengkapi metadata utama (Pengunggah, Versi, Jenis Data, Periode) sebelum menyimpan data.</p>
+        </div>
+    </div>
     {% if mode == "upload" %}
     {% include "partials/_upload_form.html" %}
     {% else %}

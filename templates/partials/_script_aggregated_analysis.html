@@ -16,7 +16,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     }
 
     const resultDiv = document.getElementById('pivot-result');
-    resultDiv.innerHTML = '<div class="text-center text-slate-500 py-4">Sedang memproses analisis periode...</div>';
+    resultDiv.innerHTML = '<div class="text-center text-base-content/60 py-4">Sedang memproses analisis periode...</div>';
 
     const formData = new URLSearchParams();
     formData.append('indicator', indicator);
@@ -120,7 +120,7 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
           <table class="table table-zebra w-full">
             <thead>
-              <tr class="text-slate-500">
+              <tr class="text-base-content/60">
                 <th>Kuartal</th>
                 <th>Nilai Saat Ini</th>
                 <th>Nilai Sebelumnya</th>
@@ -154,7 +154,7 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
           <table class="table table-zebra w-full">
             <thead>
-              <tr class="text-slate-500">
+              <tr class="text-base-content/60">
                 <th>Bulan</th>
                 <th>Nilai Saat Ini</th>
                 <th>Nilai Sebelumnya</th>
@@ -188,7 +188,7 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
           <table class="table table-zebra w-full">
             <thead>
-              <tr class="text-slate-500">
+              <tr class="text-base-content/60">
                 <th>Tahun</th>
                 <th>Nilai Saat Ini</th>
                 <th>Nilai Sebelumnya</th>
@@ -225,7 +225,7 @@ function generatePeriodAnalysisHTML(analysis) {
             <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
               <table class="table table-zebra w-full">
                 <thead>
-                  <tr class="text-slate-500">
+                  <tr class="text-base-content/60">
                     <th>Bulan</th>
                     <th>Nilai YTD</th>
                   </tr>
@@ -244,7 +244,7 @@ function generatePeriodAnalysisHTML(analysis) {
           body += collapse(`YTD Bulanan - ${yearData.year}`, table, false);
         }
       });
-      html += `<div data-section="ytd" class="${defaultTab==='ytd'?'':'hidden'}">${collapse('Analisis Tahun Berjalan (YTD)', body || '<p class="text-slate-500">Tidak ada data YTD.</p>', true)}</div>`;
+      html += `<div data-section="ytd" class="${defaultTab==='ytd'?'':'hidden'}">${collapse('Analisis Tahun Berjalan (YTD)', body || '<p class="text-base-content/60">Tidak ada data YTD.</p>', true)}</div>`;
     }
 
     if (hasCC) {
@@ -252,7 +252,7 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
           <table class="table table-zebra w-full">
             <thead>
-              <tr class="text-slate-500">
+              <tr class="text-base-content/60">
                 <th>Periode</th>
                 <th>Nilai Tahun Berjalan</th>
                 <th>Nilai Tahun Sebelumnya</th>
@@ -301,7 +301,7 @@ function exportPeriodAnalysis(indicator, year) {
 }
 
 document.getElementById('reset-pivot').addEventListener('click', function() {
-    document.getElementById('pivot-result').innerHTML = '<p class="text-slate-500 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
+    document.getElementById('pivot-result').innerHTML = '<p class="text-base-content/60 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
 });
 
@@ -336,7 +336,7 @@ function handlePlotGeneration() {
         return;
     }
 
-    plotDisplay.innerHTML = '<div class="text-center text-slate-500 py-5">Sedang membuat grafik garis...</div>';
+    plotDisplay.innerHTML = '<div class="text-center text-base-content/60 py-5">Sedang membuat grafik garis...</div>';
     plotContainer.style.display = 'block';
 
     const formData = new URLSearchParams();

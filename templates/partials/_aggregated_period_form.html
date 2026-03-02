@@ -1,8 +1,12 @@
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
-    <h3 class="text-lg font-semibold">Analisis Perbandingan Periode</h3>
-    <p class="text-slate-500">Pilih indikator untuk melihat analisis perbandingan periode (Q ke Q, M ke M, Y ke Y, YTD, C ke C).</p>
+<section class="panel mb-6">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">Analisis Perbandingan Periode</h3>
+            <p class="hint">Pilih indikator untuk melihat analisis perbandingan periode (Q ke Q, M ke M, Y ke Y, YTD, C ke C).</p>
+        </div>
+    </div>
 
-    <form id="pivot-form" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+    <form id="pivot-form" class="form-grid">
         <div class="form-control">
             <label for="analysis_indicator" class="label">
                 <span class="label-text">Pilih Indikator</span>
@@ -27,15 +31,15 @@
                 <option value="2020">2020</option>
             </select>
         </div>
-        <div class="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
+        <div class="form-actions-bar md:col-span-2 xl:col-span-3">
             <button type="button" id="generate-pivot" class="btn btn-primary">Hasilkan Analisis Periode</button>
             <button type="button" id="reset-pivot" class="btn btn-outline">Atur Ulang</button>
         </div>
     </form>
 
-    <div class="mt-6 border-t border-base-200 pt-6">
+    <div class="mt-6 border-t border-base-300 pt-6">
         <div id="pivot-result">
-            <p class="text-slate-500 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
+            <p class="text-base-content/60 mb-0">Klik "Hasilkan Analisis Periode" untuk melihat analisis data.</p>
         </div>
     </div>
 </section>

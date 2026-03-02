@@ -3,7 +3,7 @@
     <div class="panel-header md:flex-row md:items-end md:justify-between">
         <div class="space-y-1">
             <h3 class="text-lg font-semibold">Entri Data ({{ entries|length }} ditampilkan)</h3>
-            <div class="text-slate-500">
+            <div class="text-base-content/60">
                 Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
                 (Halaman {{ filters.page }} dari {{ filters.total_pages }})
             </div>
@@ -36,11 +36,11 @@
         </div>
     </div>
 
-    <div id="bulk-actions" class="alert bg-base-200 border border-base-200 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
+    <div id="bulk-actions" class="alert bg-base-200 border border-base-300 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
         <span class="font-semibold">Aksi Massal</span>
         <button type="button" id="bulk-delete-btn" class="btn btn-error btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
         <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
-        <span id="selected-count" class="text-slate-500">0 data dipilih</span>
+        <span id="selected-count" class="text-base-content/60">0 data dipilih</span>
     </div>
 
     <div class="table-wrap table-wrap--sticky mt-4">

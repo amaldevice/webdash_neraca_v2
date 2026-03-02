@@ -1,5 +1,11 @@
 <section class="panel mb-6">
-    <form method="GET" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">Filter Pratinjau</h3>
+            <p class="hint">Pilih kombinasi filter untuk mempersempit data sebelum ekspor.</p>
+        </div>
+    </div>
+    <form method="GET" class="form-grid">
         <div class="form-control">
             <label for="data_type" class="label">
                 <span class="label-text">Filter Jenis Data</span>
@@ -62,7 +68,7 @@
                 <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
             </select>
         </div>
-        <div class="toolbar pt-3 border-t border-base-200 xl:col-span-3 xl:justify-end xl:self-end">
+        <div class="form-actions-bar xl:col-span-3 xl:justify-end xl:self-end">
             <button type="submit" class="btn btn-primary">Terapkan Filter</button>
             <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Atur Ulang Filter</a>
         </div>

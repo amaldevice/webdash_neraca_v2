@@ -13,20 +13,56 @@
 }
 
 @layer components {
+  .app-shell {
+    @apply container mx-auto flex-1 w-full px-4 py-6 space-y-6;
+  }
+
+  .nav-pill {
+    @apply inline-flex items-center gap-3 rounded-2xl border border-base-300 bg-base-200/70 px-3 py-2;
+  }
+
   .panel {
-    @apply bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm;
+    @apply rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm;
   }
 
   .panel-header {
-    @apply flex flex-col gap-2 pb-4 mb-4 border-b border-base-200;
+    @apply mb-4 flex flex-col gap-2 border-b border-base-300 pb-4;
   }
 
   .toolbar {
     @apply flex flex-wrap items-center gap-2;
   }
 
+  .card-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+
+  .stat-card {
+    @apply rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow;
+  }
+
+  .kpi {
+    @apply mt-2 space-y-1;
+  }
+
+  .section-title {
+    @apply mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-base-300 pb-3;
+  }
+
+  .form-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .form-actions-bar {
+    @apply flex flex-wrap items-center gap-2 border-t border-base-300 pt-4;
+  }
+
+  .hint {
+    @apply text-sm text-base-content/60;
+  }
+
   .table-wrap {
-    @apply w-full overflow-x-auto rounded-xl border border-base-200 bg-base-100;
+    @apply w-full overflow-x-auto rounded-xl border border-base-300 bg-base-100;
   }
 
   .table-wrap--sticky {
@@ -43,7 +79,7 @@
   }
 
   .empty-state {
-    @apply alert border border-base-200 bg-base-100 text-base-content/80 rounded-xl;
+    @apply alert rounded-xl border border-base-300 bg-base-100 text-base-content/80;
   }
 
   .table th {

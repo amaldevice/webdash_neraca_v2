@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="min-h-screen bg-base-100 text-base-content flex flex-col">
-    <nav class="bg-base-100 border-b border-base-200 shadow-sm">
+<body class="min-h-screen bg-base-200/30 text-base-content flex flex-col">
+    <nav class="border-b border-base-300 bg-base-100/90 shadow-sm backdrop-blur">
         <div class="container mx-auto px-4">
-            <div class="navbar px-0">
+            <div class="navbar min-h-20 px-0">
                 <div class="navbar-start">
                     <div class="dropdown">
                         <label tabindex="0" class="btn btn-ghost lg:hidden" aria-label="Buka menu">
@@ -23,10 +23,16 @@
                             {% include "partials/_nav_menu_items.html" %}
                         </ul>
                     </div>
-                    <a class="btn btn-ghost text-lg font-semibold" href="{{ url_for('landing_page') }}">Sistem Data BPS</a>
+                    <a class="nav-pill" href="{{ url_for('landing_page') }}">
+                        <span class="badge badge-primary badge-sm">BPS</span>
+                        <span>
+                            <span class="block text-xs uppercase tracking-[0.2em] text-base-content/60">Dashboard</span>
+                            <span class="block text-sm font-semibold leading-tight">Sistem Data Neraca</span>
+                        </span>
+                    </a>
                 </div>
                 <div class="navbar-end hidden lg:flex items-center gap-2">
-                    <ul class="menu menu-horizontal px-1">
+                    <ul class="menu menu-horizontal rounded-xl border border-base-300 bg-base-100 px-1">
                         {% include "partials/_nav_menu_items.html" %}
                     </ul>
 
@@ -44,15 +50,15 @@
 
     {% include "partials/_flash_messages.html" %}
 
-    <main class="container mx-auto px-4 py-6 flex-1">
+    <main class="app-shell">
         {% block page_header %}
             {% include "partials/_page_header.html" %}
         {% endblock %}
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-base-200 bg-base-100">
-        <div class="container mx-auto px-4 py-4 text-center text-sm text-slate-500">
+    <footer class="border-t border-base-300 bg-base-100">
+        <div class="container mx-auto px-4 py-4 text-center text-sm text-base-content/60">
             <small>Prototipe sederhana berbasis Flask + SQLite untuk BPS.</small>
         </div>
     </footer>

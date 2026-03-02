@@ -1,8 +1,12 @@
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
-    <h3 class="text-lg font-semibold">Visualisasi Grafik Garis</h3>
-    <p class="text-slate-500">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
+<section class="panel mb-6">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">Visualisasi Grafik Garis</h3>
+            <p class="hint">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
+        </div>
+    </div>
 
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+    <div class="form-grid">
         <div class="form-control">
             <label for="indicator_filter" class="label">
                 <span class="label-text">Pilih Indikator</span>
@@ -25,12 +29,12 @@
                 <option value="2022">Tahun 2022</option>
             </select>
         </div>
-        <div class="flex items-end">
+        <div class="form-actions-bar border-t-0 pt-0 items-end">
             <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
         </div>
     </div>
 
-    <div class="mt-6 border-t border-base-200 pt-6 aggregated-plot-container" id="plot-container" style="display: none;">
+    <div class="mt-6 border-t border-base-300 pt-6 aggregated-plot-container" id="plot-container" style="display: none;">
         <div id="plot-display" class="aggregated-plot-display"></div>
     </div>
 </section>

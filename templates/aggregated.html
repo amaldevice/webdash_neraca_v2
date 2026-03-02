@@ -2,6 +2,10 @@
 {% block page_header %}
 {% set page_header_title = "Analisis Data & Tabel Pivot" %}
 {% set page_header_description = "Analisis data agregat melalui tabel pivot dan berbagai filter untuk wawasan yang lebih mendalam." %}
+{% set page_header_actions %}
+<a href="{{ url_for('preview_data') }}" class="btn btn-outline btn-primary">Sumber Data</a>
+<a href="{{ url_for('data_management') }}" class="btn btn-ghost">Kelola Data</a>
+{% endset %}
 {{ super() }}
 {% endblock %}
 {% block content %}
