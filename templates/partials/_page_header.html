@@ -1,0 +1,15 @@
+{% if page_header_title or page_header_description %}
+<section class="mb-6">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+            {% if page_header_title %}<h1 class="text-2xl font-semibold">{{ page_header_title }}</h1>{% endif %}
+            {% if page_header_description %}<p class="text-base-content/70">{{ page_header_description }}</p>{% endif %}
+        </div>
+        {% if page_header_actions %}
+        <div class="flex flex-wrap gap-2">
+            {{ page_header_actions|safe }}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}

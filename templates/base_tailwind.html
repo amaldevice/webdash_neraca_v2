@@ -20,24 +20,14 @@
                             </svg>
                         </label>
                         <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-56">
-                            <li><a href="{{ url_for('landing_page') }}">Beranda</a></li>
-                            <li><a href="{{ url_for('upload_data') }}">Unggah Data</a></li>
-                            <li><a href="{{ url_for('manual_input') }}">Input Manual</a></li>
-                            <li><a href="{{ url_for('preview_data') }}">Pratinjau Data</a></li>
-                            <li><a href="{{ url_for('data_management') }}">Manajemen Data</a></li>
-                            <li><a href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a></li>
+                            {% include "partials/_nav_menu_items.html" %}
                         </ul>
                     </div>
                     <a class="btn btn-ghost text-lg font-semibold" href="{{ url_for('landing_page') }}">Sistem Data BPS</a>
                 </div>
                 <div class="navbar-end hidden lg:flex items-center gap-2">
                     <ul class="menu menu-horizontal px-1">
-                        <li><a href="{{ url_for('landing_page') }}">Beranda</a></li>
-                        <li><a href="{{ url_for('upload_data') }}">Unggah Data</a></li>
-                        <li><a href="{{ url_for('manual_input') }}">Input Manual</a></li>
-                        <li><a href="{{ url_for('preview_data') }}">Pratinjau Data</a></li>
-                        <li><a href="{{ url_for('data_management') }}">Manajemen Data</a></li>
-                        <li><a href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a></li>
+                        {% include "partials/_nav_menu_items.html" %}
                     </ul>
 
                     <label class="swap swap-rotate btn btn-ghost btn-sm" aria-label="Ganti mode terang/gelap">
@@ -52,30 +42,12 @@
         </div>
     </nav>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <section class="container mx-auto px-4 mt-4">
-        <div class="space-y-2">
-            {% for category, msg in messages %}
-                {% if category == 'error' %}
-                    {% set alert_class = 'alert-error' %}
-                {% elif category == 'success' %}
-                    {% set alert_class = 'alert-success' %}
-                {% elif category == 'warning' %}
-                    {% set alert_class = 'alert-warning' %}
-                {% else %}
-                    {% set alert_class = 'alert-info' %}
-                {% endif %}
-                <div class="alert {{ alert_class }} shadow-sm">
-                    <span>{{ msg }}</span>
-                </div>
-            {% endfor %}
-        </div>
-    </section>
-    {% endif %}
-    {% endwith %}
+    {% include "partials/_flash_messages.html" %}
 
     <main class="container mx-auto px-4 py-6 flex-1">
+        {% block page_header %}
+            {% include "partials/_page_header.html" %}
+        {% endblock %}
         {% block content %}{% endblock %}
     </main>
 
@@ -85,36 +57,6 @@
         </div>
     </footer>
 
-<script>
-(function() {
-  const KEY = 'webdash_theme';
-  const root = document.documentElement;
-  const toggle = document.getElementById('theme-toggle');
-
-  function apply(theme) {
-    root.setAttribute('data-theme', theme);
-    if (toggle) toggle.checked = (theme === 'bps-dark');
-  }
-
-  // initial
-  const saved = localStorage.getItem(KEY);
-  if (saved === 'bps' || saved === 'bps-dark') {
-    apply(saved);
-  } else {
-    // fallback to system preference
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    apply(prefersDark ? 'bps-dark' : 'bps');
-  }
-
-  // toggle
-  if (toggle) {
-    toggle.addEventListener('change', () => {
-      const next = toggle.checked ? 'bps-dark' : 'bps';
-      localStorage.setItem(KEY, next);
-      apply(next);
-    });
-  }
-})();
-</script>
+    {% include "partials/_script_theme_toggle.html" %}
 </body>
 </html>

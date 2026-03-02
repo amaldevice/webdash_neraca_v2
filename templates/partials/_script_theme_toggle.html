@@ -1,0 +1,28 @@
+<script>
+(function() {
+  const KEY = 'webdash_theme';
+  const root = document.documentElement;
+  const toggle = document.getElementById('theme-toggle');
+
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    if (toggle) toggle.checked = (theme === 'bps-dark');
+  }
+
+  const saved = localStorage.getItem(KEY);
+  if (saved === 'bps' || saved === 'bps-dark') {
+    apply(saved);
+  } else {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    apply(prefersDark ? 'bps-dark' : 'bps');
+  }
+
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      const next = toggle.checked ? 'bps-dark' : 'bps';
+      localStorage.setItem(KEY, next);
+      apply(next);
+    });
+  }
+})();
+</script>
