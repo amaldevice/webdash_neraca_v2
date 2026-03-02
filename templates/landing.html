@@ -3,8 +3,8 @@
 {% set page_header_title = "Dasbor Ringkasan" %}
 {% set page_header_description = "Ringkasan data terbaru dari proses agregasi dan unggahan BPS." %}
 {% set page_header_actions %}
-<span class="badge badge-primary badge-outline">Terbaru</span>
-<a class="btn btn-outline btn-primary" href="{{ url_for('upload_data') }}">Mulai Unggah</a>
+<span class="chip">Terbaru</span>
+<a class="btn-soft" href="{{ url_for('upload_data') }}">Mulai Unggah</a>
 {% endset %}
 {{ super() }}
 {% endblock %}
@@ -21,8 +21,8 @@
     <div class="form-actions-bar">
         <div class="join join-vertical w-full sm:join-horizontal sm:w-auto">
             <a class="btn btn-primary join-item" href="{{ url_for('upload_data') }}">Unggah Excel</a>
-            <a class="btn btn-outline btn-primary join-item" href="{{ url_for('manual_input') }}">Input Manual</a>
-            <a class="btn btn-ghost join-item" href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a>
+            <a class="btn-soft join-item" href="{{ url_for('manual_input') }}">Input Manual</a>
+            <a class="btn-soft join-item" href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a>
         </div>
     </div>
 </section>

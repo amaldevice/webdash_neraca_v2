@@ -3,8 +3,8 @@
 {% set page_header_title = "Manajemen Data" %}
 {% set page_header_description = "Kelola data BPS melalui operasi CRUD (Create, Read, Update, Delete) secara langsung." %}
 {% set page_header_actions %}
-<a href="{{ url_for('preview_data') }}" class="btn btn-outline btn-primary">Lihat Pratinjau</a>
-<a href="{{ url_for('upload_data') }}" class="btn btn-ghost">Tambah via Unggah</a>
+<a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
+<a href="{{ url_for('upload_data') }}" class="btn-soft">Tambah via Unggah</a>
 {% endset %}
 {{ super() }}
 {% endblock %}

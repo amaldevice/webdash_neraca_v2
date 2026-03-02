@@ -1,6 +1,6 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-<section class="container mx-auto px-4 mt-4">
+<section class="toast toast-top toast-end z-50 mt-16" aria-live="polite" aria-atomic="true">
     <div class="space-y-2">
         {% for category, msg in messages %}
             {% if category == 'error' %}
@@ -12,8 +12,11 @@
             {% else %}
                 {% set alert_class = 'alert-info' %}
             {% endif %}
-            <div class="alert {{ alert_class }} shadow-sm">
-                <span>{{ msg }}</span>
+            <div class="alert {{ alert_class }} shadow-md max-w-sm" role="status">
+                <span class="text-sm">{{ msg }}</span>
+                <button type="button" class="btn btn-ghost btn-xs" aria-label="Tutup notifikasi" onclick="this.closest('.alert').remove()">
+                    ✕
+                </button>
             </div>
         {% endfor %}
     </div>

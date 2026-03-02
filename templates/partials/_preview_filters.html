@@ -10,20 +10,20 @@
             <label for="data_type" class="label">
                 <span class="label-text">Filter Jenis Data</span>
             </label>
-            <select id="data_type" name="data_type" class="select select-bordered w-full focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <select id="data_type" name="data_type" class="control">
                 <option value="" {% if not filters.data_type %}selected{% endif %}>Semua</option>
                 <option value="flow" {% if filters.data_type == "flow" %}selected{% endif %}>Flow</option>
                 <option value="stock" {% if filters.data_type == "stock" %}selected{% endif %}>Stock</option>
             </select>
             <label class="label">
-                <span class="label-text-alt text-base-content/50">Flow = arus, Stock = posisi.</span>
+                <span class="field-help">Flow = arus, Stock = posisi.</span>
             </label>
         </div>
         <div class="form-control">
             <label for="time_period" class="label">
                 <span class="label-text">Filter Periode</span>
             </label>
-            <select id="time_period" name="time_period" class="select select-bordered w-full focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <select id="time_period" name="time_period" class="control">
                 <option value="" {% if not filters.time_period %}selected{% endif %}>Semua</option>
                 <option value="monthly" {% if filters.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
                 <option value="quarterly" {% if filters.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
@@ -35,7 +35,7 @@
                 <span class="label-text">Pengunggah</span>
             </label>
             <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
-                   class="input input-bordered w-full placeholder:text-base-content/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Cari pengunggah..." list="uploader-options">
+                   class="control" placeholder="Cari pengunggah..." list="uploader-options">
             <datalist id="uploader-options">
                 {% for uploader in filter_options.uploaders %}
                 <option value="{{ uploader }}">
@@ -47,7 +47,7 @@
                 <span class="label-text">Indikator</span>
             </label>
             <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
-                   class="input input-bordered w-full placeholder:text-base-content/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Cari indikator..." list="indicator-options">
+                   class="control" placeholder="Cari indikator..." list="indicator-options">
             <datalist id="indicator-options">
                 {% for indicator in filter_options.indicators %}
                 <option value="{{ indicator }}">
@@ -58,7 +58,7 @@
             <label for="limit" class="label">
                 <span class="label-text">Baris per halaman</span>
             </label>
-            <select id="limit" name="limit" onchange="changeLimit(this.value)" class="select select-bordered w-full focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <select id="limit" name="limit" onchange="changeLimit(this.value)" class="control">
                 <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                 <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
                 <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
@@ -70,7 +70,7 @@
         </div>
         <div class="form-actions-bar xl:col-span-3 xl:justify-end xl:self-end">
             <button type="submit" class="btn btn-primary">Terapkan Filter</button>
-            <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Atur Ulang Filter</a>
+            <a href="{{ url_for('preview_data') }}" class="btn-soft">Atur Ulang Filter</a>
         </div>
     </form>
 

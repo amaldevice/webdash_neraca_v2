@@ -1,4 +1,6 @@
 <script>
+let confirmActionHandler = null;
+
 function toggleSelectAll() {
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.row-checkbox');
@@ -25,6 +27,26 @@ function updateBulkActions() {
     const selectAll = document.getElementById('select-all');
     selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
     selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+}
+
+function openConfirmModal({ title, message, confirmLabel = 'Hapus', confirmClass = 'btn btn-error', onConfirm }) {
+    const modal = document.getElementById('confirm-action-modal');
+    const titleEl = document.getElementById('confirm-action-title');
+    const messageEl = document.getElementById('confirm-action-message');
+    const submitBtn = document.getElementById('confirm-action-submit');
+
+    if (!modal || !titleEl || !messageEl || !submitBtn) {
+        return false;
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    submitBtn.textContent = confirmLabel;
+    submitBtn.className = confirmClass;
+    confirmActionHandler = typeof onConfirm === 'function' ? onConfirm : null;
+
+    modal.showModal();
+    return false;
 }
 
 function prepareUpdate(button, entryId) {
@@ -54,17 +76,25 @@ function confirmBulkDelete() {
         return;
     }
 
-    if (confirm(`Yakin menghapus ${checkboxes.length} data yang dipilih?`)) {
-        const form = document.getElementById('bulk-delete-form');
-        checkboxes.forEach(cb => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'selected_ids[]';
-            input.value = cb.value;
-            form.appendChild(input);
-        });
-        form.submit();
-    }
+    openConfirmModal({
+        title: 'Hapus data terpilih?',
+        message: `${checkboxes.length} data yang dipilih akan dihapus permanen.`,
+        confirmLabel: 'Hapus Terpilih',
+        confirmClass: 'btn btn-error',
+        onConfirm: () => {
+            const form = document.getElementById('bulk-delete-form');
+            form.querySelectorAll('input[name="selected_ids[]"]').forEach(input => input.remove());
+
+            checkboxes.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selected_ids[]';
+                input.value = cb.value;
+                form.appendChild(input);
+            });
+            form.submit();
+        }
+    });
 }
 
 function openBulkUpdateModal() {
@@ -75,22 +105,42 @@ function openBulkUpdateModal() {
     }
 
     const modal = document.getElementById('bulk-update-modal');
-    modal.style.display = 'flex';
-    modal.classList.remove('hidden');
+    if (modal) {
+        modal.showModal();
+    }
 }
 
 function closeBulkUpdateModal() {
     const modal = document.getElementById('bulk-update-modal');
-    modal.style.display = 'none';
-    modal.classList.add('hidden');
-    document.getElementById('bulk-update-form').reset();
+    if (modal) {
+        modal.close();
+    }
 }
 
-document.getElementById('bulk-update-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeBulkUpdateModal();
-    }
-});
+function bindConfirmActionButtons() {
+    const confirmButtons = document.querySelectorAll('.js-confirm-action');
+    confirmButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const form = this.closest('form');
+            if (!form) {
+                return;
+            }
+
+            const title = this.dataset.confirmTitle || 'Konfirmasi Tindakan';
+            const message = this.dataset.confirmMessage || 'Apakah Anda yakin ingin melanjutkan?';
+            const confirmLabel = this.dataset.confirmLabel || 'Lanjutkan';
+            const confirmClass = this.dataset.confirmClass || 'btn btn-error';
+
+            openConfirmModal({
+                title,
+                message,
+                confirmLabel,
+                confirmClass,
+                onConfirm: () => form.submit()
+            });
+        });
+    });
+}
 
 function updateInsertPeriodFormat() {
     const timePeriod = document.getElementById('insert_time_period').value;
@@ -145,6 +195,42 @@ document.addEventListener('DOMContentLoaded', function() {
     updateInsertPeriodFormat();
     restoreCheckboxState();
     updateSelectAllState();
+    bindConfirmActionButtons();
+
+    const confirmModal = document.getElementById('confirm-action-modal');
+    const confirmCancel = document.getElementById('confirm-action-cancel');
+    const confirmSubmit = document.getElementById('confirm-action-submit');
+    const bulkUpdateModal = document.getElementById('bulk-update-modal');
+
+    if (confirmCancel && confirmModal) {
+        confirmCancel.addEventListener('click', function() {
+            confirmModal.close();
+            confirmActionHandler = null;
+        });
+    }
+
+    if (confirmSubmit && confirmModal) {
+        confirmSubmit.addEventListener('click', function() {
+            const handler = confirmActionHandler;
+            confirmModal.close();
+            confirmActionHandler = null;
+            if (handler) {
+                handler();
+            }
+        });
+    }
+
+    if (confirmModal) {
+        confirmModal.addEventListener('close', function() {
+            confirmActionHandler = null;
+        });
+    }
+
+    if (bulkUpdateModal) {
+        bulkUpdateModal.addEventListener('close', function() {
+            document.getElementById('bulk-update-form').reset();
+        });
+    }
 
     const bulkActions = document.getElementById('bulk-actions');
     if (bulkActions) {

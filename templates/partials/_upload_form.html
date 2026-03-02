@@ -4,9 +4,9 @@
         <label for="uploader" class="label">
             <span class="label-text">Pengunggah</span>
         </label>
-        <input id="uploader" name="uploader" class="input input-bordered w-full" required>
+        <input id="uploader" name="uploader" class="control" required>
         <label class="label">
-            <span class="label-text-alt text-base-content/60">Nama penanggung jawab unggahan.</span>
+            <span class="field-help">Nama penanggung jawab unggahan.</span>
         </label>
     </div>
 
@@ -14,9 +14,9 @@
         <label for="version" class="label">
             <span class="label-text">Versi</span>
         </label>
-        <input id="version" name="version" class="input input-bordered w-full" required>
+        <input id="version" name="version" class="control" required>
         <label class="label">
-            <span class="label-text-alt text-base-content/60">Gunakan format v1.0, v2.0, dll.</span>
+            <span class="field-help">Gunakan format v1.0, v2.0, dll.</span>
         </label>
     </div>
 
@@ -24,12 +24,12 @@
         <label for="data_type" class="label">
             <span class="label-text">Jenis Data</span>
         </label>
-        <select id="data_type" name="data_type" class="select select-bordered w-full">
+        <select id="data_type" name="data_type" class="control">
             <option value="flow">Flow</option>
             <option value="stock">Stock</option>
         </select>
         <label class="label">
-            <span class="label-text-alt text-base-content/60">Flow = arus, Stock = posisi.</span>
+            <span class="field-help">Flow = arus, Stock = posisi.</span>
         </label>
     </div>
 
@@ -37,7 +37,7 @@
         <label for="time_period" class="label">
             <span class="label-text">Periode</span>
         </label>
-        <select id="time_period" name="time_period" class="select select-bordered w-full">
+        <select id="time_period" name="time_period" class="control">
             <option value="monthly">Bulanan</option>
             <option value="quarterly">Triwulanan</option>
             <option value="yearly">Tahunan</option>
@@ -55,13 +55,13 @@
         </label>
         <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered file-input-primary w-full" accept=".xls,.xlsx" required>
         <label class="label">
-            <span class="label-text-alt text-base-content/60">Format .xls atau .xlsx. Maksimalkan akurasi kolom sebelum unggah.</span>
+            <span class="field-help">Format .xls atau .xlsx. Maksimalkan akurasi kolom sebelum unggah.</span>
         </label>
     </div>
     </div>
 
     <div class="form-actions-bar">
         <button type="submit" class="btn btn-primary">Unggah</button>
-        <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
+        <a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
     </div>
 </form>

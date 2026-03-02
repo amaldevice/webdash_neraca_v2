@@ -3,8 +3,8 @@
 {% set page_header_title = "Unggah Excel" if mode == "upload" else "Input Manual" %}
 {% set page_header_description = "Pastikan Pengunggah dan Versi selalu diisi." %}
 {% set page_header_actions %}
-<span class="badge badge-outline">{{ "Unggah" if mode == "upload" else "Manual" }}</span>
-<a href="{{ url_for('preview_data') }}" class="btn btn-outline btn-primary">Lihat Pratinjau</a>
+<span class="chip">{{ "Unggah" if mode == "upload" else "Manual" }}</span>
+<a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
 {% endset %}
 {{ super() }}
 {% endblock %}

@@ -6,7 +6,15 @@ const sampleData = [
     {% endfor %}
 ];
 
+function setButtonLoading(button, isLoading) {
+    if (!button) return;
+    button.disabled = isLoading;
+    button.classList.toggle('loading', isLoading);
+    button.classList.toggle('pointer-events-none', isLoading);
+}
+
 document.getElementById('generate-pivot').addEventListener('click', function() {
+    const generatePivotButton = this;
     const indicator = document.getElementById('analysis_indicator').value;
     const year = document.getElementById('analysis_year').value;
 
@@ -17,6 +25,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
 
     const resultDiv = document.getElementById('pivot-result');
     resultDiv.innerHTML = '<div class="text-center text-base-content/60 py-4">Sedang memproses analisis periode...</div>';
+    setButtonLoading(generatePivotButton, true);
 
     const formData = new URLSearchParams();
     formData.append('indicator', indicator);
@@ -49,7 +58,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
                 tabEls.forEach(t => {
                     const active = (t === tab);
                     t.classList.toggle('btn-primary', active);
-                    t.classList.toggle('btn-ghost', !active);
+                    t.classList.toggle('btn-soft', !active);
                 });
                 sectionEls.forEach(sec => {
                     sec.classList.toggle('hidden', sec.getAttribute('data-section') !== key);
@@ -59,6 +68,9 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     })
     .catch(error => {
         resultDiv.innerHTML = '<div class="text-center text-error py-4">Gagal menghasilkan analisis: ' + error.message + '</div>';
+    })
+    .finally(() => {
+        setButtonLoading(generatePivotButton, false);
     });
 });
 
@@ -94,7 +106,7 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="bg-base-200/40 border border-base-200 rounded-box p-2">
           <div class="join flex flex-wrap gap-2">
             ${tabs.map(t => `
-              <button type="button" class="btn btn-sm join-item ${t.key===defaultTab?'btn-primary':'btn-ghost'}" data-tab="${t.key}">
+              <button type="button" class="${t.key===defaultTab?'btn btn-sm join-item btn-primary':'btn-soft btn-sm join-item'}" data-tab="${t.key}">
                 <span>${t.label}</span>
               </button>
             `).join('')}
@@ -288,7 +300,7 @@ function generatePeriodAnalysisHTML(analysis) {
 
     html += `
         <div class="mt-4">
-            <button class="btn btn-outline btn-primary" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Ekspor Analisis</button>
+            <button class="btn-soft" onclick="exportPeriodAnalysis('${analysis.indicator}', '${analysis.analysis_year}')">Ekspor Analisis</button>
         </div>
     `;
 
@@ -313,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function handlePlotGeneration() {
+    const generatePlotButton = document.getElementById('generate-plot');
     const indicatorFilter = document.getElementById('indicator_filter');
     const timeRange = document.getElementById('time_range');
 
@@ -338,6 +351,7 @@ function handlePlotGeneration() {
 
     plotDisplay.innerHTML = '<div class="text-center text-base-content/60 py-5">Sedang membuat grafik garis...</div>';
     plotContainer.style.display = 'block';
+    setButtonLoading(generatePlotButton, true);
 
     const formData = new URLSearchParams();
     formData.append('indicator_filter', indicatorValue);
@@ -379,6 +393,9 @@ function handlePlotGeneration() {
     })
     .catch(error => {
         plotDisplay.innerHTML = '<div class="text-center text-error py-5">Gagal membuat grafik: ' + error.message + '</div>';
+    })
+    .finally(() => {
+        setButtonLoading(generatePlotButton, false);
     });
 }
 </script>
