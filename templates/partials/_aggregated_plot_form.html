@@ -1,0 +1,36 @@
+<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-semibold">Visualisasi Grafik Garis</h3>
+    <p class="text-slate-500">Hasilkan grafik garis tren indikator BPS untuk analisis perubahan waktu.</p>
+
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+        <div class="form-control">
+            <label for="indicator_filter" class="label">
+                <span class="label-text">Pilih Indikator</span>
+            </label>
+            <select id="indicator_filter" name="indicator_filter" class="select select-bordered w-full">
+                <option value="">Pilih indikator...</option>
+                {% for indicator in summary.indicators %}
+                <option value="{{ indicator }}">{{ indicator }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
+            <label for="time_range" class="label">
+                <span class="label-text">Rentang Waktu</span>
+            </label>
+            <select id="time_range" name="time_range" class="select select-bordered w-full">
+                <option value="all">Semua Periode</option>
+                <option value="2020">Tahun 2020</option>
+                <option value="2021">Tahun 2021</option>
+                <option value="2022">Tahun 2022</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
+        </div>
+    </div>
+
+    <div class="mt-6 border-t border-base-200 pt-6 aggregated-plot-container" id="plot-container" style="display: none;">
+        <div id="plot-display" class="aggregated-plot-display"></div>
+    </div>
+</section>
