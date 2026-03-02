@@ -6,10 +6,10 @@
     </div>
 </div>
 
-<div class="overflow-x-auto">
+<div class="table-wrap table-wrap--sticky">
     <table class="table table-zebra w-full">
-        <thead>
-            <tr class="text-slate-500">
+        <thead class="text-sm">
+            <tr>
                 <th>ID</th>
                 <th>Pengunggah</th>
                 <th>Versi</th>
@@ -41,5 +41,6 @@
 {% set pagination_endpoint = "preview_data" %}
 {% include "partials/_pagination.html" %}
 {% else %}
+{% set message = "Ubah filter atau unggah data baru untuk melihat hasil pratinjau." %}
 {% include "partials/_empty_state.html" %}
 {% endif %}

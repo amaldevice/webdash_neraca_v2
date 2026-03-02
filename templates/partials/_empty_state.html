@@ -1,1 +1,5 @@
-<p class="text-slate-500">Tidak ada data untuk filter saat ini.</p>
+{% set empty_state_message = message | default("Tidak ada data untuk filter saat ini.") %}
+<div class="empty-state">
+    <span class="font-medium">Data belum tersedia</span>
+    <span>{{ empty_state_message }}</span>
+</div>
