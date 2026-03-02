@@ -1,19 +1,19 @@
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
+<section class="panel">
     {% if entries %}
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-        <div>
-            <h3 class="text-lg font-semibold mb-1">Entri Data ({{ entries|length }} ditampilkan)</h3>
+    <div class="panel-header md:flex-row md:items-end md:justify-between">
+        <div class="space-y-1">
+            <h3 class="text-lg font-semibold">Entri Data ({{ entries|length }} ditampilkan)</h3>
             <div class="text-slate-500">
                 Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
                 (Halaman {{ filters.page }} dari {{ filters.total_pages }})
             </div>
         </div>
-        <div class="flex flex-wrap gap-2 items-end">
+        <div class="toolbar md:justify-end">
             <div class="form-control">
                 <label for="limit-selector" class="label">
                     <span class="label-text">Baris per halaman</span>
                 </label>
-                <select id="limit-selector" onchange="changeLimit(this.value)" class="select select-bordered select-sm">
+                <select id="limit-selector" onchange="changeLimit(this.value)" class="select select-bordered select-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
                     <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                     <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
                     <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
@@ -24,7 +24,7 @@
                 </select>
             </div>
             {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator %}
-            <form method="POST" class="self-end">
+            <form method="POST" class="self-end md:pt-8">
                 <input type="hidden" name="action" value="delete_by_filter">
                 <input type="hidden" name="data_type" value="{{ filters.data_type }}">
                 <input type="hidden" name="time_period" value="{{ filters.time_period }}">
@@ -36,17 +36,17 @@
         </div>
     </div>
 
-    <div id="bulk-actions" class="alert bg-base-200 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
+    <div id="bulk-actions" class="alert bg-base-200 border border-base-200 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
         <span class="font-semibold">Aksi Massal</span>
         <button type="button" id="bulk-delete-btn" class="btn btn-error btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
         <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
         <span id="selected-count" class="text-slate-500">0 data dipilih</span>
     </div>
 
-    <div class="overflow-x-auto mt-4">
+    <div class="table-wrap table-wrap--sticky mt-4">
         <table class="table table-zebra w-full">
-            <thead>
-                <tr class="text-slate-500">
+            <thead class="text-sm">
+                <tr>
                     <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
                     <th>ID</th>
                     <th>Pengunggah</th>
@@ -110,9 +110,10 @@
 
     {% set pagination_aria_label = "Paginasi manajemen data" %}
     {% set pagination_endpoint = "data_management" %}
-    {% include "partials/_pagination.html" %}
+{% include "partials/_pagination.html" %}
 
     {% else %}
+    {% set message = "Belum ada data yang cocok dengan filter manajemen saat ini." %}
     {% include "partials/_empty_state.html" %}
     {% endif %}
 </section>

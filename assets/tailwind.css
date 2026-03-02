@@ -13,6 +13,39 @@
 }
 
 @layer components {
+  .panel {
+    @apply bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm;
+  }
+
+  .panel-header {
+    @apply flex flex-col gap-2 pb-4 mb-4 border-b border-base-200;
+  }
+
+  .toolbar {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .table-wrap {
+    @apply w-full overflow-x-auto rounded-xl border border-base-200 bg-base-100;
+  }
+
+  .table-wrap--sticky {
+    max-height: min(70vh, 720px);
+    overflow: auto;
+  }
+
+  .table-wrap .table thead th {
+    @apply sticky top-0 z-[1] bg-base-200 text-base-content font-semibold;
+  }
+
+  .table-wrap .table tbody tr:hover {
+    @apply bg-base-200/60;
+  }
+
+  .empty-state {
+    @apply alert border border-base-200 bg-base-100 text-base-content/80 rounded-xl;
+  }
+
   .table th {
     @apply font-semibold;
   }
