@@ -1,0 +1,45 @@
+{% if entries %}
+<div class="flex flex-wrap justify-between items-center gap-2 mb-4 text-sm text-slate-500">
+    <div>
+        Menampilkan {{ entries|length }} dari {{ filters.total_entries }} total data
+        (Halaman {{ filters.page }} dari {{ filters.total_pages }})
+    </div>
+</div>
+
+<div class="overflow-x-auto">
+    <table class="table table-zebra w-full">
+        <thead>
+            <tr class="text-slate-500">
+                <th>ID</th>
+                <th>Pengunggah</th>
+                <th>Versi</th>
+                <th>Indikator</th>
+                <th>Nilai</th>
+                <th>Jenis Data</th>
+                <th>Periode</th>
+                <th>Periode Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in entries %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.uploader_name }}</td>
+                <td>{{ row.version }}</td>
+                <td>{{ row.indicator_name }}</td>
+                <td>{{ row.value }}</td>
+                <td>{% include "partials/_data_type_badge.html" %}</td>
+                <td>{% include "partials/_time_period_badge.html" %}</td>
+                <td>{{ row.tanggal_data }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% set pagination_aria_label = "Paginasi pratinjau data" %}
+{% set pagination_endpoint = "preview_data" %}
+{% include "partials/_pagination.html" %}
+{% else %}
+{% include "partials/_empty_state.html" %}
+{% endif %}

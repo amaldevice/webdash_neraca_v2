@@ -1,0 +1,24 @@
+{% if filters.total_pages > 1 %}
+<nav aria-label="{{ pagination_aria_label|default('Paginasi data') }}" class="mt-6 flex justify-center">
+    <div class="join flex-wrap">
+        {% set start_page = [1, filters.page - 2]|max %}
+        {% set end_page = [filters.total_pages, filters.page + 2]|min %}
+
+        {% if filters.page > 1 %}
+        <a class="join-item btn btn-sm" href="{{ url_for(pagination_endpoint|default('preview_data'), data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page-1) }}">&laquo; Sebelumnya</a>
+        {% endif %}
+
+        {% for page_num in range(start_page, end_page + 1) %}
+        {% if page_num == filters.page %}
+        <span class="join-item btn btn-sm btn-primary btn-disabled">{{ page_num }}</span>
+        {% else %}
+        <a class="join-item btn btn-sm" href="{{ url_for(pagination_endpoint|default('preview_data'), data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=page_num) }}">{{ page_num }}</a>
+        {% endif %}
+        {% endfor %}
+
+        {% if filters.page < filters.total_pages %}
+        <a class="join-item btn btn-sm" href="{{ url_for(pagination_endpoint|default('preview_data'), data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '', limit=filters.limit, page=filters.page+1) }}">Berikutnya &raquo;</a>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}

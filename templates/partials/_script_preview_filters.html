@@ -1,0 +1,41 @@
+<script>
+function resetForm() {
+    document.getElementById('data_type').value = '';
+    document.getElementById('time_period').value = '';
+    document.getElementById('uploader').value = '';
+    document.getElementById('indicator').value = '';
+    document.getElementById('limit').value = '20';
+
+    if (confirm('Atur ulang semua filter?')) {
+        const form = document.querySelector('form');
+        form.submit();
+    }
+}
+
+function clearField(fieldId) {
+    document.getElementById(fieldId).value = '';
+}
+
+function setLimitAndSubmit(limitValue) {
+    document.getElementById('limit').value = limitValue;
+    const form = document.querySelector('form');
+    form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            const form = document.querySelector('form');
+            form.submit();
+        }
+    });
+});
+
+function changeLimit(newLimit) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('limit', newLimit);
+    urlParams.set('page', '1');
+    window.location.href = window.location.pathname + '?' + urlParams.toString();
+}
+</script>

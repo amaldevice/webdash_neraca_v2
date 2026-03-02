@@ -1,0 +1,9 @@
+{% if row.time_period == 'monthly' %}
+<span class="badge badge-outline">Bulanan</span>
+{% elif row.time_period == 'quarterly' %}
+<span class="badge badge-outline">Triwulanan</span>
+{% elif row.time_period == 'yearly' %}
+<span class="badge badge-outline">Tahunan</span>
+{% else %}
+<span class="badge badge-outline">{{ row.time_period }}</span>
+{% endif %}

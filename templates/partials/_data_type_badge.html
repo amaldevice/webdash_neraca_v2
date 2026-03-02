@@ -1,0 +1,7 @@
+{% if row.data_type == 'flow' %}
+<span class="badge badge-primary badge-outline">Flow</span>
+{% elif row.data_type == 'stock' %}
+<span class="badge badge-accent badge-outline">Stock</span>
+{% else %}
+<span class="badge badge-outline">{{ row.data_type }}</span>
+{% endif %}
