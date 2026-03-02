@@ -1,29 +1,15 @@
 {% extends "base_tailwind.html" %}
+{% block page_header %}
+{% set page_header_title = "Dasbor Ringkasan" %}
+{% set page_header_description = "Ringkasan data terbaru dari proses agregasi dan unggahan BPS." %}
+{% set page_header_actions %}
+<span class="badge badge-primary badge-outline">Terbaru</span>
+<span class="badge badge-accent badge-outline">Terverifikasi</span>
+{% endset %}
+{{ super() }}
+{% endblock %}
 {% block content %}
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
-    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-            <h2 class="text-2xl font-semibold">Dasbor Ringkasan</h2>
-            <p class="text-slate-500">Ringkasan data terbaru dari proses agregasi dan unggahan BPS.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <span class="badge badge-primary badge-outline">Terbaru</span>
-            <span class="badge badge-accent badge-outline">Terverifikasi</span>
-        </div>
-    </div>
-</section>
-
-<section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-    {% for card in summary.cards %}
-    <article class="card bg-base-100 border border-base-200 shadow-sm">
-        <div class="card-body">
-            <p class="text-xs uppercase tracking-widest text-slate-500">{{ card.title }}</p>
-            <p class="text-3xl font-semibold text-slate-900">{{ card.value }}</p>
-            <p class="text-sm text-slate-500">{{ card.label }}</p>
-        </div>
-    </article>
-    {% endfor %}
-</section>
+{% include "partials/_landing_summary_cards.html" %}
 
 <section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm">
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

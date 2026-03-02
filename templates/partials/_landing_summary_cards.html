@@ -1,0 +1,11 @@
+<section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+    {% for card in summary.cards %}
+    <article class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body">
+            <p class="text-xs uppercase tracking-widest text-slate-500">{{ card.title }}</p>
+            <p class="text-3xl font-semibold text-slate-900">{{ card.value }}</p>
+            <p class="text-sm text-slate-500">{{ card.label }}</p>
+        </div>
+    </article>
+    {% endfor %}
+</section>
