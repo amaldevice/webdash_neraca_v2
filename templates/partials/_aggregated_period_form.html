@@ -11,7 +11,7 @@
             <label for="analysis_indicator" class="label">
                 <span class="label-text">Pilih Indikator</span>
             </label>
-            <select id="analysis_indicator" name="analysis_indicator" class="select select-bordered w-full" required>
+            <select id="analysis_indicator" name="analysis_indicator" class="control" required>
                 <option value="">Pilih indikator...</option>
                 {% for indicator in summary.indicators %}
                 <option value="{{ indicator }}">{{ indicator }}</option>
@@ -22,7 +22,7 @@
             <label for="analysis_year" class="label">
                 <span class="label-text">Tahun Analisis</span>
             </label>
-            <select id="analysis_year" name="analysis_year" class="select select-bordered w-full">
+            <select id="analysis_year" name="analysis_year" class="control">
                 <option value="">Semua Tahun</option>
                 <option value="2024">2024</option>
                 <option value="2023">2023</option>
@@ -33,7 +33,7 @@
         </div>
         <div class="form-actions-bar md:col-span-2 xl:col-span-3">
             <button type="button" id="generate-pivot" class="btn btn-primary">Hasilkan Analisis Periode</button>
-            <button type="button" id="reset-pivot" class="btn btn-outline">Atur Ulang</button>
+            <button type="button" id="reset-pivot" class="btn-soft">Atur Ulang</button>
         </div>
     </form>
 

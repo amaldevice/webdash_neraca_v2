@@ -4,9 +4,9 @@
 {% set page_header_description = "Periksa, telusuri, dan ekspor data BPS yang telah diunggah." %}
 {% set page_header_actions %}
 <a href="{{ url_for('export_data', format='csv', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
-   class="btn btn-outline btn-primary">Ekspor CSV</a>
+   class="btn-soft">Ekspor CSV</a>
 <a href="{{ url_for('export_data', format='excel', data_type=filters.data_type or '', time_period=filters.time_period or '', uploader=filters.uploader or '', indicator=filters.indicator or '') }}"
-   class="btn btn-outline btn-primary">Ekspor Excel</a>
+   class="btn-soft">Ekspor Excel</a>
 {% endset %}
 {{ super() }}
 {% endblock %}

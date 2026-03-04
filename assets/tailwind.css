@@ -33,6 +33,14 @@
     @apply flex flex-wrap items-center gap-2;
   }
 
+  .toolbar-bar {
+    @apply flex w-full flex-wrap items-end justify-between gap-3 rounded-2xl border border-base-300 bg-base-200/40 px-4 py-3;
+  }
+
+  .toolbar-actions {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
   .card-grid {
     @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
   }
@@ -55,6 +63,56 @@
 
   .form-actions-bar {
     @apply flex flex-wrap items-center gap-2 border-t border-base-300 pt-4;
+  }
+
+  input.control,
+  select.control,
+  textarea.control {
+    @apply w-full border-base-300 bg-base-100 placeholder:text-base-content/50 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  input.control {
+    @apply input input-bordered;
+  }
+
+  select.control {
+    @apply select select-bordered pr-10;
+  }
+
+  textarea.control {
+    @apply textarea textarea-bordered min-h-24;
+  }
+
+  input.control--sm {
+    @apply input-sm;
+  }
+
+  select.control--sm {
+    @apply select-sm;
+  }
+
+  textarea.control--sm {
+    @apply min-h-20 text-sm;
+  }
+
+  .btn-soft {
+    @apply btn btn-outline border-base-300 bg-base-100 hover:border-base-content/20 hover:bg-base-200;
+  }
+
+  .btn-danger-soft {
+    @apply btn btn-outline border-error/40 bg-error/10 text-error hover:border-error/60 hover:bg-error/20;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-base-300 bg-base-200 px-2.5 py-1 text-xs font-medium text-base-content/75;
+  }
+
+  .field-help {
+    @apply label-text-alt text-base-content/60;
+  }
+
+  .field-error {
+    @apply label-text-alt font-medium text-error;
   }
 
   .hint {

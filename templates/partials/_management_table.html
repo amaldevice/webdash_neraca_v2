@@ -8,12 +8,12 @@
                 (Halaman {{ filters.page }} dari {{ filters.total_pages }})
             </div>
         </div>
-        <div class="toolbar md:justify-end">
+        <div class="toolbar-bar md:w-auto md:min-w-[28rem]">
             <div class="form-control">
                 <label for="limit-selector" class="label">
                     <span class="label-text">Baris per halaman</span>
                 </label>
-                <select id="limit-selector" onchange="changeLimit(this.value)" class="select select-bordered select-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <select id="limit-selector" onchange="changeLimit(this.value)" class="control control--sm">
                     <option value="5" {% if filters.limit == 5 %}selected{% endif %}>5</option>
                     <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10</option>
                     <option value="15" {% if filters.limit == 15 %}selected{% endif %}>15</option>
@@ -23,6 +23,7 @@
                     <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100</option>
                 </select>
             </div>
+            <div class="toolbar-actions">
             {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator %}
             <form method="POST" class="self-end md:pt-8">
                 <input type="hidden" name="action" value="delete_by_filter">
@@ -30,15 +31,16 @@
                 <input type="hidden" name="time_period" value="{{ filters.time_period }}">
                 <input type="hidden" name="uploader" value="{{ filters.uploader }}">
                 <input type="hidden" name="indicator" value="{{ filters.indicator }}">
-                <button type="submit" class="btn btn-error btn-sm" onclick="return confirm('Yakin menghapus semua data yang sesuai filter?')">Hapus Berdasarkan Filter</button>
+                <button type="button" class="btn-danger-soft btn-sm js-confirm-action" data-confirm-title="Hapus data sesuai filter?" data-confirm-message="Semua data yang cocok dengan filter aktif akan dihapus." data-confirm-label="Hapus Data" data-confirm-submit="true">Hapus Berdasarkan Filter</button>
             </form>
             {% endif %}
+            </div>
         </div>
     </div>
 
     <div id="bulk-actions" class="alert bg-base-200 border border-base-300 flex flex-wrap gap-2 items-center" style="display: none;" hidden>
-        <span class="font-semibold">Aksi Massal</span>
-        <button type="button" id="bulk-delete-btn" class="btn btn-error btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
+        <span class="chip">Aksi Massal</span>
+        <button type="button" id="bulk-delete-btn" class="btn-danger-soft btn-sm" onclick="confirmBulkDelete()">Hapus Terpilih</button>
         <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
         <span id="selected-count" class="text-base-content/60">0 data dipilih</span>
     </div>
@@ -64,18 +66,18 @@
                 <tr data-entry-id="{{ entry.id }}">
                     <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
                     <td>{{ entry.id }}</td>
-                    <td><input type="text" name="update_uploader_{{ entry.id }}" value="{{ entry.uploader_name }}" class="input input-bordered input-sm w-full" required></td>
-                    <td><input type="text" name="update_version_{{ entry.id }}" value="{{ entry.version }}" class="input input-bordered input-sm w-full" required></td>
-                    <td><input type="text" name="update_indicator_{{ entry.id }}" value="{{ entry.indicator_name }}" class="input input-bordered input-sm w-full" required></td>
-                    <td><input type="number" step="0.01" name="update_value_{{ entry.id }}" value="{{ entry.value }}" class="input input-bordered input-sm w-full" required></td>
+                    <td><input type="text" name="update_uploader_{{ entry.id }}" value="{{ entry.uploader_name }}" class="control control--sm" required></td>
+                    <td><input type="text" name="update_version_{{ entry.id }}" value="{{ entry.version }}" class="control control--sm" required></td>
+                    <td><input type="text" name="update_indicator_{{ entry.id }}" value="{{ entry.indicator_name }}" class="control control--sm" required></td>
+                    <td><input type="number" step="0.01" name="update_value_{{ entry.id }}" value="{{ entry.value }}" class="control control--sm" required></td>
                     <td>
-                        <select name="update_data_type_{{ entry.id }}" class="select select-bordered select-sm w-full">
+                        <select name="update_data_type_{{ entry.id }}" class="control control--sm">
                             <option value="flow" {% if entry.data_type == "flow" %}selected{% endif %}>Flow</option>
                             <option value="stock" {% if entry.data_type == "stock" %}selected{% endif %}>Stock</option>
                         </select>
                     </td>
                     <td>
-                        <select name="update_time_period_{{ entry.id }}" class="select select-bordered select-sm w-full">
+                        <select name="update_time_period_{{ entry.id }}" class="control control--sm">
                             <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
                             <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
                             <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
@@ -98,7 +100,7 @@
                             <form method="POST" class="inline">
                                 <input type="hidden" name="action" value="delete_single">
                                 <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                <button type="submit" class="btn btn-outline btn-error btn-sm" onclick="return confirm('Yakin menghapus data ini?')">Hapus</button>
+                                <button type="button" class="btn-danger-soft btn-sm js-confirm-action" data-confirm-title="Hapus data ini?" data-confirm-message="Data yang dipilih akan dihapus permanen." data-confirm-label="Hapus" data-confirm-submit="true">Hapus</button>
                             </form>
                         </div>
                     </td>
