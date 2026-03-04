@@ -1,11 +1,12 @@
-<form method="POST" class="grid gap-4">
+<form method="POST" class="space-y-5">
+    <div class="form-grid">
     <div class="form-control">
         <label for="uploader" class="label">
             <span class="label-text">Pengunggah</span>
         </label>
         <input id="uploader" name="uploader" class="input input-bordered w-full" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Nama penanggung jawab unggahan.</span>
+            <span class="label-text-alt text-base-content/60">Nama penanggung jawab unggahan.</span>
         </label>
     </div>
 
@@ -15,7 +16,7 @@
         </label>
         <input id="version" name="version" class="input input-bordered w-full" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Gunakan format v1.0, v2.0, dll.</span>
+            <span class="label-text-alt text-base-content/60">Gunakan format v1.0, v2.0, dll.</span>
         </label>
     </div>
 
@@ -28,7 +29,7 @@
             <option value="stock">Stock</option>
         </select>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            <span class="label-text-alt text-base-content/60">Flow = arus, Stock = posisi.</span>
         </label>
     </div>
 
@@ -42,14 +43,16 @@
             <option value="yearly">Tahunan</option>
         </select>
     </div>
+    </div>
 
-    <div class="form-control">
+    <div class="form-grid">
+        <div class="form-control md:col-span-2">
         <label for="period_date" class="label">
             <span class="label-text">Periode Data</span>
         </label>
         <input id="period_date" name="period_date" type="text" class="input input-bordered w-full" placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Gunakan format periode sesuai pilihan di atas.</span>
+            <span class="label-text-alt text-base-content/60">Gunakan format periode sesuai pilihan di atas.</span>
         </label>
     </div>
 
@@ -66,8 +69,9 @@
         </label>
         <input id="value" name="value" type="number" step="any" class="input input-bordered w-full" required>
     </div>
+    </div>
 
-    <div class="flex flex-wrap gap-2">
+    <div class="form-actions-bar">
         <button type="submit" class="btn btn-primary">Simpan Entri Manual</button>
         <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
     </div>

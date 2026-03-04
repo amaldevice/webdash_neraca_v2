@@ -1,5 +1,5 @@
 {% if page_header_title or page_header_description or page_header_actions or page_header_breadcrumbs %}
-<section class="mb-8">
+<section class="panel">
     <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div class="space-y-2">
             {% if page_header_breadcrumbs %}
@@ -11,7 +11,7 @@
             {% if page_header_description %}<p class="max-w-3xl text-base-content/70">{{ page_header_description }}</p>{% endif %}
         </div>
         {% if page_header_actions %}
-        <div class="toolbar md:justify-end">
+        <div class="toolbar md:justify-end md:self-end">
             {{ page_header_actions|safe }}
         </div>
         {% endif %}

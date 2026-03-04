@@ -1,11 +1,12 @@
-<form method="POST" enctype="multipart/form-data" class="grid gap-4">
+<form method="POST" enctype="multipart/form-data" class="space-y-5">
+    <div class="form-grid">
     <div class="form-control">
         <label for="uploader" class="label">
             <span class="label-text">Pengunggah</span>
         </label>
         <input id="uploader" name="uploader" class="input input-bordered w-full" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Nama penanggung jawab unggahan.</span>
+            <span class="label-text-alt text-base-content/60">Nama penanggung jawab unggahan.</span>
         </label>
     </div>
 
@@ -15,7 +16,7 @@
         </label>
         <input id="version" name="version" class="input input-bordered w-full" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Gunakan format v1.0, v2.0, dll.</span>
+            <span class="label-text-alt text-base-content/60">Gunakan format v1.0, v2.0, dll.</span>
         </label>
     </div>
 
@@ -28,7 +29,7 @@
             <option value="stock">Stock</option>
         </select>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+            <span class="label-text-alt text-base-content/60">Flow = arus, Stock = posisi.</span>
         </label>
     </div>
 
@@ -42,18 +43,24 @@
             <option value="yearly">Tahunan</option>
         </select>
     </div>
+    </div>
 
-    <div class="form-control">
+    <div class="rounded-2xl border border-dashed border-base-300 bg-base-200/30 p-4">
+        <div class="section-title pb-0 mb-3 border-b-0">
+            <h4 class="font-semibold">Berkas Sumber</h4>
+        </div>
+        <div class="form-control">
         <label for="excel_file" class="label">
             <span class="label-text">File Excel</span>
         </label>
-        <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered w-full" accept=".xls,.xlsx" required>
+        <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered file-input-primary w-full" accept=".xls,.xlsx" required>
         <label class="label">
-            <span class="label-text-alt text-slate-400">Format .xls atau .xlsx.</span>
+            <span class="label-text-alt text-base-content/60">Format .xls atau .xlsx. Maksimalkan akurasi kolom sebelum unggah.</span>
         </label>
     </div>
+    </div>
 
-    <div class="flex flex-wrap gap-2">
+    <div class="form-actions-bar">
         <button type="submit" class="btn btn-primary">Unggah</button>
         <a href="{{ url_for('preview_data') }}" class="btn btn-outline">Lihat Pratinjau</a>
     </div>

@@ -1,6 +1,11 @@
-<section class="bg-base-100 border border-base-200 rounded-2xl p-6 shadow-sm mb-6">
-    <h3 class="text-lg font-semibold mb-4">Tambah Data Baru</h3>
-    <form method="POST" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+<section class="panel mb-6">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">Tambah Data Baru</h3>
+            <p class="hint">Input cepat untuk menambahkan entri tunggal ke basis data.</p>
+        </div>
+    </div>
+    <form method="POST" class="form-grid">
         <input type="hidden" name="action" value="insert">
         <div class="form-control">
             <label for="insert_uploader" class="label">
@@ -23,7 +28,7 @@
                 <option value="stock">Stock</option>
             </select>
             <label class="label">
-                <span class="label-text-alt text-slate-400">Flow = arus, Stock = posisi.</span>
+                <span class="label-text-alt text-base-content/60">Flow = arus, Stock = posisi.</span>
             </label>
         </div>
         <div class="form-control">
@@ -42,7 +47,7 @@
             </label>
             <input type="text" id="insert_period_date" name="insert_period_date" class="input input-bordered w-full" required placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan">
             <label class="label">
-                <span class="label-text-alt text-slate-400">Isi sesuai format periode terpilih.</span>
+                <span class="label-text-alt text-base-content/60">Isi sesuai format periode terpilih.</span>
             </label>
         </div>
         <div class="form-control">
@@ -57,7 +62,7 @@
             </label>
             <input type="number" step="0.01" id="insert_value" name="insert_value" class="input input-bordered w-full" required placeholder="123,45">
         </div>
-        <div class="flex flex-wrap gap-2 md:col-span-2 xl:col-span-4">
+        <div class="form-actions-bar md:col-span-2 xl:col-span-4">
             <button type="submit" class="btn btn-primary">Tambah Data</button>
         </div>
     </form>
