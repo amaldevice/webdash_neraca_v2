@@ -359,8 +359,39 @@ function generatePeriodAnalysisHTML(analysis) {
 }
 
 function exportPeriodAnalysis(indicator, year) {
-    setInlineStatus('pivot-form-status', 'info', 'Fitur ekspor analisis periode belum tersedia.');
-    console.log('Exporting analysis for:', indicator, 'Year:', year);
+    if (!indicator) {
+        setInlineStatus('pivot-form-status', 'warning', 'Pilih indikator terlebih dahulu.');
+        return;
+    }
+
+    setInlineStatus('pivot-form-status', 'info', 'Sedang menyiapkan file Excel...');
+
+    // Create form for POST submission (to handle file download)
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/export-period-analysis';
+    form.style.display = 'none';
+
+    const indicatorInput = document.createElement('input');
+    indicatorInput.type = 'hidden';
+    indicatorInput.name = 'indicator';
+    indicatorInput.value = indicator;
+    form.appendChild(indicatorInput);
+
+    const yearInput = document.createElement('input');
+    yearInput.type = 'hidden';
+    yearInput.name = 'year';
+    yearInput.value = year || '';
+    form.appendChild(yearInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    // Clear status after a delay
+    setTimeout(() => {
+        clearInlineStatus('pivot-form-status');
+    }, 3000);
 }
 
 document.getElementById('reset-pivot').addEventListener('click', function() {

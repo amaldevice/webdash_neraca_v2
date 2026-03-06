@@ -626,5 +626,340 @@ def data_management():
     return render_template("data_management.html", entries=entries, filters=filters, filter_options=filter_options)
 
 
+@app.route("/export-period-analysis", methods=["POST"])
+def export_period_analysis_excel():
+    """Export period analysis to Excel (Phase 2: Complete with all sheets + conditional formatting)"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from openpyxl.chart import LineChart, Reference
+
+    indicator = request.form.get("indicator", "").strip()
+    analysis_year = request.form.get("year", "").strip()
+
+    if not indicator:
+        flash("Pilih indikator terlebih dahulu.", "error")
+        return redirect(url_for("aggregated_summary"))
+
+    # Convert year to int if it's numeric, otherwise None for all years
+    year_param = None
+    if analysis_year and analysis_year.isdigit():
+        year_param = int(analysis_year)
+
+    # Get analysis data
+    results = calculate_period_comparisons(indicator, year_param)
+
+    if "error" in results:
+        flash(results["error"], "error")
+        return redirect(url_for("aggregated_summary"))
+
+    # Create workbook
+    wb = Workbook()
+
+    # Define styles - Enhanced for Phase 2
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+    
+    # Conditional formatting colors (background)
+    green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Light green
+    red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")    # Light red
+    green_font = Font(color="006100", bold=True)  # Dark green
+    red_font = Font(color="9C0006", bold=True)    # Dark red
+    
+    title_font = Font(bold=True, size=16, color="366092")
+    subtitle_font = Font(italic=True, size=10, color="666666")
+    section_font = Font(bold=True, size=12, color="366092")
+
+    # Check what data exists
+    has_mm = bool(results.get('monthly_comparison') and len(results['monthly_comparison']) > 0)
+    has_qq = bool(results.get('quarterly_comparison') and len(results['quarterly_comparison']) > 0)
+    has_yy = bool(results.get('yearly_comparison') and len(results['yearly_comparison']) > 0)
+    has_ytd = bool(results.get('ytd_comparison') and len(results['ytd_comparison']) > 0)
+    has_cc = bool(results.get('current_to_current') and len(results['current_to_current']) > 0)
+
+    # ========== SHEET 1: DASHBOARD (Enhanced) ==========
+    ws_dashboard = wb.active
+    ws_dashboard.title = "Dashboard"
+
+    # Title
+    ws_dashboard['A1'] = f"📊 Analisis Periode: {indicator}"
+    ws_dashboard['A1'].font = title_font
+    ws_dashboard.merge_cells('A1:D1')
+    
+    ws_dashboard['A2'] = f"Tahun Analisis: {results.get('analysis_year', 'Semua Tahun')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    ws_dashboard['A2'].font = subtitle_font
+    ws_dashboard.merge_cells('A2:D2')
+
+    # Summary Section
+    ws_dashboard['A4'] = "📈 Ringkasan Data"
+    ws_dashboard['A4'].font = section_font
+    ws_dashboard.merge_cells('A4:D4')
+
+    # Headers
+    headers = ["Metrik", "Jumlah Data", "Rata-rata Perubahan", "Status"]
+    for col, header in enumerate(headers, 1):
+        cell = ws_dashboard.cell(row=5, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = thin_border
+
+    # Data rows
+    row_data = [
+        ("M ke M (Bulanan)", len(results.get('monthly_comparison', [])), _calc_avg_change(results.get('monthly_comparison', [])), "✓" if has_mm else "✗"),
+        ("Q ke Q (Kuartal)", len(results.get('quarterly_comparison', [])), _calc_avg_change(results.get('quarterly_comparison', [])), "✓" if has_qq else "✗"),
+        ("Y ke Y (Tahunan)", len(results.get('yearly_comparison', [])), _calc_avg_change(results.get('yearly_comparison', [])), "✓" if has_yy else "✗"),
+        ("YTD (Akumulasi)", sum(len(y.get('monthly_ytd', [])) for y in results.get('ytd_comparison', [])), "-", "✓" if has_ytd else "✗"),
+        ("C ke C (YoY)", len(results.get('current_to_current', [])), _calc_avg_change(results.get('current_to_current', [])), "✓" if has_cc else "✗"),
+    ]
+
+    for idx, (metric, count, avg_change, status) in enumerate(row_data, start=6):
+        ws_dashboard.cell(row=idx, column=1, value=metric).border = thin_border
+        ws_dashboard.cell(row=idx, column=2, value=count).border = thin_border
+        ws_dashboard.cell(row=idx, column=2).alignment = center_align
+        change_cell = ws_dashboard.cell(row=idx, column=3, value=avg_change)
+        change_cell.border = thin_border
+        change_cell.alignment = center_align
+        status_cell = ws_dashboard.cell(row=idx, column=4, value=status)
+        status_cell.border = thin_border
+        status_cell.alignment = center_align
+
+    # Column widths
+    ws_dashboard.column_dimensions['A'].width = 22
+    ws_dashboard.column_dimensions['B'].width = 14
+    ws_dashboard.column_dimensions['C'].width = 20
+    ws_dashboard.column_dimensions['D'].width = 10
+
+    # ========== HELPER FUNCTION FOR DATA SHEETS ==========
+    def create_data_sheet(sheet_name, headers, data_items, period_col_name):
+        """Helper to create standardized data sheets with conditional formatting"""
+        ws = wb.create_sheet(sheet_name)
+        
+        # Title
+        ws['A1'] = f"{sheet_name} - {indicator}"
+        ws['A1'].font = section_font
+        ws.merge_cells(f'A1:E1')
+        
+        # Headers (row 3, leave row 2 empty for spacing)
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=3, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+
+        # Data rows
+        for idx, item in enumerate(data_items, start=4):
+            ws.cell(row=idx, column=1, value=item['period']).border = thin_border
+            ws.cell(row=idx, column=2, value=item['current_value']).border = thin_border
+            ws.cell(row=idx, column=2).alignment = center_align
+            ws.cell(row=idx, column=3, value=item['previous_value']).border = thin_border
+            ws.cell(row=idx, column=3).alignment = center_align
+            
+            change_cell = ws.cell(row=idx, column=4, value=f"{item['change_percent']}%")
+            change_cell.border = thin_border
+            change_cell.alignment = center_align
+            
+            status_cell = ws.cell(row=idx, column=5, value=item['change_type'].capitalize())
+            status_cell.border = thin_border
+            status_cell.alignment = center_align
+
+            # Conditional formatting (background color)
+            if item['change_type'] == 'increase':
+                change_cell.fill = green_fill
+                change_cell.font = green_font
+                status_cell.fill = green_fill
+                status_cell.font = green_font
+            elif item['change_type'] == 'decrease':
+                change_cell.fill = red_fill
+                change_cell.font = red_font
+                status_cell.fill = red_fill
+                status_cell.font = red_font
+
+        # Column widths
+        ws.column_dimensions['A'].width = 14
+        ws.column_dimensions['B'].width = 16
+        ws.column_dimensions['C'].width = 18
+        ws.column_dimensions['D'].width = 16
+        ws.column_dimensions['E'].width = 12
+        
+        return ws
+
+    # ========== SHEET 2: M to M ==========
+    if has_mm:
+        create_data_sheet("M to M", ["Bulan", "Nilai", "Sebelumnya", "Perubahan", "Status"], 
+                         results['monthly_comparison'], "Bulan")
+
+    # ========== SHEET 3: Q to Q ==========
+    if has_qq:
+        create_data_sheet("Q ke Q", ["Kuartal", "Nilai", "Sebelumnya", "Perubahan", "Status"], 
+                         results['quarterly_comparison'], "Kuartal")
+
+    # ========== SHEET 4: Y to Y ==========
+    if has_yy:
+        create_data_sheet("Y ke Y", ["Tahun", "Nilai", "Sebelumnya", "Perubahan", "Status"], 
+                         results['yearly_comparison'], "Tahun")
+
+    # ========== SHEET 5: YTD ==========
+    if has_ytd:
+        ws_ytd = wb.create_sheet("YTD")
+        ws_ytd['A1'] = f"YTD Analysis - {indicator}"
+        ws_ytd['A1'].font = section_font
+        ws_ytd.merge_cells('A1:D1')
+
+        current_row = 3
+        for year_data in results['ytd_comparison']:
+            year = year_data.get('year', 'Unknown')
+            
+            # Year header
+            ws_ytd.cell(row=current_row, column=1, value=f"Tahun {year}")
+            ws_ytd.cell(row=current_row, column=1).font = Font(bold=True, size=11, color="366092")
+            current_row += 1
+            
+            # Monthly YTD headers
+            ytd_headers = ["Periode", "Nilai Bulanan", "YTD Akumulasi", "Status"]
+            for col, header in enumerate(ytd_headers, 1):
+                cell = ws_ytd.cell(row=current_row, column=col, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center_align
+                cell.border = thin_border
+            current_row += 1
+            
+            # Monthly data
+            monthly_data = year_data.get('monthly_ytd', [])
+            for item in monthly_data:
+                ws_ytd.cell(row=current_row, column=1, value=item['period']).border = thin_border
+                ws_ytd.cell(row=current_row, column=2, value=item.get('monthly_value', '-')).border = thin_border
+                ws_ytd.cell(row=current_row, column=2).alignment = center_align
+                ytd_cell = ws_ytd.cell(row=current_row, column=3, value=item['ytd_value'])
+                ytd_cell.border = thin_border
+                ytd_cell.alignment = center_align
+                ytd_cell.fill = PatternFill(start_color="E7E6E6", end_color="E7E6E6", fill_type="solid")
+                ws_ytd.cell(row=current_row, column=4, value="Akumulasi").border = thin_border
+                current_row += 1
+            
+            current_row += 1  # Space between years
+
+        # Column widths
+        ws_ytd.column_dimensions['A'].width = 14
+        ws_ytd.column_dimensions['B'].width = 16
+        ws_ytd.column_dimensions['C'].width = 18
+        ws_ytd.column_dimensions['D'].width = 14
+
+    # ========== SHEET 6: C to C ==========
+    if has_cc:
+        ws_cc = wb.create_sheet("C ke C")
+        ws_cc['A1'] = f"C ke C (Current vs Previous Year) - {indicator}"
+        ws_cc['A1'].font = section_font
+        ws_cc.merge_cells('A1:E1')
+        
+        headers = ["Periode", "Nilai Tahun Ini", "Nilai Tahun Lalu", "Perubahan (%)", "Status"]
+        for col, header in enumerate(headers, 1):
+            cell = ws_cc.cell(row=3, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+
+        for idx, item in enumerate(results['current_to_current'], start=4):
+            ws_cc.cell(row=idx, column=1, value=item['period']).border = thin_border
+            ws_cc.cell(row=idx, column=2, value=item['current_value']).border = thin_border
+            ws_cc.cell(row=idx, column=2).alignment = center_align
+            ws_cc.cell(row=idx, column=3, value=item['previous_year_value']).border = thin_border
+            ws_cc.cell(row=idx, column=3).alignment = center_align
+            
+            change_cell = ws_cc.cell(row=idx, column=4, value=f"{item['change_percent']}%")
+            change_cell.border = thin_border
+            change_cell.alignment = center_align
+            
+            status_cell = ws_cc.cell(row=idx, column=5, value=item['change_type'].capitalize())
+            status_cell.border = thin_border
+            status_cell.alignment = center_align
+
+            # Conditional formatting
+            if item['change_type'] == 'increase':
+                change_cell.fill = green_fill
+                change_cell.font = green_font
+                status_cell.fill = green_fill
+                status_cell.font = green_font
+            elif item['change_type'] == 'decrease':
+                change_cell.fill = red_fill
+                change_cell.font = red_font
+                status_cell.fill = red_fill
+                status_cell.font = red_font
+
+        # Column widths
+        ws_cc.column_dimensions['A'].width = 14
+        ws_cc.column_dimensions['B'].width = 18
+        ws_cc.column_dimensions['C'].width = 18
+        ws_cc.column_dimensions['D'].width = 16
+        ws_cc.column_dimensions['E'].width = 12
+
+    # ========== SHEET 7: METADATA ==========
+    ws_meta = wb.create_sheet("Metadata")
+    ws_meta['A1'] = "📋 Informasi Analisis"
+    ws_meta['A1'].font = title_font
+    ws_meta.merge_cells('A1:C1')
+
+    metadata_items = [
+        ("Indikator", indicator),
+        ("Tahun Analisis", results.get('analysis_year', 'Semua Tahun')),
+        ("Tanggal Export", datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+        ("Jumlah Periode M-M", str(len(results.get('monthly_comparison', [])))),
+        ("Jumlah Periode Q-Q", str(len(results.get('quarterly_comparison', [])))),
+        ("Jumlah Periode Y-Y", str(len(results.get('yearly_comparison', [])))),
+        ("Jumlah Data C-C", str(len(results.get('current_to_current', [])))),
+        ("", ""),
+        ("Catatan", "Data ini dihasilkan oleh Sistem Data BPS"),
+        ("Disclaimer", "Data untuk analisis internal. Validasi ke sumber resmi BPS sebelum dipublikasikan."),
+    ]
+
+    for idx, (label, value) in enumerate(metadata_items, start=3):
+        label_cell = ws_meta.cell(row=idx, column=1, value=label)
+        label_cell.font = Font(bold=True if label else False)
+        value_cell = ws_meta.cell(row=idx, column=2, value=value)
+        if label == "Catatan" or label == "Disclaimer":
+            value_cell.font = Font(italic=True, size=9)
+            ws_meta.merge_cells(f'B{idx}:C{idx}')
+
+    ws_meta.column_dimensions['A'].width = 20
+    ws_meta.column_dimensions['B'].width = 50
+    ws_meta.column_dimensions['C'].width = 20
+
+    # Save to BytesIO
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # Generate filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"BPS_Analysis_{indicator}_{timestamp}.xlsx"
+
+    return Response(
+        output.getvalue(),
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+    )
+
+
+def _calc_avg_change(comparison_list):
+    """Helper function to calculate average change percentage"""
+    if not comparison_list:
+        return "N/A"
+    try:
+        avg = sum(item.get('change_percent', 0) for item in comparison_list) / len(comparison_list)
+        return f"{avg:+.2f}%"
+    except:
+        return "N/A"
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=int(os.environ.get("FLASK_RUN_PORT", 5000)))
