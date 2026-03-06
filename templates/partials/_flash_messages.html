@@ -14,8 +14,10 @@
             {% endif %}
             <div class="alert {{ alert_class }} shadow-md max-w-sm" role="status">
                 <span class="text-sm">{{ msg }}</span>
-                <button type="button" class="btn btn-ghost btn-xs" aria-label="Tutup notifikasi" onclick="this.closest('.alert').remove()">
-                    ✕
+                <button type="button" class="btn btn-ghost btn-xs flash-close" aria-label="Tutup notifikasi" onclick="this.closest('.alert').remove()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
                 </button>
             </div>
         {% endfor %}

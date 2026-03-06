@@ -13,13 +13,64 @@ function setButtonLoading(button, isLoading) {
     button.classList.toggle('pointer-events-none', isLoading);
 }
 
+function setInlineStatus(elementId, type, message) {
+    const statusEl = document.getElementById(elementId);
+    if (!statusEl) return;
+
+    const classes = {
+        info: 'alert-info',
+        warning: 'alert-warning',
+        error: 'alert-error',
+        success: 'alert-success'
+    };
+
+    statusEl.className = `alert text-sm mt-4 ${classes[type] || classes.info}`;
+    statusEl.textContent = message;
+    statusEl.classList.remove('hidden');
+}
+
+function clearInlineStatus(elementId) {
+    const statusEl = document.getElementById(elementId);
+    if (!statusEl) return;
+
+    statusEl.textContent = '';
+    statusEl.classList.add('hidden');
+}
+
+function getTrendCellHTML(changeType) {
+    const isIncrease = changeType === 'increase';
+    const isDecrease = changeType === 'decrease';
+    const trendClass = isIncrease ? 'text-success' : (isDecrease ? 'text-error' : 'text-base-content/60');
+    const trendLabel = isIncrease ? 'Naik' : (isDecrease ? 'Turun' : 'Stabil');
+
+    if (!isIncrease && !isDecrease) {
+        return `<span class="inline-flex items-center gap-1 ${trendClass}" title="${trendLabel}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <span class="sr-only">${trendLabel}</span>
+        </span>`;
+    }
+
+    return `<span class="inline-flex items-center gap-1 ${trendClass}" title="${trendLabel}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            ${isIncrease
+                ? '<path d="M4 12l4-4 3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />'
+                : '<path d="M4 8l4 4 3-3 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 14h4v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />'}
+        </svg>
+        <span class="sr-only">${trendLabel}</span>
+    </span>`;
+}
+
 document.getElementById('generate-pivot').addEventListener('click', function() {
     const generatePivotButton = this;
     const indicator = document.getElementById('analysis_indicator').value;
     const year = document.getElementById('analysis_year').value;
 
+    clearInlineStatus('pivot-form-status');
+
     if (!indicator) {
-        alert('Pilih indikator terlebih dahulu.');
+        setInlineStatus('pivot-form-status', 'warning', 'Pilih indikator terlebih dahulu.');
         return;
     }
 
@@ -42,6 +93,7 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     .then(data => {
         if (data.error) {
             resultDiv.innerHTML = '<div class="text-center text-error py-4">' + data.error + '</div>';
+            setInlineStatus('pivot-form-status', 'error', data.error);
             return;
         }
 
@@ -49,7 +101,6 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
         const analysisHTML = generatePeriodAnalysisHTML(analysis);
         resultDiv.innerHTML = analysisHTML;
 
-        // Activate tabs behavior (DaisyUI tabs are visual only; we handle content toggling here)
         const tabEls = resultDiv.querySelectorAll('[data-tab]');
         const sectionEls = resultDiv.querySelectorAll('[data-section]');
         tabEls.forEach(tab => {
@@ -67,7 +118,9 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
         });
     })
     .catch(error => {
-        resultDiv.innerHTML = '<div class="text-center text-error py-4">Gagal menghasilkan analisis: ' + error.message + '</div>';
+        const message = 'Gagal menghasilkan analisis: ' + error.message;
+        resultDiv.innerHTML = '<div class="text-center text-error py-4">' + message + '</div>';
+        setInlineStatus('pivot-form-status', 'error', message);
     })
     .finally(() => {
         setButtonLoading(generatePivotButton, false);
@@ -84,8 +137,6 @@ function generatePeriodAnalysisHTML(analysis) {
         </div>
     `;
 
-    // Render panjang -> gunakan kombinasi Tabs + Accordion (collapse)
-    // agar halaman tidak terlalu panjang.
     const hasQQ = analysis.quarterly_comparison && analysis.quarterly_comparison.length > 0;
     const hasMM = analysis.monthly_comparison && analysis.monthly_comparison.length > 0;
     const hasYY = analysis.yearly_comparison && analysis.yearly_comparison.length > 0;
@@ -116,7 +167,6 @@ function generatePeriodAnalysisHTML(analysis) {
         <div class="mt-4 space-y-3" id="analysis-sections">
     `;
 
-    // helper: wrap into collapse
     function collapse(title, bodyHtml, openByDefault=true) {
       return `
         <div class="collapse collapse-arrow bg-base-200/40 border border-base-200 rounded-box">
@@ -129,9 +179,9 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (hasQQ) {
       let body = `
-        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-          <table class="table table-zebra w-full">
-            <thead>
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto period-table-wrap">
+          <table class="table table-zebra w-full period-analysis-table">
+            <thead class="period-analysis-head">
               <tr class="text-base-content/60">
                 <th>Kuartal</th>
                 <th>Nilai Saat Ini</th>
@@ -144,15 +194,14 @@ function generatePeriodAnalysisHTML(analysis) {
       `;
 
       analysis.quarterly_comparison.forEach(item => {
-        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
-        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        const trendClass = item.change_type === 'increase' ? 'text-success' : (item.change_type === 'decrease' ? 'text-error' : 'text-base-content/60');
         body += `
           <tr>
             <td>${item.period}</td>
             <td>${item.current_value.toLocaleString()}</td>
             <td>${item.previous_value.toLocaleString()}</td>
             <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
-            <td>${trendSymbol}</td>
+            <td>${getTrendCellHTML(item.change_type)}</td>
           </tr>
         `;
       });
@@ -163,9 +212,9 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (hasMM) {
       let body = `
-        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-          <table class="table table-zebra w-full">
-            <thead>
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto period-table-wrap">
+          <table class="table table-zebra w-full period-analysis-table">
+            <thead class="period-analysis-head">
               <tr class="text-base-content/60">
                 <th>Bulan</th>
                 <th>Nilai Saat Ini</th>
@@ -178,15 +227,14 @@ function generatePeriodAnalysisHTML(analysis) {
       `;
 
       analysis.monthly_comparison.forEach(item => {
-        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
-        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        const trendClass = item.change_type === 'increase' ? 'text-success' : (item.change_type === 'decrease' ? 'text-error' : 'text-base-content/60');
         body += `
           <tr>
             <td>${item.period}</td>
             <td>${item.current_value.toLocaleString()}</td>
             <td>${item.previous_value.toLocaleString()}</td>
             <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
-            <td>${trendSymbol}</td>
+            <td>${getTrendCellHTML(item.change_type)}</td>
           </tr>
         `;
       });
@@ -197,9 +245,9 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (hasYY) {
       let body = `
-        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-          <table class="table table-zebra w-full">
-            <thead>
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto period-table-wrap">
+          <table class="table table-zebra w-full period-analysis-table">
+            <thead class="period-analysis-head">
               <tr class="text-base-content/60">
                 <th>Tahun</th>
                 <th>Nilai Saat Ini</th>
@@ -212,15 +260,14 @@ function generatePeriodAnalysisHTML(analysis) {
       `;
 
       analysis.yearly_comparison.forEach(item => {
-        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
-        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        const trendClass = item.change_type === 'increase' ? 'text-success' : (item.change_type === 'decrease' ? 'text-error' : 'text-base-content/60');
         body += `
           <tr>
             <td>${item.period}</td>
             <td>${item.current_value.toLocaleString()}</td>
             <td>${item.previous_value.toLocaleString()}</td>
             <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
-            <td>${trendSymbol}</td>
+            <td>${getTrendCellHTML(item.change_type)}</td>
           </tr>
         `;
       });
@@ -234,9 +281,9 @@ function generatePeriodAnalysisHTML(analysis) {
       analysis.ytd_comparison.forEach(yearData => {
         if (yearData.monthly_ytd && yearData.monthly_ytd.length > 0) {
           let table = `
-            <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-              <table class="table table-zebra w-full">
-                <thead>
+            <div class="overflow-x-auto max-h-[520px] overflow-y-auto period-table-wrap">
+              <table class="table table-zebra w-full period-analysis-table">
+                <thead class="period-analysis-head">
                   <tr class="text-base-content/60">
                     <th>Bulan</th>
                     <th>Nilai YTD</th>
@@ -261,9 +308,9 @@ function generatePeriodAnalysisHTML(analysis) {
 
     if (hasCC) {
       let body = `
-        <div class="overflow-x-auto max-h-[520px] overflow-y-auto">
-          <table class="table table-zebra w-full">
-            <thead>
+        <div class="overflow-x-auto max-h-[520px] overflow-y-auto period-table-wrap">
+          <table class="table table-zebra w-full period-analysis-table">
+            <thead class="period-analysis-head">
               <tr class="text-base-content/60">
                 <th>Periode</th>
                 <th>Nilai Tahun Berjalan</th>
@@ -276,15 +323,14 @@ function generatePeriodAnalysisHTML(analysis) {
       `;
 
       analysis.current_to_current.forEach(item => {
-        const trendClass = item.change_type === 'increase' ? 'text-success' : 'text-error';
-        const trendSymbol = item.change_type === 'increase' ? '↗️' : '↘️';
+        const trendClass = item.change_type === 'increase' ? 'text-success' : (item.change_type === 'decrease' ? 'text-error' : 'text-base-content/60');
         body += `
           <tr>
             <td>${item.period}</td>
             <td>${item.current_value.toLocaleString()}</td>
             <td>${item.previous_year_value.toLocaleString()}</td>
             <td class="${trendClass}">${item.change_percent > 0 ? '+' : ''}${item.change_percent}%</td>
-            <td>${trendSymbol}</td>
+            <td>${getTrendCellHTML(item.change_type)}</td>
           </tr>
         `;
       });
@@ -308,13 +354,14 @@ function generatePeriodAnalysisHTML(analysis) {
 }
 
 function exportPeriodAnalysis(indicator, year) {
-    alert('Fitur ekspor analisis periode akan diimplementasikan di sini.');
+    setInlineStatus('pivot-form-status', 'info', 'Fitur ekspor analisis periode belum tersedia.');
     console.log('Exporting analysis for:', indicator, 'Year:', year);
 }
 
 document.getElementById('reset-pivot').addEventListener('click', function() {
     document.getElementById('pivot-result').innerHTML = '<p class="text-base-content/60 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
+    clearInlineStatus('pivot-form-status');
 });
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -329,16 +376,18 @@ function handlePlotGeneration() {
     const indicatorFilter = document.getElementById('indicator_filter');
     const timeRange = document.getElementById('time_range');
 
+    clearInlineStatus('plot-form-status');
+
     if (!indicatorFilter || !timeRange) {
-        alert('Elemen formulir tidak ditemukan.');
+        setInlineStatus('plot-form-status', 'error', 'Elemen formulir tidak ditemukan.');
         return;
     }
 
     const indicatorValue = indicatorFilter.value;
     const timeValue = timeRange.value;
 
-    if (!indicatorValue || indicatorValue === "") {
-        alert('Pilih indikator terlebih dahulu.');
+    if (!indicatorValue || indicatorValue === '') {
+        setInlineStatus('plot-form-status', 'warning', 'Pilih indikator terlebih dahulu.');
         return;
     }
 
@@ -346,6 +395,7 @@ function handlePlotGeneration() {
     const plotDisplay = document.getElementById('plot-display');
 
     if (!plotContainer || !plotDisplay) {
+        setInlineStatus('plot-form-status', 'error', 'Area grafik tidak tersedia.');
         return;
     }
 
@@ -379,11 +429,14 @@ function handlePlotGeneration() {
     .then(data => {
         if (data && data.error) {
             plotDisplay.innerHTML = '<div class="text-center text-error py-5">' + data.error + '</div>';
+            setInlineStatus('plot-form-status', 'error', data.error);
             return;
         }
 
         if (!data || !data.plot_json) {
-            plotDisplay.innerHTML = '<div class="text-center text-error py-5">Kesalahan: data grafik tidak tersedia.</div>';
+            const message = 'Kesalahan: data grafik tidak tersedia.';
+            plotDisplay.innerHTML = '<div class="text-center text-error py-5">' + message + '</div>';
+            setInlineStatus('plot-form-status', 'error', message);
             return;
         }
 
@@ -392,7 +445,9 @@ function handlePlotGeneration() {
         Plotly.newPlot(plotDisplay, fig.data, fig.layout, fig.config || {});
     })
     .catch(error => {
-        plotDisplay.innerHTML = '<div class="text-center text-error py-5">Gagal membuat grafik: ' + error.message + '</div>';
+        const message = 'Gagal membuat grafik: ' + error.message;
+        plotDisplay.innerHTML = '<div class="text-center text-error py-5">' + message + '</div>';
+        setInlineStatus('plot-form-status', 'error', message);
     })
     .finally(() => {
         setButtonLoading(generatePlotButton, false);

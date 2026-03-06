@@ -199,6 +199,30 @@ def _build_manual_entry(
     }
 
 
+def get_available_years() -> list[int]:
+    """Fetch distinct year values for aggregated UI filters."""
+    db_path = os.path.join(BASE_DIR, "data.db")
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT year
+            FROM data_entries
+            WHERE year IS NOT NULL
+            ORDER BY year DESC
+            """
+        ).fetchall()
+    years: list[int] = []
+    for row in rows:
+        raw_year = row[0]
+        if raw_year is None:
+            continue
+        try:
+            years.append(int(raw_year))
+        except (TypeError, ValueError):
+            continue
+    return years
+
+
 @app.route("/preview-data", methods=["GET"])
 def preview_data():
     # Get filter parameters
@@ -314,8 +338,13 @@ def aggregated_summary():
     summary = fetch_aggregated_summary()
     # Get unique indicators for filter dropdown
     indicators = get_unique_indicators()
-    summary_with_indicators = dict(summary)
+    summary_dict = summary if isinstance(summary, dict) else {}
+    available_years = summary_dict.get("available_years")
+    if not isinstance(available_years, list) or not available_years:
+        available_years = get_available_years()
+    summary_with_indicators = dict(summary_dict)
     summary_with_indicators['indicators'] = indicators
+    summary_with_indicators['available_years'] = available_years
     return render_template("aggregated.html", summary=summary_with_indicators)
 
 

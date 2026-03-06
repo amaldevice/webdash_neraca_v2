@@ -44,71 +44,170 @@
         <button type="button" id="bulk-update-btn" class="btn btn-primary btn-sm" onclick="openBulkUpdateModal()">Perbarui Terpilih</button>
         <span id="selected-count" class="text-base-content/60">0 data dipilih</span>
     </div>
+    <div id="management-inline-status" class="alert alert-warning text-sm mt-3 hidden" role="status" aria-live="polite"></div>
 
-    <div class="table-wrap table-wrap--sticky mt-4">
-        <table class="table table-zebra w-full">
-            <thead class="text-sm">
-                <tr>
-                    <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
-                    <th>ID</th>
-                    <th>Pengunggah</th>
-                    <th>Versi</th>
-                    <th>Indikator</th>
-                    <th>Nilai</th>
-                    <th>Jenis Data</th>
-                    <th>Periode</th>
-                    <th>Periode Data</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for entry in entries %}
-                <tr data-entry-id="{{ entry.id }}">
-                    <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
-                    <td>{{ entry.id }}</td>
-                    <td><input type="text" name="update_uploader_{{ entry.id }}" value="{{ entry.uploader_name }}" class="control control--sm" required></td>
-                    <td><input type="text" name="update_version_{{ entry.id }}" value="{{ entry.version }}" class="control control--sm" required></td>
-                    <td><input type="text" name="update_indicator_{{ entry.id }}" value="{{ entry.indicator_name }}" class="control control--sm" required></td>
-                    <td><input type="number" step="0.01" name="update_value_{{ entry.id }}" value="{{ entry.value }}" class="control control--sm" required></td>
-                    <td>
-                        <select name="update_data_type_{{ entry.id }}" class="control control--sm">
-                            <option value="flow" {% if entry.data_type == "flow" %}selected{% endif %}>Flow</option>
-                            <option value="stock" {% if entry.data_type == "stock" %}selected{% endif %}>Stock</option>
-                        </select>
-                    </td>
-                    <td>
-                        <select name="update_time_period_{{ entry.id }}" class="control control--sm">
-                            <option value="monthly" {% if entry.time_period == "monthly" %}selected{% endif %}>Bulanan</option>
-                            <option value="quarterly" {% if entry.time_period == "quarterly" %}selected{% endif %}>Triwulanan</option>
-                            <option value="yearly" {% if entry.time_period == "yearly" %}selected{% endif %}>Tahunan</option>
-                        </select>
-                    </td>
-                    <td>{{ entry.tanggal_data }}</td>
-                    <td>
-                        <div class="flex flex-wrap gap-1">
-                            <form method="POST" class="inline">
-                                <input type="hidden" name="action" value="update">
-                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                <input type="hidden" name="update_uploader" value="">
-                                <input type="hidden" name="update_version" value="">
-                                <input type="hidden" name="update_indicator" value="">
-                                <input type="hidden" name="update_value" value="">
-                                <input type="hidden" name="update_data_type" value="">
-                                <input type="hidden" name="update_time_period" value="">
-                                <button type="submit" class="btn btn-primary btn-sm" onclick="prepareUpdate(this, {{ entry.id }})">Perbarui</button>
-                            </form>
-                            <form method="POST" class="inline">
-                                <input type="hidden" name="action" value="delete_single">
-                                <input type="hidden" name="entry_id" value="{{ entry.id }}">
-                                <button type="button" class="btn-danger-soft btn-sm js-confirm-action" data-confirm-title="Hapus data ini?" data-confirm-message="Data yang dipilih akan dihapus permanen." data-confirm-label="Hapus" data-confirm-submit="true">Hapus</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="mt-4 grid gap-3 md:hidden">
+        {% for entry in entries %}
+        <article class="card bg-base-100 border border-base-300 shadow-sm management-mobile-card" data-entry-id="{{ entry.id }}">
+            <div class="card-body p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="space-y-1 min-w-0">
+                        <div class="text-xs text-base-content/60">ID #{{ entry.id }}</div>
+                        <h4 class="font-semibold truncate">{{ entry.indicator_name }}</h4>
+                    </div>
+                    <input type="checkbox" class="row-checkbox checkbox" value="{{ entry.id }}" data-entry-id="{{ entry.id }}" aria-label="Pilih data ID {{ entry.id }}">
+                </div>
+
+                <dl class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                    <dt class="text-base-content/60">Nilai</dt>
+                    <dd class="font-medium text-right">{{ entry.value }}</dd>
+                    <dt class="text-base-content/60">Pengunggah</dt>
+                    <dd class="text-right truncate">{{ entry.uploader_name }}</dd>
+                    <dt class="text-base-content/60">Versi</dt>
+                    <dd class="text-right">{{ entry.version }}</dd>
+                    <dt class="text-base-content/60">Jenis / Periode</dt>
+                    <dd class="text-right">{{ entry.data_type }} / {{ entry.time_period }}</dd>
+                    <dt class="text-base-content/60">Tanggal Data</dt>
+                    <dd class="text-right">{{ entry.tanggal_data }}</dd>
+                </dl>
+
+                <div class="flex gap-2 pt-1">
+                    <button
+                        type="button"
+                        class="btn btn-primary flex-1 management-action-btn"
+                        data-entry-id="{{ entry.id }}"
+                        data-uploader="{{ entry.uploader_name|e }}"
+                        data-version="{{ entry.version|e }}"
+                        data-indicator="{{ entry.indicator_name|e }}"
+                        data-value="{{ entry.value }}"
+                        data-data-type="{{ entry.data_type }}"
+                        data-time-period="{{ entry.time_period }}"
+                        onclick="openEntryEditModal(this)"
+                    >
+                        Edit
+                    </button>
+                    <form method="POST" class="flex-1">
+                        <input type="hidden" name="action" value="delete_single">
+                        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                        <button type="button" class="btn-danger-soft w-full management-action-btn js-confirm-action" data-confirm-title="Hapus data ini?" data-confirm-message="Data yang dipilih akan dihapus permanen." data-confirm-label="Hapus" data-confirm-submit="true">Hapus</button>
+                    </form>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
     </div>
+
+    <div class="mt-4 hidden md:block">
+        <div class="table-wrap table-wrap--sticky management-table-wrap">
+            <table class="table table-zebra w-full management-table">
+                <thead class="text-sm">
+                    <tr>
+                        <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
+                        <th>ID</th>
+                        <th>Indikator</th>
+                        <th>Nilai</th>
+                        <th>Metadata</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr data-entry-id="{{ entry.id }}">
+                        <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
+                        <td class="font-medium">#{{ entry.id }}</td>
+                        <td>
+                            <div class="font-medium">{{ entry.indicator_name }}</div>
+                            <div class="text-xs text-base-content/60">{{ entry.uploader_name }} • v{{ entry.version }}</div>
+                        </td>
+                        <td class="font-semibold">{{ entry.value }}</td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="chip">{{ entry.data_type|title }}</span>
+                                <span class="chip">{{ entry.time_period|title }}</span>
+                                <span class="chip">{{ entry.tanggal_data }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <button
+                                    type="button"
+                                    class="btn btn-primary btn-sm management-action-btn"
+                                    data-entry-id="{{ entry.id }}"
+                                    data-uploader="{{ entry.uploader_name|e }}"
+                                    data-version="{{ entry.version|e }}"
+                                    data-indicator="{{ entry.indicator_name|e }}"
+                                    data-value="{{ entry.value }}"
+                                    data-data-type="{{ entry.data_type }}"
+                                    data-time-period="{{ entry.time_period }}"
+                                    onclick="openEntryEditModal(this)"
+                                >
+                                    Edit
+                                </button>
+                                <form method="POST" class="inline">
+                                    <input type="hidden" name="action" value="delete_single">
+                                    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                                    <button type="button" class="btn-danger-soft btn-sm js-confirm-action management-action-btn" data-confirm-title="Hapus data ini?" data-confirm-message="Data yang dipilih akan dihapus permanen." data-confirm-label="Hapus" data-confirm-submit="true">Hapus</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <dialog id="entry-edit-modal" class="modal">
+        <form method="POST" class="modal-box w-11/12 max-w-xl space-y-4">
+            <h3 class="font-semibold text-lg">Edit Data</h3>
+            <p class="text-sm text-base-content/60">Perbarui data langsung dari tampilan mobile.</p>
+
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" id="entry_update_id" name="entry_id" value="">
+
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="form-control">
+                    <label for="entry_update_uploader" class="label"><span class="label-text">Pengunggah</span></label>
+                    <input id="entry_update_uploader" type="text" name="update_uploader" class="control" required>
+                </div>
+                <div class="form-control">
+                    <label for="entry_update_version" class="label"><span class="label-text">Versi</span></label>
+                    <input id="entry_update_version" type="text" name="update_version" class="control" required>
+                </div>
+                <div class="form-control sm:col-span-2">
+                    <label for="entry_update_indicator" class="label"><span class="label-text">Indikator</span></label>
+                    <input id="entry_update_indicator" type="text" name="update_indicator" class="control" required>
+                </div>
+                <div class="form-control">
+                    <label for="entry_update_value" class="label"><span class="label-text">Nilai</span></label>
+                    <input id="entry_update_value" type="number" step="0.01" name="update_value" class="control" required>
+                </div>
+                <div class="form-control">
+                    <label for="entry_update_data_type" class="label"><span class="label-text">Jenis Data</span></label>
+                    <select id="entry_update_data_type" name="update_data_type" class="control">
+                        <option value="flow">Flow</option>
+                        <option value="stock">Stock</option>
+                    </select>
+                </div>
+                <div class="form-control sm:col-span-2">
+                    <label for="entry_update_time_period" class="label"><span class="label-text">Periode</span></label>
+                    <select id="entry_update_time_period" name="update_time_period" class="control">
+                        <option value="monthly">Bulanan</option>
+                        <option value="quarterly">Triwulanan</option>
+                        <option value="yearly">Tahunan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-action">
+                <button type="button" class="btn-soft" onclick="closeEntryEditModal()">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+        </form>
+        <form method="dialog" class="modal-backdrop">
+            <button aria-label="Tutup modal edit data">Tutup</button>
+        </form>
+    </dialog>
 
     {% set pagination_aria_label = "Paginasi manajemen data" %}
     {% set pagination_endpoint = "data_management" %}

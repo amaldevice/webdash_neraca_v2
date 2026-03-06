@@ -1,30 +1,65 @@
 <script>
 let confirmActionHandler = null;
 
+function setManagementStatus(message, type = 'warning') {
+    const statusEl = document.getElementById('management-inline-status');
+    if (!statusEl) return;
+
+    const classes = {
+        info: 'alert-info',
+        warning: 'alert-warning',
+        error: 'alert-error',
+        success: 'alert-success'
+    };
+
+    statusEl.className = `alert text-sm mt-3 ${classes[type] || classes.warning}`;
+    statusEl.textContent = message;
+    statusEl.classList.remove('hidden');
+}
+
+function clearManagementStatus() {
+    const statusEl = document.getElementById('management-inline-status');
+    if (!statusEl) return;
+
+    statusEl.textContent = '';
+    statusEl.classList.add('hidden');
+}
+
+function getVisibleRowCheckboxes() {
+    const all = Array.from(document.querySelectorAll('.row-checkbox'));
+    return all.filter(cb => cb.offsetParent !== null);
+}
+
+function getCheckedVisibleRowCheckboxes() {
+    return getVisibleRowCheckboxes().filter(cb => cb.checked);
+}
+
 function toggleSelectAll() {
     const selectAll = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.row-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = selectAll.checked;
-    });
+    if (!selectAll) return;
+    const checkboxes = getVisibleRowCheckboxes();
+    checkboxes.forEach(cb => { cb.checked = selectAll.checked; });
     updateBulkActions();
     updateSelectAllState();
 }
 
 function updateBulkActions() {
-    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const checkboxes = getCheckedVisibleRowCheckboxes();
     const bulkActions = document.getElementById('bulk-actions');
     const selectedCount = document.getElementById('selected-count');
+    if (!bulkActions || !selectedCount) return;
 
     if (checkboxes.length > 0) {
         bulkActions.style.display = 'flex';
         selectedCount.textContent = `${checkboxes.length} data dipilih`;
+        clearManagementStatus();
     } else {
         bulkActions.style.display = 'none';
     }
 
-    const allCheckboxes = document.querySelectorAll('.row-checkbox');
+    const allCheckboxes = getVisibleRowCheckboxes();
     const selectAll = document.getElementById('select-all');
+    if (!selectAll) return;
     selectAll.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
     selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
 }
@@ -49,30 +84,10 @@ function openConfirmModal({ title, message, confirmLabel = 'Hapus', confirmClass
     return false;
 }
 
-function prepareUpdate(button, entryId) {
-    const row = button.closest('tr');
-    const uploader = row.querySelector(`input[name="update_uploader_${entryId}"]`).value;
-    const version = row.querySelector(`input[name="update_version_${entryId}"]`).value;
-    const indicator = row.querySelector(`input[name="update_indicator_${entryId}"]`).value;
-    const value = row.querySelector(`input[name="update_value_${entryId}"]`).value;
-    const dataType = row.querySelector(`select[name="update_data_type_${entryId}"]`).value;
-    const timePeriod = row.querySelector(`select[name="update_time_period_${entryId}"]`).value;
-
-    const form = button.closest('form');
-    form.querySelector('input[name="update_uploader"]').value = uploader;
-    form.querySelector('input[name="update_version"]').value = version;
-    form.querySelector('input[name="update_indicator"]').value = indicator;
-    form.querySelector('input[name="update_value"]').value = value;
-    form.querySelector('input[name="update_data_type"]').value = dataType;
-    form.querySelector('input[name="update_time_period"]').value = timePeriod;
-
-    return true;
-}
-
 function confirmBulkDelete() {
-    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const checkboxes = getCheckedVisibleRowCheckboxes();
     if (checkboxes.length === 0) {
-        alert('Pilih data yang ingin dihapus terlebih dahulu.');
+        setManagementStatus('Pilih data yang ingin dihapus terlebih dahulu.', 'warning');
         return;
     }
 
@@ -98,9 +113,9 @@ function confirmBulkDelete() {
 }
 
 function openBulkUpdateModal() {
-    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const checkboxes = getCheckedVisibleRowCheckboxes();
     if (checkboxes.length === 0) {
-        alert('Pilih data yang ingin diperbarui terlebih dahulu.');
+        setManagementStatus('Pilih data yang ingin diperbarui terlebih dahulu.', 'warning');
         return;
     }
 
@@ -112,6 +127,39 @@ function openBulkUpdateModal() {
 
 function closeBulkUpdateModal() {
     const modal = document.getElementById('bulk-update-modal');
+    if (modal) {
+        modal.close();
+    }
+}
+
+function openEntryEditModal(trigger) {
+    const modal = document.getElementById('entry-edit-modal');
+    if (!modal || !trigger) {
+        return;
+    }
+
+    const entryId = trigger.dataset.entryId || '';
+    const uploader = trigger.dataset.uploader || '';
+    const version = trigger.dataset.version || '';
+    const indicator = trigger.dataset.indicator || '';
+    const value = trigger.dataset.value || '';
+    const dataType = trigger.dataset.dataType || 'flow';
+    const timePeriod = trigger.dataset.timePeriod || 'monthly';
+
+    document.getElementById('entry_update_id').value = entryId;
+    document.getElementById('entry_update_uploader').value = uploader;
+    document.getElementById('entry_update_version').value = version;
+    document.getElementById('entry_update_indicator').value = indicator;
+    document.getElementById('entry_update_value').value = value;
+    document.getElementById('entry_update_data_type').value = dataType;
+    document.getElementById('entry_update_time_period').value = timePeriod;
+
+    clearManagementStatus();
+    modal.showModal();
+}
+
+function closeEntryEditModal() {
+    const modal = document.getElementById('entry-edit-modal');
     if (modal) {
         modal.close();
     }
@@ -173,7 +221,7 @@ function changeLimit(newLimit) {
 }
 
 function saveCheckboxState() {
-    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    const checkedBoxes = getCheckedVisibleRowCheckboxes();
     const checkedIds = Array.from(checkedBoxes).map(cb => cb.value);
     localStorage.setItem('dataManagementSelectedIds', JSON.stringify(checkedIds));
 }
@@ -183,10 +231,12 @@ function restoreCheckboxState() {
     if (savedIds) {
         const selectedIds = JSON.parse(savedIds);
         selectedIds.forEach(id => {
-            const checkbox = document.querySelector(`.row-checkbox[value="${id}"]`);
-            if (checkbox) {
-                checkbox.checked = true;
-            }
+            const checkboxes = document.querySelectorAll(`.row-checkbox[value="${id}"]`);
+            checkboxes.forEach(checkbox => {
+                if (checkbox.offsetParent !== null) {
+                    checkbox.checked = true;
+                }
+            });
         });
     }
 }
@@ -201,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmCancel = document.getElementById('confirm-action-cancel');
     const confirmSubmit = document.getElementById('confirm-action-submit');
     const bulkUpdateModal = document.getElementById('bulk-update-modal');
+    const entryEditModal = document.getElementById('entry-edit-modal');
 
     if (confirmCancel && confirmModal) {
         confirmCancel.addEventListener('click', function() {
@@ -232,6 +283,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (entryEditModal) {
+        entryEditModal.addEventListener('close', function() {
+            const editForm = entryEditModal.querySelector('form[method="POST"]');
+            if (editForm) {
+                editForm.reset();
+            }
+        });
+    }
+
     const bulkActions = document.getElementById('bulk-actions');
     if (bulkActions) {
         bulkActions.style.display = 'none';
@@ -239,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     updateBulkActions();
+    clearManagementStatus();
 
     const checkboxes = document.querySelectorAll('.row-checkbox');
     checkboxes.forEach(checkbox => {
@@ -258,12 +319,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateSelectAllState() {
-    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const checkboxes = getVisibleRowCheckboxes();
     const selectAll = document.getElementById('select-all');
 
     if (!selectAll) return;
 
-    const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+    const checkedCount = getCheckedVisibleRowCheckboxes().length;
     const totalCount = checkboxes.length;
 
     selectAll.checked = checkedCount === totalCount && totalCount > 0;

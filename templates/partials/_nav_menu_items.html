@@ -1,6 +1,20 @@
-<li><a href="{{ url_for('landing_page') }}">Beranda</a></li>
-<li><a href="{{ url_for('upload_data') }}">Unggah Data</a></li>
-<li><a href="{{ url_for('manual_input') }}">Input Manual</a></li>
-<li><a href="{{ url_for('preview_data') }}">Pratinjau Data</a></li>
-<li><a href="{{ url_for('data_management') }}">Manajemen Data</a></li>
-<li><a href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a></li>
+{% set current_endpoint = request.endpoint or '' %}
+{% set nav_items = [
+    {"endpoint": "landing_page", "label": "Beranda"},
+    {"endpoint": "upload_data", "label": "Unggah Data"},
+    {"endpoint": "manual_input", "label": "Input Manual"},
+    {"endpoint": "preview_data", "label": "Pratinjau Data"},
+    {"endpoint": "data_management", "label": "Manajemen Data"},
+    {"endpoint": "aggregated_summary", "label": "Ringkasan Agregat"},
+] %}
+
+{% for item in nav_items %}
+    {% set is_active = current_endpoint == item.endpoint %}
+    <li class="topbar-menu-item">
+        <a href="{{ url_for(item.endpoint) }}"
+           class="topbar-nav-link{% if is_active %} active{% endif %}"
+           {% if is_active %}aria-current="page"{% endif %}>
+            <span class="topbar-nav-label">{{ item.label }}</span>
+        </a>
+    </li>
+{% endfor %}

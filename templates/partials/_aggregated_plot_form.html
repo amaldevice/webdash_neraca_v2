@@ -24,15 +24,17 @@
             </label>
             <select id="time_range" name="time_range" class="control">
                 <option value="all">Semua Periode</option>
-                <option value="2020">Tahun 2020</option>
-                <option value="2021">Tahun 2021</option>
-                <option value="2022">Tahun 2022</option>
+                {% set available_years = summary.available_years if summary is defined and summary.available_years is defined else [] %}
+                {% for year in available_years %}
+                <option value="{{ year }}">Tahun {{ year }}</option>
+                {% endfor %}
             </select>
         </div>
         <div class="form-actions-bar border-t-0 pt-0 items-end">
             <button type="button" id="generate-plot" class="btn btn-primary">Hasilkan Grafik Garis</button>
         </div>
     </div>
+    <div id="plot-form-status" class="alert alert-warning text-sm mt-4 hidden" role="status" aria-live="polite"></div>
 
     <div class="mt-6 border-t border-base-300 pt-6 aggregated-plot-container" id="plot-container" style="display: none;">
         <div id="plot-display" class="aggregated-plot-display"></div>

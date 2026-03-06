@@ -1,1 +1,282 @@
-/* Reserved for targeted non-Tailwind overrides. */
+/* Accessibility and UI refinement overrides */
+
+:root {
+    --app-focus-color: var(--fallback-p, oklch(var(--p) / 1));
+    --app-focus-offset: var(--fallback-b1, oklch(var(--b1) / 1));
+}
+
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid oklch(var(--b3) / 0.7);
+    background: linear-gradient(180deg, oklch(var(--b1) / 0.94) 0%, oklch(var(--b1) / 0.88) 100%);
+    backdrop-filter: blur(10px);
+}
+
+.topbar-wrap {
+    min-height: 5rem;
+}
+
+.topbar-frame {
+    margin-block: 0.45rem;
+    border: 1px solid oklch(var(--b3) / 0.9);
+    border-radius: 1.15rem;
+    padding-inline: 0.6rem;
+    background: color-mix(in srgb, oklch(var(--b1)) 88%, oklch(var(--b2)) 12%);
+    box-shadow: 0 10px 28px oklch(var(--bc) / 0.08);
+}
+
+.topbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid oklch(var(--b3));
+    background: oklch(var(--b1));
+    padding: 0.55rem 0.75rem;
+    box-shadow: 0 8px 18px oklch(var(--bc) / 0.04);
+}
+
+.topbar-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.75rem;
+    background: oklch(var(--p));
+    color: oklch(var(--pc));
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.topbar-menu-shell {
+    padding: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.45rem;
+    border: 0;
+    background: transparent;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: oklch(var(--b3)) transparent;
+}
+
+.topbar-menu-shell::-webkit-scrollbar {
+    height: 6px;
+}
+
+.topbar-menu-shell::-webkit-scrollbar-thumb {
+    background: oklch(var(--b3));
+    border-radius: 999px;
+}
+
+.topbar-menu-group {
+    border: 1px solid oklch(var(--b3));
+    border-radius: 1rem;
+    background: oklch(var(--b1));
+    padding: 0.25rem;
+    box-shadow: inset 0 1px 0 oklch(var(--bc) / 0.04);
+}
+
+.topbar-menu-item {
+    margin: 0;
+    display: flex;
+    flex: 0 0 auto;
+}
+
+.topbar-nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    min-width: clamp(8.5rem, 9.2vw, 10.5rem);
+    border-radius: 0.75rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: oklch(var(--bc) / 0.74);
+    transition: background-color 180ms ease, color 180ms ease;
+    border: 1px solid transparent;
+}
+
+.topbar-nav-link:hover {
+    background: color-mix(in srgb, oklch(var(--b2)) 75%, white 25%);
+    color: oklch(var(--bc));
+    border-color: oklch(var(--b3));
+}
+
+.topbar-nav-link.active {
+    background: color-mix(in srgb, oklch(var(--p)) 15%, transparent);
+    color: oklch(var(--p));
+    border-color: color-mix(in srgb, oklch(var(--p)) 22%, oklch(var(--b3)));
+}
+
+.topbar-nav-label {
+    white-space: nowrap;
+}
+
+#pivot-result .period-table-wrap {
+    position: relative;
+    border: 1px solid oklch(var(--b3));
+    border-radius: 0.95rem;
+}
+
+#pivot-result .period-analysis-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#pivot-result .period-analysis-table thead.period-analysis-head th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: oklch(var(--b1));
+    box-shadow: inset 0 -1px 0 oklch(var(--b3));
+}
+
+.topbar-mobile-menu {
+    margin-top: 0.75rem;
+    z-index: 60;
+    width: 16rem;
+    border-radius: 1rem;
+    border: 1px solid oklch(var(--b3));
+    background: oklch(var(--b1));
+    padding: 0.5rem;
+    box-shadow: 0 16px 40px oklch(var(--bc) / 0.14);
+}
+
+.topbar-icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(var(--b3));
+    background: oklch(var(--b1));
+}
+
+:where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [role="button"],
+    .btn,
+    .btn-soft,
+    .btn-danger-soft,
+    .nav-pill,
+    .menu a,
+    .control,
+    .checkbox
+):focus-visible {
+    outline: 2px solid var(--app-focus-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-focus-offset) 60%, transparent);
+}
+
+.menu li > a[aria-current="page"] {
+    font-weight: 600;
+}
+
+.flash-close {
+    min-inline-size: 2.25rem;
+    min-block-size: 2.25rem;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+    .topbar-frame {
+        padding-inline: 0.4rem;
+    }
+
+    .topbar-nav-link {
+        min-width: 100%;
+        justify-content: flex-start;
+        padding-inline: 0.8rem;
+    }
+
+    .management-mobile-card {
+        border-radius: 1rem;
+    }
+
+    .management-mobile-card .btn,
+    .management-mobile-card .btn-danger-soft {
+        min-height: 2.75rem;
+    }
+
+    .management-mobile-card .checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .table-wrap--sticky.management-table-wrap {
+        max-height: none;
+    }
+
+    .management-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .management-table th,
+    .management-table td {
+        white-space: nowrap;
+    }
+
+    .management-table .control,
+    .management-table input,
+    .management-table select {
+        min-height: 2.5rem;
+        min-width: 7.5rem;
+    }
+
+    #select-all,
+    .management-table .row-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .management-action-btn,
+    #bulk-delete-btn,
+    #bulk-update-btn {
+        min-height: 2.5rem;
+        padding-inline: 0.75rem;
+    }
+
+    .toolbar-bar {
+        min-width: 0;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+    .topbar-nav-link {
+        min-width: 7.8rem;
+        padding-inline: 0.72rem;
+        font-size: 0.82rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

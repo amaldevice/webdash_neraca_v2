@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", "Manrope", "Segoe UI", system-ui, sans-serif;
   }
 
   body {
@@ -15,6 +15,46 @@
 @layer components {
   .app-shell {
     @apply container mx-auto flex-1 w-full px-4 py-6 space-y-6;
+  }
+
+  .app-topbar {
+    @apply sticky top-0 z-40 border-b border-base-300/80 bg-base-100/90 backdrop-blur-md;
+  }
+
+  .topbar-wrap {
+    @apply min-h-20;
+  }
+
+  .topbar-brand {
+    @apply inline-flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-3 py-2 shadow-sm transition hover:border-primary/30 hover:shadow;
+  }
+
+  .topbar-brand-badge {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/90 text-primary-content text-xs font-semibold;
+  }
+
+  .topbar-menu-shell {
+    @apply rounded-2xl border border-base-300 bg-base-100 p-1 shadow-sm;
+  }
+
+  .topbar-nav-link {
+    @apply rounded-xl px-3 py-2 text-sm font-medium text-base-content/75 transition-colors;
+  }
+
+  .topbar-nav-link:hover {
+    @apply bg-base-200 text-base-content;
+  }
+
+  .topbar-nav-link.active {
+    @apply bg-primary/12 text-primary;
+  }
+
+  .topbar-icon-btn {
+    @apply h-10 w-10 rounded-xl border border-base-300 bg-base-100;
+  }
+
+  .topbar-mobile-menu {
+    @apply mt-3 z-[60] w-64 rounded-2xl border border-base-300 bg-base-100 p-2 shadow-xl;
   }
 
   .nav-pill {

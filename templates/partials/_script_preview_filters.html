@@ -1,4 +1,28 @@
 <script>
+function setPreviewFilterStatus(message, type = 'info') {
+    const statusEl = document.getElementById('preview-filter-status');
+    if (!statusEl) return;
+
+    const classes = {
+        info: 'alert-info',
+        warning: 'alert-warning',
+        error: 'alert-error',
+        success: 'alert-success'
+    };
+
+    statusEl.className = `alert text-sm mt-4 ${classes[type] || classes.info}`;
+    statusEl.textContent = message;
+    statusEl.classList.remove('hidden');
+}
+
+function clearPreviewFilterStatus() {
+    const statusEl = document.getElementById('preview-filter-status');
+    if (!statusEl) return;
+
+    statusEl.textContent = '';
+    statusEl.classList.add('hidden');
+}
+
 function resetForm() {
     document.getElementById('data_type').value = '';
     document.getElementById('time_period').value = '';
@@ -6,8 +30,9 @@ function resetForm() {
     document.getElementById('indicator').value = '';
     document.getElementById('limit').value = '20';
 
-    if (confirm('Atur ulang semua filter?')) {
-        const form = document.querySelector('form');
+    setPreviewFilterStatus('Filter diatur ulang. Memuat data tanpa filter...', 'info');
+    const form = document.querySelector('form');
+    if (form) {
         form.submit();
     }
 }
@@ -19,15 +44,21 @@ function clearField(fieldId) {
 function setLimitAndSubmit(limitValue) {
     document.getElementById('limit').value = limitValue;
     const form = document.querySelector('form');
-    form.submit();
+    if (form) {
+        form.submit();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    clearPreviewFilterStatus();
+
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
             const form = document.querySelector('form');
-            form.submit();
+            if (form) {
+                form.submit();
+            }
         }
     });
 });
