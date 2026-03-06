@@ -43,6 +43,16 @@ function toggleSelectAll() {
     updateSelectAllState();
 }
 
+function toggleSelectAllMobile(mobileSelectAll) {
+    if (!mobileSelectAll) return;
+    // Get only mobile visible checkboxes (in mobile table)
+    const mobileTable = mobileSelectAll.closest('table');
+    if (!mobileTable) return;
+    const checkboxes = mobileTable.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => { cb.checked = mobileSelectAll.checked; });
+    updateBulkActions();
+}
+
 function updateBulkActions() {
     const checkboxes = getCheckedVisibleRowCheckboxes();
     const bulkActions = document.getElementById('bulk-actions');

@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 *.so
 .Python
+env/
+venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -19,15 +22,15 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
 
-# IDE and editor files
+# IDE
 .cursor/
 .vscode/
 .idea/
@@ -35,35 +38,26 @@ env/
 *.swo
 *~
 
-# Playwright
-.playwright/
+# Testing
 .playwright-mcp/
+playwright-report/
+test-results/
+tests/logs/
+simple_tests/__pycache__/
+tests/__pycache__/
 
-# OS generated files
+# Uploads
+uploads/*.xlsx
+uploads/*.csv
+uploads/*.xls
+
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Logs
 *.log
-logs/
 
-# Temporary files
+# Local temp files
 *.tmp
-*.temp
-
-# Database files (uncomment if you want to ignore them)
-# data.db
-# *.db
-
-# Uploads (might contain sensitive data)
-# uploads/
-
-# Static files cache
-# static/
-# Node
-node_modules/
+*~

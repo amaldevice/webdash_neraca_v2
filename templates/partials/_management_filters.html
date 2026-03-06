@@ -34,13 +34,25 @@
             <label for="uploader" class="label">
                 <span class="label-text">Pengunggah</span>
             </label>
-            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}" class="control" placeholder="Cari pengunggah...">
+            <input type="text" id="uploader" name="uploader" value="{{ filters.uploader }}"
+                   class="control" placeholder="Cari pengunggah..." list="uploader-options">
+            <datalist id="uploader-options">
+                {% for uploader in filter_options.uploaders %}
+                <option value="{{ uploader }}">
+                {% endfor %}
+            </datalist>
         </div>
         <div class="form-control">
             <label for="indicator" class="label">
                 <span class="label-text">Indikator</span>
             </label>
-            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}" class="control" placeholder="Cari indikator...">
+            <input type="text" id="indicator" name="indicator" value="{{ filters.indicator }}"
+                   class="control" placeholder="Cari indikator..." list="indicator-options">
+            <datalist id="indicator-options">
+                {% for indicator in filter_options.indicators %}
+                <option value="{{ indicator }}">
+                {% endfor %}
+            </datalist>
         </div>
         <div class="form-actions-bar xl:col-span-4 xl:justify-end">
             <button type="submit" class="btn btn-primary">Terapkan Filter</button>

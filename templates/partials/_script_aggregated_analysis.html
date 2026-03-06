@@ -44,19 +44,19 @@ function getTrendCellHTML(changeType) {
     const trendLabel = isIncrease ? 'Naik' : (isDecrease ? 'Turun' : 'Stabil');
 
     if (!isIncrease && !isDecrease) {
-        return `<span class="inline-flex items-center gap-1 ${trendClass}" title="${trendLabel}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        return `<span class="inline-flex items-center justify-center ${trendClass}" title="${trendLabel}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
             <span class="sr-only">${trendLabel}</span>
         </span>`;
     }
 
-    return `<span class="inline-flex items-center gap-1 ${trendClass}" title="${trendLabel}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    return `<span class="inline-flex items-center justify-center ${trendClass}" title="${trendLabel}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="none" aria-hidden="true">
             ${isIncrease
-                ? '<path d="M4 12l4-4 3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />'
-                : '<path d="M4 8l4 4 3-3 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 14h4v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />'}
+                ? '<path d="M4 12l4-4 3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 6h4v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />'
+                : '<path d="M4 8l4 4 3-3 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M12 14h4v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />'}
         </svg>
         <span class="sr-only">${trendLabel}</span>
     </span>`;
@@ -108,8 +108,9 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
                 const key = tab.getAttribute('data-tab');
                 tabEls.forEach(t => {
                     const active = (t === tab);
-                    t.classList.toggle('btn-primary', active);
-                    t.classList.toggle('btn-soft', !active);
+                    t.classList.toggle('period-tab-active', active);
+                    t.classList.toggle('period-tab-inactive', !active);
+                    t.setAttribute('aria-selected', active ? 'true' : 'false');
                 });
                 sectionEls.forEach(sec => {
                     sec.classList.toggle('hidden', sec.getAttribute('data-section') !== key);
@@ -155,10 +156,14 @@ function generatePeriodAnalysisHTML(analysis) {
     html += `
       <div class="mt-6">
         <div class="bg-base-200/40 border border-base-200 rounded-box p-2">
-          <div class="join flex flex-wrap gap-2">
+          <div class="period-tabs-container" role="tablist" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
             ${tabs.map(t => `
-              <button type="button" class="${t.key===defaultTab?'btn btn-sm join-item btn-primary':'btn-soft btn-sm join-item'}" data-tab="${t.key}">
-                <span>${t.label}</span>
+              <button type="button"
+                class="period-tab-btn ${t.key===defaultTab ? 'period-tab-active' : 'period-tab-inactive'}"
+                data-tab="${t.key}"
+                role="tab"
+                aria-selected="${t.key===defaultTab ? 'true' : 'false'}">
+                ${t.label}
               </button>
             `).join('')}
           </div>

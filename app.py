@@ -620,7 +620,10 @@ def data_management():
         "total_entries": total_entries
     }
 
-    return render_template("data_management.html", entries=entries, filters=filters)
+    # Get filter options for autocomplete
+    filter_options = get_filter_options()
+
+    return render_template("data_management.html", entries=entries, filters=filters, filter_options=filter_options)
 
 
 if __name__ == "__main__":
