@@ -31,6 +31,36 @@
             </select>
         </div>
         <div class="form-control">
+            <label for="start_period" class="label">
+                <span class="label-text">Rentang Periode Mulai</span>
+            </label>
+            <input
+                type="text"
+                id="start_period"
+                name="start_period"
+                value="{{ filters.start_period or '' }}"
+                class="control"
+                placeholder="YYYY / YYYY-MM / YYYY-Q1"
+                pattern="^$|^\d{4}(-\d{1,2}|-Q[1-4])?$"
+                title="Format contoh: YYYY, YYYY-MM, YYYY-Q1"
+            >
+        </div>
+        <div class="form-control">
+            <label for="end_period" class="label">
+                <span class="label-text">Rentang Periode Akhir</span>
+            </label>
+            <input
+                type="text"
+                id="end_period"
+                name="end_period"
+                value="{{ filters.end_period or '' }}"
+                class="control"
+                placeholder="YYYY / YYYY-MM / YYYY-Q1"
+                pattern="^$|^\d{4}(-\d{1,2}|-Q[1-4])?$"
+                title="Format contoh: YYYY, YYYY-MM, YYYY-Q1"
+            >
+        </div>
+        <div class="form-control">
             <label for="uploader" class="label">
                 <span class="label-text">Pengunggah</span>
             </label>

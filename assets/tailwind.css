@@ -172,6 +172,14 @@
     @apply sticky top-0 z-[1] bg-base-200 text-base-content font-semibold;
   }
 
+  .data-table-wrap {
+    @apply table-wrap table-wrap--sticky;
+  }
+
+  .data-table {
+    @apply table table-zebra w-full;
+  }
+
   .table-wrap .table tbody tr:hover {
     @apply bg-base-200/60;
   }
@@ -195,5 +203,82 @@
 
   .aggregated-plot-display {
     min-height: 480px;
+  }
+
+  /* Enhanced Table Styles */
+  .table {
+    @apply border-collapse;
+  }
+
+  .table th,
+  .table td {
+    @apply px-4 py-3 text-left align-middle;
+  }
+
+  .table th {
+    @apply bg-base-200/80 font-semibold text-base-content border-b border-base-300;
+  }
+
+  .table tbody tr {
+    @apply border-b border-base-200/50 transition-colors duration-150;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-base-200/40;
+  }
+
+  .table tbody tr:last-child {
+    @apply border-b-0;
+  }
+
+  .data-table thead th {
+    @apply text-sm;
+  }
+
+  .data-table thead th,
+  .data-table td {
+    @apply py-3;
+  }
+
+  .data-table td .chip {
+    @apply text-xs;
+  }
+
+  .data-table--mobile thead th,
+  .data-table--mobile td {
+    @apply py-2.5;
+  }
+
+  /* Table variants */
+  .table--compact th,
+  .table--compact td {
+    @apply px-3 py-2 text-sm;
+  }
+
+  .table--dense th,
+  .table--dense td {
+    @apply px-2 py-1.5 text-xs;
+  }
+
+  /* Cell alignment utilities */
+  .table-cell--center {
+    @apply text-center;
+  }
+
+  .table-cell--right {
+    @apply text-right;
+  }
+
+  /* Data display utilities */
+  .table-data--bold {
+    @apply font-semibold;
+  }
+
+  .table-data--muted {
+    @apply text-base-content/60;
+  }
+
+  .table-data--truncate {
+    @apply truncate max-w-0;
   }
 }

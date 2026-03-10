@@ -223,6 +223,16 @@ def get_available_years() -> list[int]:
     return years
 
 
+def _get_range_params(source, start_key: str = "start_period", end_key: str = "end_period") -> tuple[str | None, str | None]:
+    """Extract optional period-range parameters from request-like inputs."""
+    start_period = source.get(start_key, "", type=str)
+    end_period = source.get(end_key, "", type=str)
+    return (
+        start_period.strip() if start_period is not None else None,
+        end_period.strip() if end_period is not None else None,
+    )
+
+
 @app.route("/preview-data", methods=["GET"])
 def preview_data():
     # Get filter parameters
@@ -230,6 +240,7 @@ def preview_data():
     time_period = request.args.get("time_period", "")
     uploader = request.args.get("uploader", "")
     indicator = request.args.get("indicator", "")
+    period_start, period_end = _get_range_params(request.args)
 
     # Get pagination parameters
     page = int(request.args.get("page", 1))
@@ -250,6 +261,8 @@ def preview_data():
         time_period=time_period or None,
         uploader=uploader or None,
         indicator=indicator or None,
+        period_start=period_start,
+        period_end=period_end,
         limit=limit,
         offset=offset
     )
@@ -259,7 +272,9 @@ def preview_data():
         data_type=data_type or None,
         time_period=time_period or None,
         uploader=uploader or None,
-        indicator=indicator or None
+        indicator=indicator or None,
+        period_start=period_start,
+        period_end=period_end
     )
 
     total_pages = (total_entries + limit - 1) // limit  # Ceiling division
@@ -269,6 +284,8 @@ def preview_data():
         "time_period": time_period,
         "uploader": uploader,
         "indicator": indicator,
+        "start_period": period_start,
+        "end_period": period_end,
         "page": page,
         "limit": limit,
         "total_pages": total_pages,
@@ -290,11 +307,14 @@ def export_data():
     time_period = request.args.get("time_period")
     uploader = request.args.get("uploader")
     indicator = request.args.get("indicator")
+    period_start, period_end = _get_range_params(request.args)
     entries = query_data_entries(
         data_type=data_type,
         time_period=time_period,
         uploader=uploader,
         indicator=indicator,
+        period_start=period_start,
+        period_end=period_end,
         limit=1000
     )
     if fmt == "excel":
@@ -352,11 +372,23 @@ def aggregated_summary():
 def generate_plot():
     indicator = request.form.get("indicator_filter", "").strip()
     time_range = request.form.get("time_range", "all")
+    period_start, period_end = _get_range_params(request.form, start_key="period_start", end_key="period_end")
 
     if not indicator:
         return jsonify({"error": "Pilih indikator terlebih dahulu"})
 
-    fig_json = generate_indicator_line_chart(indicator, time_range)
+    if time_range == "all":
+        range_start = None
+        range_end = None
+    else:
+        normalized_year = time_range.strip()
+        range_start = normalized_year
+        range_end = normalized_year
+
+    start_period = period_start or range_start
+    end_period = period_end or range_end
+
+    fig_json = generate_indicator_line_chart(indicator, time_range, start_period, end_period)
     return jsonify({"plot_json": fig_json})
 
 
@@ -364,11 +396,12 @@ def generate_plot():
 def generate_period_analysis():
     indicator = request.form.get("indicator", "").strip()
     analysis_year = request.form.get("year", "").strip()
+    period_start, period_end = _get_range_params(request.form, start_key="period_start", end_key="end_period")
 
     if not indicator:
         return jsonify({"error": "Pilih indikator terlebih dahulu"})
 
-    results = calculate_period_comparisons(indicator, analysis_year or None)
+    results = calculate_period_comparisons(indicator, analysis_year or None, period_start, period_end)
 
     if "error" in results:
         return jsonify({"error": results["error"]})
@@ -376,11 +409,21 @@ def generate_period_analysis():
     return jsonify({"analysis": results})
 
 
-def generate_indicator_line_chart(indicator, time_range="all"):
+def generate_indicator_line_chart(
+    indicator,
+    time_range="all",
+    period_start: str | None = None,
+    period_end: str | None = None
+):
     """Generate line chart for a specific indicator with time filtering"""
 
-    # Get data for specific indicator
-    entries = query_data_entries(limit=1000)
+    # Get data for specific indicator (with optional period filter)
+    entries = query_data_entries(
+        indicator=indicator,
+        limit=1000,
+        period_start=period_start,
+        period_end=period_end,
+    )
 
     if not entries:
         return "<div class='no-data'>Tidak ada data untuk membuat plot</div>"
@@ -394,9 +437,9 @@ def generate_indicator_line_chart(indicator, time_range="all"):
     if df_filtered.empty:
         return f"<div class='error'>Tidak ada data untuk indikator '{indicator}'</div>"
 
-    # Apply time range filter
     if time_range != "all":
-        if 'tanggal_data' in df_filtered.columns:
+        # Keep backward-compatible explicit time_range filtering if provided
+        if time_range and 'tanggal_data' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['tanggal_data'].str.startswith(time_range)]
 
     # Sort by date for proper line chart
@@ -451,10 +494,12 @@ def generate_indicator_line_chart(indicator, time_range="all"):
 @app.route("/data-management", methods=["GET", "POST"])
 def data_management():
     # Handle filters
-    data_type = request.args.get("data_type", "")
-    time_period = request.args.get("time_period", "")
-    uploader = request.args.get("uploader", "")
-    indicator = request.args.get("indicator", "")
+    filter_source = request.values
+    data_type = filter_source.get("data_type", "")
+    time_period = filter_source.get("time_period", "")
+    uploader = filter_source.get("uploader", "")
+    indicator = filter_source.get("indicator", "")
+    period_start, period_end = _get_range_params(filter_source)
 
     # Handle pagination parameters
     page = int(request.args.get("page", 1))
@@ -482,7 +527,9 @@ def data_management():
                 data_type=data_type or None,
                 time_period=time_period or None,
                 uploader=uploader or None,
-                indicator=indicator or None
+                indicator=indicator or None,
+                period_start=period_start,
+                period_end=period_end
             )
             flash(f"{deleted_count} data berhasil dihapus berdasarkan filter.", "success")
 
@@ -549,7 +596,8 @@ def data_management():
                     except ValueError:
                         flash("Nilai harus berupa angka.", "error")
                         return redirect(url_for("data_management", data_type=data_type, time_period=time_period,
-                                              uploader=uploader, indicator=indicator))
+                                              uploader=uploader, indicator=indicator,
+                                              start_period=period_start, end_period=period_end))
 
                 if updates:
                     updated_count = bulk_update_entries(selected_ids, updates)
@@ -586,8 +634,15 @@ def data_management():
             else:
                 flash("Semua kolom wajib diisi.", "error")
 
-        return redirect(url_for("data_management", data_type=data_type, time_period=time_period,
-                              uploader=uploader, indicator=indicator))
+        return redirect(url_for(
+            "data_management",
+            data_type=data_type,
+            time_period=time_period,
+            uploader=uploader,
+            indicator=indicator,
+            start_period=period_start,
+            end_period=period_end
+        ))
 
     # Get data for display with proper pagination
     entries = query_data_entries(
@@ -595,6 +650,8 @@ def data_management():
         time_period=time_period or None,
         uploader=uploader or None,
         indicator=indicator or None,
+        period_start=period_start,
+        period_end=period_end,
         limit=limit,
         offset=offset
     )
@@ -604,7 +661,9 @@ def data_management():
         data_type=data_type or None,
         time_period=time_period or None,
         uploader=uploader or None,
-        indicator=indicator or None
+        indicator=indicator or None,
+        period_start=period_start,
+        period_end=period_end
     )
 
     total_pages = (total_entries + limit - 1) // limit  # Ceiling division
@@ -614,6 +673,8 @@ def data_management():
         "time_period": time_period,
         "uploader": uploader,
         "indicator": indicator,
+        "start_period": period_start,
+        "end_period": period_end,
         "page": page,
         "limit": limit,
         "total_pages": total_pages,
@@ -636,6 +697,7 @@ def export_period_analysis_excel():
 
     indicator = request.form.get("indicator", "").strip()
     analysis_year = request.form.get("year", "").strip()
+    period_start, period_end = _get_range_params(request.form, start_key="period_start", end_key="end_period")
 
     if not indicator:
         flash("Pilih indikator terlebih dahulu.", "error")
@@ -647,7 +709,7 @@ def export_period_analysis_excel():
         year_param = int(analysis_year)
 
     # Get analysis data
-    results = calculate_period_comparisons(indicator, year_param)
+    results = calculate_period_comparisons(indicator, year_param, period_start, period_end)
 
     if "error" in results:
         flash(results["error"], "error")

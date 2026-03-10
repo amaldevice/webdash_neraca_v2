@@ -29,6 +29,9 @@ todos:
   - id: implement-export-feature
     content: Provide CSV/Excel export from dashboard/aggregated views
     status: pending
+  - id: add-period-range-filter
+    content: Add start/end period date-range filters on Preview-Data, Data-Management, and Aggregated pages
+    status: completed
 isProject: false
 ---
 
@@ -189,9 +192,11 @@ Ringkasan:
 - SQLite schema + insert helpers ready for uploader/version metadata and normalized time breakdowns.
 - Excel parser + manual normalization written so both flows reuse the same persistence path.
 - **Bulk operations implemented**: Added checkbox selection, bulk delete, and bulk update functionality in data management page for efficient multi-record operations.
+- **Table UI consistency implemented**: Harmonized Data-Management and Preview-Data table visuals using shared table classes and metadata badge components, while keeping Data-Management actions and bulk tools unchanged.
 - **Period comparison analysis implemented**: Added Q to Q, M to M, Y to Y, YTD, and C to C analysis with interactive pivot tables for indicator analysis.
 - **Data management pagination implemented**: Added configurable rows per page (5, 10, 15, 20, 30, 50, 100) with persistent checkbox state across page changes.
 - **Preview data pagination implemented**: Added configurable rows per page (5, 10, 15, 20, 30, 50, 100) with full pagination controls.
+- **Date-range filtering implemented**: Added `start_period`/`end_period` filters across Preview-Data, Data-Management, and Aggregated pages with SQL-level filtering, URL-state persistence, and export/plot/analysis propagation.
 
 ## Project Rule
 

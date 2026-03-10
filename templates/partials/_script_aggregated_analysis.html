@@ -66,6 +66,8 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     const generatePivotButton = this;
     const indicator = document.getElementById('analysis_indicator').value;
     const year = document.getElementById('analysis_year').value;
+    const periodStart = document.getElementById('period_start') ? document.getElementById('period_start').value : '';
+    const periodEnd = document.getElementById('period_end') ? document.getElementById('period_end').value : '';
 
     clearInlineStatus('pivot-form-status');
 
@@ -81,6 +83,8 @@ document.getElementById('generate-pivot').addEventListener('click', function() {
     const formData = new URLSearchParams();
     formData.append('indicator', indicator);
     formData.append('year', year);
+    formData.append('period_start', periodStart);
+    formData.append('end_period', periodEnd);
 
     fetch('/generate-period-analysis', {
         method: 'POST',
@@ -365,6 +369,8 @@ function exportPeriodAnalysis(indicator, year) {
     }
 
     setInlineStatus('pivot-form-status', 'info', 'Sedang menyiapkan file Excel...');
+    const periodStart = document.getElementById('period_start') ? document.getElementById('period_start').value : '';
+    const periodEnd = document.getElementById('period_end') ? document.getElementById('period_end').value : '';
 
     // Create form for POST submission (to handle file download)
     const form = document.createElement('form');
@@ -384,6 +390,18 @@ function exportPeriodAnalysis(indicator, year) {
     yearInput.value = year || '';
     form.appendChild(yearInput);
 
+    const periodStartInput = document.createElement('input');
+    periodStartInput.type = 'hidden';
+    periodStartInput.name = 'period_start';
+    periodStartInput.value = periodStart || '';
+    form.appendChild(periodStartInput);
+
+    const periodEndInput = document.createElement('input');
+    periodEndInput.type = 'hidden';
+    periodEndInput.name = 'end_period';
+    periodEndInput.value = periodEnd || '';
+    form.appendChild(periodEndInput);
+
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
@@ -397,6 +415,12 @@ function exportPeriodAnalysis(indicator, year) {
 document.getElementById('reset-pivot').addEventListener('click', function() {
     document.getElementById('pivot-result').innerHTML = '<p class="text-base-content/60 mb-0">Pilih indikator dan klik "Hasilkan Analisis Periode" untuk melihat analisis perbandingan periode.</p>';
     document.getElementById('pivot-form').reset();
+    if (document.getElementById('period_start')) {
+        document.getElementById('period_start').value = '';
+    }
+    if (document.getElementById('period_end')) {
+        document.getElementById('period_end').value = '';
+    }
     clearInlineStatus('pivot-form-status');
 });
 
@@ -411,6 +435,8 @@ function handlePlotGeneration() {
     const generatePlotButton = document.getElementById('generate-plot');
     const indicatorFilter = document.getElementById('indicator_filter');
     const timeRange = document.getElementById('time_range');
+    const periodStartInput = document.getElementById('start_period');
+    const periodEndInput = document.getElementById('end_period');
 
     clearInlineStatus('plot-form-status');
 
@@ -421,6 +447,8 @@ function handlePlotGeneration() {
 
     const indicatorValue = indicatorFilter.value;
     const timeValue = timeRange.value;
+    const periodStart = periodStartInput ? periodStartInput.value : '';
+    const periodEnd = periodEndInput ? periodEndInput.value : '';
 
     if (!indicatorValue || indicatorValue === '') {
         setInlineStatus('plot-form-status', 'warning', 'Pilih indikator terlebih dahulu.');
@@ -442,6 +470,8 @@ function handlePlotGeneration() {
     const formData = new URLSearchParams();
     formData.append('indicator_filter', indicatorValue);
     formData.append('time_range', timeValue);
+    formData.append('period_start', periodStart);
+    formData.append('end_period', periodEnd);
 
     fetch('/generate-plot', {
         method: 'POST',

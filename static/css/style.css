@@ -5,6 +5,75 @@
     --app-focus-offset: var(--fallback-b1, oklch(var(--b1) / 1));
 }
 
+.data-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(var(--b3));
+    background: oklch(var(--b1));
+}
+
+.data-table-wrap--sticky {
+    max-height: min(70vh, 720px);
+    overflow: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: oklch(var(--b2));
+    color: oklch(var(--bc));
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.data-table thead th,
+.data-table td,
+.data-table th {
+    vertical-align: middle;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid color-mix(in oklch, oklch(var(--b3)) 55%, transparent);
+    transition: background-color 150ms ease;
+}
+
+.data-table tbody tr:hover {
+    background: color-mix(in oklch, oklch(var(--b2)) 40%, transparent);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: 0;
+}
+
+.data-table--compact th,
+.data-table--compact td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.data-table--dense th,
+.data-table--dense td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.data-table td .chip {
+    font-size: 0.75rem;
+}
+
 .app-topbar {
     position: sticky;
     top: 0;
@@ -223,18 +292,9 @@
         height: 1.25rem;
     }
 
-    .table-wrap--sticky.management-table-wrap {
-        max-height: none;
-    }
-
     .management-table-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-    }
-
-    .management-table th,
-    .management-table td {
-        white-space: nowrap;
     }
 
     .management-table .control,

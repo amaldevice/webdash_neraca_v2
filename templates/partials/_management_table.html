@@ -24,13 +24,15 @@
                 </select>
             </div>
             <div class="toolbar-actions">
-            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator %}
+            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator or filters.start_period or filters.end_period %}
             <form method="POST" class="self-end md:pt-8">
                 <input type="hidden" name="action" value="delete_by_filter">
                 <input type="hidden" name="data_type" value="{{ filters.data_type }}">
                 <input type="hidden" name="time_period" value="{{ filters.time_period }}">
                 <input type="hidden" name="uploader" value="{{ filters.uploader }}">
                 <input type="hidden" name="indicator" value="{{ filters.indicator }}">
+                <input type="hidden" name="start_period" value="{{ filters.start_period or '' }}">
+                <input type="hidden" name="end_period" value="{{ filters.end_period or '' }}">
                 <button type="button" class="btn-danger-soft btn-sm js-confirm-action" data-confirm-title="Hapus data sesuai filter?" data-confirm-message="Semua data yang cocok dengan filter aktif akan dihapus." data-confirm-label="Hapus Data" data-confirm-submit="true">Hapus Berdasarkan Filter</button>
             </form>
             {% endif %}
@@ -47,8 +49,8 @@
     <div id="management-inline-status" class="alert alert-warning text-sm mt-3 hidden" role="status" aria-live="polite"></div>
 
     {# Mobile: Compact horizontal table view (like preview-data) #}
-    <div class="mt-4 md:hidden overflow-x-auto">
-        <table class="table table-zebra w-full text-sm">
+    <div class="mt-4 md:hidden data-table-wrap">
+        <table class="data-table data-table--compact data-table--mobile">
             <thead>
                 <tr class="text-base-content/60">
                     <th class="w-8"><input type="checkbox" class="checkbox checkbox-sm" onclick="toggleSelectAllMobile(this)"></th>
@@ -70,8 +72,12 @@
                     </td>
                     <td class="font-semibold">{{ entry.value }}</td>
                     <td>
-                        <div class="text-xs">{{ entry.data_type|title }}</div>
-                        <div class="text-xs text-base-content/60">{{ entry.tanggal_data }}</div>
+                        {% set row = entry %}
+                        <div class="flex flex-wrap gap-1">
+                            {% include "partials/_data_type_badge.html" %}
+                            {% include "partials/_time_period_badge.html" %}
+                            <span class="chip">{{ entry.tanggal_data }}</span>
+                        </div>
                     </td>
                     <td>
                         <div class="flex gap-1">
@@ -103,8 +109,8 @@
     </div>
 
     <div class="mt-4 hidden md:block">
-        <div class="table-wrap table-wrap--sticky management-table-wrap">
-            <table class="table table-zebra w-full management-table">
+        <div class="data-table-wrap data-table-wrap--sticky management-table-wrap">
+            <table class="data-table management-table">
                 <thead class="text-sm">
                     <tr>
                         <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
@@ -126,11 +132,12 @@
                         </td>
                         <td class="font-semibold">{{ entry.value }}</td>
                         <td>
-                            <div class="flex flex-wrap gap-1">
-                                <span class="chip">{{ entry.data_type|title }}</span>
-                                <span class="chip">{{ entry.time_period|title }}</span>
-                                <span class="chip">{{ entry.tanggal_data }}</span>
-                            </div>
+                        {% set row = entry %}
+                        <div class="flex flex-wrap gap-1">
+                            {% include "partials/_data_type_badge.html" %}
+                            {% include "partials/_time_period_badge.html" %}
+                            <span class="chip">{{ entry.tanggal_data }}</span>
+                        </div>
                         </td>
                         <td>
                             <div class="flex flex-wrap gap-1">

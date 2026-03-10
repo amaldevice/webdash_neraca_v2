@@ -1,9 +1,10 @@
-{% if row.time_period == 'monthly' %}
+{% set _badge_row = row if row is defined else entry if entry is defined else None %}
+{% if _badge_row and _badge_row.time_period == 'monthly' %}
 <span class="badge badge-outline">Bulanan</span>
-{% elif row.time_period == 'quarterly' %}
+{% elif _badge_row and _badge_row.time_period == 'quarterly' %}
 <span class="badge badge-outline">Triwulanan</span>
-{% elif row.time_period == 'yearly' %}
+{% elif _badge_row and _badge_row.time_period == 'yearly' %}
 <span class="badge badge-outline">Tahunan</span>
 {% else %}
-<span class="badge badge-outline">{{ row.time_period }}</span>
+<span class="badge badge-outline">{{ _badge_row.time_period if _badge_row else '' }}</span>
 {% endif %}

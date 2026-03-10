@@ -1,7 +1,8 @@
-{% if row.data_type == 'flow' %}
+{% set _badge_row = row if row is defined else entry if entry is defined else None %}
+{% if _badge_row and _badge_row.data_type == 'flow' %}
 <span class="badge badge-primary badge-outline">Flow</span>
-{% elif row.data_type == 'stock' %}
+{% elif _badge_row and _badge_row.data_type == 'stock' %}
 <span class="badge badge-accent badge-outline">Stock</span>
 {% else %}
-<span class="badge badge-outline">{{ row.data_type }}</span>
+<span class="badge badge-outline">{{ _badge_row.data_type if _badge_row else '' }}</span>
 {% endif %}
