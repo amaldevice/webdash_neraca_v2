@@ -1,14 +1,14 @@
-# BPS Data System
+# Sistem Data BPS
 
-> Minimal Flask + SQLite prototype to upload BPS Excel templates or manual entries, normalize them, cache aggregated summaries, and expose filtered dashboards + raw exports.
+> Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun ringkasan agregat, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
 
-## 1-3 Fast Setup
+## Langkah Cepat (1-3 Langkah)
 
-1. Clone repository dan masuk ke folder proyek.
-2. Install dependencies memakai `pip` atau `uv pip`.
-3. Jalankan inisialisasi database, lalu start aplikasi di `http://127.0.0.1:5000`.
+1. Lakukan kloning repositori dan masuk ke direktori proyek.
+2. Instal ketergantungan menggunakan `pip` atau `uv pip`.
+3. Inisialisasi basis data, lalu jalankan aplikasi pada `http://127.0.0.1:5000`.
 
-## Installation (pip)
+## Instalasi (pip)
 
 ```bash
 git clone <repo-url>
@@ -22,7 +22,7 @@ npm run build:css
 python app.py
 ```
 
-## Installation (uv pip)
+## Instalasi (uv pip)
 
 ```bash
 git clone <repo-url>
@@ -37,135 +37,139 @@ npm run build:css
 python app.py
 ```
 
-## Features
+## Fitur
 
-### Core Features
-- [x] **Landing portal**: Aggregated cards, metadata, and quick actions for upload/manual/summary views.
-- [x] **Dual ingestion paths**: Excel parser handles horizontal/vertical templates while manual input keeps metadata enforced.
-- [x] **Aggregation & caching**: Aggregator layer stores pre-computed cards and metadata for landing and aggregated reuse.
+### Fitur Inti
+- [x] **Portal beranda (landing page)**: Menyediakan kartu ringkasan agregat, metadata penting, dan akses cepat untuk unggah, input manual, serta ringkasan.
+- [x] **Dua jalur masuk data**: Parser Excel mendukung template horizontal dan vertikal, sedangkan input manual tetap memaksa keterisian metadata secara konsisten.
+- [x] **Agregasi dan cache ringkasan**: Layer agregator menyimpan kartu ringkasan dan metadata yang siap pakai ulang pada halaman beranda maupun halaman agregat.
 
-### Additional Features
-- [x] **Date-range filtering**: Preview-Data dan Data-Management memakai `start_period` + `end_period`; Aggregated memakai `period_start` + `period_end` (grafik) dan `period_start` + `end_period` (analisis periode).
-- [x] **Filtered table browsing**: Pagination, limit selector, and consistent row/table rendering across halaman utama data.
-- [x] **Raw exports**: Download filtered rows as CSV/Excel via `/export` dengan parameter filter yang tetap terjaga.
-- [x] **Validation guardrails**: Metadata validation memastikan uploader, version, data_type, dan time_period tetap valid.
-- [x] **Bulk actions**: Data-Management memiliki bulk update, bulk delete, dan pilihan delete by filter.
-- [x] **Period analysis workflow**: Aggregated menyediakan analisis periode (M to M, Q to Q, Y to Y, YTD, C to C) dan export Excel hasil analisis.
+### Fitur Tambahan
+- [x] **Penyaringan rentang periode**
+  - Halaman **Preview-Data** dan **Data-Management** menggunakan parameter `start_period` + `end_period`.
+  - Halaman **Aggregated** menggunakan parameter `period_start` + `period_end` untuk grafik, serta `period_start` + `end_period` untuk analisis periode.
+  - Semua fitur filter ini berlaku untuk proses ekspor dan analisis agar hasil yang ditampilkan konsisten dengan ruang lingkup waktu yang dipilih.
+- [x] **Penelusuran tabel terfilter**: Mendukung paginasi dan pembatasan jumlah data per halaman, dengan tampilan baris/tabel yang konsisten.
+- [x] **Ekspor data mentah**: Menyediakan unduhan CSV/Excel melalui `/export` dengan mempertahankan parameter filter aktif.
+- [x] **Validasi metadata**: Memastikan atribut seperti `uploader`, `version`, `data_type`, dan `time_period` tervalidasi sejak proses unggah/input.
+- [x] **Aksi massal**: Halaman Data-Management menyediakan pembaruan massal, penghapusan massal, dan penghapusan berbasis filter.
+- [x] **Alur analisis periode**: Halaman Aggregated mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
 
-### Feature Coverage yang sebelumnya belum tertulis
-- ✅ `playwright_period_filter_smoke.spec.js` sebagai smoke test untuk verifikasi alur rentang periode.
-- ✅ Konsistensi UI tombol, form, dan komponen tabel yang sudah disatukan antar halaman (preview + management).
-- ✅ Penyimpanan state filter di URL untuk preview/data-management agar mudah dibagikan/reuse.
-- ✅ Batas halaman (pagination) dan reset filter state otomatis untuk menjaga hasil filter tetap konsisten saat pindah halaman.
+### Cakupan Fitur yang sebelumnya belum terdokumentasi
+- `playwright_period_filter_smoke.spec.js` sudah tersedia sebagai smoke test untuk validasi alur filter rentang periode.
+- Konsistensi komponen tombol, formulir, dan susunan tabel lintas halaman sudah distandarkan (pratinjau dan manajemen data).
+- Status filter dipertahankan pada URL untuk preview dan data-management agar mudah dibagikan ulang.
+- Paginasi dan reset otomatis telah diatur untuk menjaga konsistensi hasil saat halaman berubah.
 
-## Architecture
+## Arsitektur
 
-### High-Level Overview
-Flask routes handle upload/manual ingestion → shared parser/normalizer → SQLite `data_entries` store + aggregation cache → aggregator refreshes summary → templates render landing, preview, data-management, and aggregated pages → exports/analysis routes stream raw data and computed analysis.
+### Gambaran Tingkat Tinggi
+Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalisasi bersama, lalu disimpan ke `data_entries` di SQLite dengan dukungan cache agregat. Selanjutnya layer agregator memperbarui ringkasan, template menampilkan halaman beranda, pratinjau, manajemen data, serta halaman agregat, dan endpoint ekspor/analisis menyediakan keluaran data mentah maupun hasil perhitungan.
 
-### Component Diagram
+### Diagram Komponen
 ```
-Landing Page + Forms
+Halaman Beranda + Form
     ↓ HTTP POST
-Flask App (app.py)
-    ↓ Parser/Model helpers
+Aplikasi Flask (app.py)
+    ↓ Parser / helper model
     ↓ SQLite (data_entries, aggregated_summary)
-Aggregation Trigger (refresh_aggregated_summary) → cached summary
+Pemicu agregasi (refresh_aggregated_summary) → ringkasan cache
     ↓ HTTP GET
-Preview / Data-Management / Aggregated Templates
+Template Preview / Data-Management / Aggregated
 ```
 
-### Data Flow
-1. **User Action** → Upload Excel or fill manual form (metadata + data_type/time_period).
-2. **Backend Processing** → Validation → parser/normalizer → insert into SQLite → trigger aggregation refresh.
-3. **Response** → Updated widgets, filtered table, export links, and aggregated summaries.
+### Alur Data
+1. **Aksi pengguna**: Mengunggah Excel atau mengisi formulir manual dengan metadata (`data_type`, `time_period`).
+2. **Pemrosesan backend**: Validasi → parsing/normalisasi → penyimpanan ke SQLite → pemicu refresh agregasi.
+3. **Respons sistem**: Menampilkan kartu ringkasan terbaru, tabel terfilter, tautan ekspor, dan ringkasan agregat.
 
-### Key Workflows
-#### Primary User Journey
-1. User opens `/` to see latest summary, metadata, and shortcut actions.
-2. Upload Excel or input manual record (both require uploader name + version + data metadata).
-3. App parses/normalizes, stores rows, then refreshes cached summary.
-4. User explores:
-   - `/preview-data` untuk melihat tabel data + filter, dengan opsi rentang periode.
-   - `/data-management` untuk maintenance data + bulk actions.
-   - `/aggregated` untuk view agregat dan analisis periodik.
-5. Semua filter relevan (termasuk `start_period`/`end_period`) ikut dipakai saat ekspor maupun analisis.
+### Alur Utama
+1. Pengguna membuka halaman `/` untuk melihat ringkasan terkini, metadata, dan menu cepat.
+2. Pengguna melakukan unggahan Excel atau input manual (keduanya memerlukan informasi penyedia data, versi, dan metadata terkait).
+3. Sistem memproses data, menyimpannya, kemudian memperbarui ringkasan cache.
+4. Pengguna melanjutkan analisis melalui:
+   - `/preview-data` untuk meninjau data tabel dengan filter rentang periode.
+   - `/data-management` untuk pemeliharaan data dan tindakan massal.
+   - `/aggregated` untuk melihat ringkasan agregat dan analisis periodik.
+5. Semua filter terkait, termasuk `start_period`/`end_period`, ikut diterapkan pada ekspor dan analisis.
 
-#### Secondary Workflows
-- `/aggregated` shows cached summary + metadata timestamp.
-- `/export` streams raw CSV/Excel for analysts before aggregation.
+### Alur Tambahan
+- `/aggregated` menampilkan ringkasan cache berikut metadata waktu pembaruan.
+- `/export` menyediakan data mentah (CSV/Excel) sebelum proses agregasi lanjutan.
 
-## Database Schema
+## Skema Basis Data
 
-### Core Tables
-- **data_entries**: Persists uploader metadata, normalize time breakdown, data_type/period, indicator, value.
-- **aggregated_summary**: Cache for latest summary JSON + timestamp.
+### Tabel Utama
+- **data_entries**: Menyimpan metadata pengunggah, rincian waktu, `data_type`, `time_period`, indikator, dan nilai.
+- **aggregated_summary**: Menyimpan ringkasan JSON terbaru beserta timestamp.
 
-### Relationships
+### Relasi
 ```
-data_entries (N) → aggregated_summary (1 cached snapshot per refresh)
+data_entries (N) → aggregated_summary (1 snapshot cache per proses refresh)
 ```
 
-## Tech Stack
+## Tumpukan Teknologi
 
 ### Frontend
-- **Templating**: Jinja2
-- **Styling**: Tailwind CSS + DaisyUI (CLI build) + minimal custom CSS
-- **Asset delivery**: Flask static serving (CSS + JS placeholders)
+- **Template engine**: Jinja2
+- **Styling**: Tailwind CSS + DaisyUI (build via CLI) + CSS custom minimal
+- **Distribusi aset**: Static serving dari Flask
 
 ### Backend
 - **Runtime**: Python 3.12+
 - **Framework**: Flask 3.1
-- **Database**: SQLite
-- **Excel Processing**: pandas + openpyxl
-- **ORM/Helpers**: Plain `sqlite3` wrappers + helper functions
-- **Validation**: Custom Python functions + flash messaging
+- **Basis data**: SQLite
+- **Pemrosesan Excel**: pandas + openpyxl
+- **ORM/helper**: Wrapper `sqlite3` + helper internal
+- **Validasi**: Fungsi validasi Python khusus + flash messaging
 
-### DevOps & Tools
-- **Version Control**: Git
-- **Documentation**: Markdown plans + README
-- **Testing**: `python -m py_compile` syntax checks
+### DevOps & Perangkat Pendukung
+- **Kontrol versi**: Git
+- **Dokumentasi**: Dokumen perencanaan dan README ini
+- **Pengujian sintaks**: `python -m py_compile`
 
-### Environment Variables
+### Variabel Lingkungan
 ```env
 FLASK_SECRET_KEY=change-me-for-production
 FLASK_RUN_PORT=5000
 ```
 
-## Active Endpoints
+## Endpoint Aktif
 ```bash
-GET  /               # landing + summary
-GET,POST /upload     # upload Excel
-GET,POST /manual     # input manual
-GET  /preview-data   # tabel pratinjau + filter/export
-GET,POST /data-management # manage data + bulk action
-GET  /aggregated     # summary agregat + plot/analisis
-GET  /export         # export CSV / Excel (mendukung filter aktif)
-POST /generate-plot  # generate grafik garis berdasarkan indikator + rentang periode
-POST /generate-period-analysis # generate analisis periode
-POST /export-period-analysis # export hasil analisis ke Excel
+GET  /                         # Beranda + ringkasan
+GET,POST /upload               # Unggah file Excel
+GET,POST /manual               # Input data manual
+GET  /preview-data             # Pratinjau data + filter + ekspor
+GET,POST /data-management      # Manajemen data + tindakan massal
+GET  /aggregated               # Ringkasan agregat + grafik + analisis
+GET  /export                   # Ekspor CSV/Excel berdasarkan filter aktif
+POST /generate-plot            # Membuat grafik garis indikator berdasarkan rentang periode
+POST /generate-period-analysis  # Membuat analisis perbandingan periode
+POST /export-period-analysis    # Mengekspor hasil analisis periode ke Excel
 ```
 
-### Available scripts
-This project uses plain Python, so run:
+## Skrip yang Tersedia
+
+Project Python dapat dijalankan dengan perintah berikut:
 ```bash
-python app.py       # start server
-pytest              # run unit tests
+python app.py                  # Menjalankan server lokal
+pytest                         # Menjalankan unit test
 python -m py_compile app.py models.py excel_parser.py aggregator.py
 
-# Frontend assets
+# Aset frontend
 npm run build:css
 ```
-## Usage
 
-### Basic Usage
-1. Visit `http://localhost:5000` for the landing page summary and metadata.
-2. Upload Excel via `/upload` or manually post data at `/manual`.
-3. Use `/preview-data` untuk filter dan ekspor data mentah.
-4. Use `/data-management` untuk kelola data, bulk update, dan delete.
-5. Use `/aggregated` untuk visualisasi + analisis rentang periode.
+## Penggunaan
 
-### API Usage
+### Penggunaan Dasar
+1. Akses `http://localhost:5000` untuk melihat ringkasan dan metadata di beranda.
+2. Lakukan unggahan data melalui `/upload` atau input manual pada `/manual`.
+3. Gunakan `/preview-data` untuk memfilter dan mengekspor data mentah.
+4. Gunakan `/data-management` untuk pemeliharaan, pembaruan massal, serta penghapusan data.
+5. Gunakan `/aggregated` untuk visualisasi dan analisis rentang periode.
+
+### Contoh Pemakaian Endpoint
 ```bash
 GET /preview-data?data_type=flow&time_period=monthly&start_period=2024&end_period=2024-Q4&limit=20&page=1
 GET /data-management?time_period=quarterly&start_period=2024-Q1&end_period=2024-Q4
@@ -176,83 +180,84 @@ POST /generate-period-analysis (form: period_start=2024, end_period=2024-Q4, com
 POST /export-period-analysis (form: period_start=2024, end_period=2024-Q4)
 ```
 
-### Cara cek fitur rentang periode
+### Cara verifikasi fitur rentang periode
 1. **Preview-Data**
    - Buka `/preview-data`.
-   - Isi `Rentang Periode Mulai` dan `Rentang Periode Akhir`, klik `Terapkan Filter`.
-   - Pastikan URL berubah dengan `start_period` + `end_period`, lalu klik export CSV/Excel → file mengikuti filter ini.
+   - Isi `Rentang Periode Mulai` dan `Rentang Periode Akhir`, lalu klik `Terapkan Filter`.
+   - Pastikan URL memuat `start_period` dan `end_period`, kemudian lakukan ekspor CSV/Excel dan verifikasi output mengikuti filter yang sama.
 2. **Data-Management**
    - Buka `/data-management`.
-   - Isi field periode, submit filter, lalu verifikasi tombol aksi (`Hapus Berdasarkan Filter`) muncul sesuai kondisi.
+   - Isi periode yang diinginkan, kirimkan filter, lalu pastikan kontrol aksi (`Hapus Berdasarkan Filter`) tersedia sesuai status filter.
 3. **Aggregated**
    - Buka `/aggregated`.
-   - Isi `Periode Mulai` / `Periode Akhir` pada form plot dan klik `Hasilkan Grafik Garis`; cek payload request mengandung `period_start` dan `end_period`.
-   - Pada `Analisis Periode`, isi `Rentang Periode` lalu klik `Hasilkan Analisis Periode`; pastikan hasil dan export analisis juga memakai rentang yang sama.
+   - Isi `Periode Mulai` dan `Periode Akhir` pada formulir grafik, klik `Hasilkan Grafik Garis`, lalu pastikan payload request membawa `period_start` dan `period_end`.
+   - Pada **Analisis Periode**, isi rentang periode dan klik `Hasilkan Analisis Periode`; pastikan hasil dan ekspor analisis juga menggunakan rentang yang sama.
 
-## Development Guidelines
+## Pedoman Pengembangan
 
-### Code Style
-- Keep Python code ≤ 120 columns.
-- Prefer descriptive helpers (`models.py`, `excel_parser.py`, etc.).
-- Document new routes/templates with inline comments where needed.
+### Gaya Kode
+- Usahakan panjang baris Python tidak melebihi 120 kolom.
+- Prioritaskan helper yang deskriptif (`models.py`, `excel_parser.py`, dan sebagainya).
+- Dokumentasikan route/template baru sesuai kebutuhan agar mudah dipelihara.
 
-### Git Workflow
+### Alur Kerja Git
 ```bash
-git checkout -b feature/<name>
-# make changes
+git checkout -b feature/<nama-fitur>
 git add .
-git commit -m "feat: describe change"
-git push origin feature/<name>
+git commit -m "feat: ..."
+git push origin feature/<nama-fitur>
 ```
 
-### Testing Strategy
-- Run unit tests: `pytest`.
-- Run `python -m py_compile ...` after structural changes.
-- Manual smoke test by exercising upload/manual flows (see `QA_CHECKLIST.md`).
-- Untuk rentang periode, jalankan: `npx playwright test simple_tests/ui_tests/playwright_period_filter_smoke.spec.js`.
+### Strategi Pengujian
+- Jalankan unit test: `pytest`.
+- Jalankan `python -m py_compile ...` setelah perubahan struktural.
+- Lakukan smoke test manual terhadap alur unggah/manual (lihat `QA_CHECKLIST.md`).
+- Untuk skenario rentang periode, jalankan:
+  - `npx playwright test simple_tests/ui_tests/playwright_period_filter_smoke.spec.js`.
 
 ## Deployment
 
-### Production Requirements
-- Python 3.13+ runtime (with Flask, pandas, openpyxl) on server.
-- Filesystem writable for `uploads/` and `data.db`.
-- Configure `FLASK_SECRET_KEY` for session security.
+### Kebutuhan Produksi
+- Runtime Python 3.13+ (dengan Flask, pandas, openpyxl).
+- Direktori kerja harus dapat menulis data ke `uploads/` dan `data.db`.
+- Konfigurasi `FLASK_SECRET_KEY` untuk keamanan sesi.
 
-### Deployment Steps
-1. Prepare server with Python dependencies.
-2. Copy `.db` and `uploads/` directories (or use migration strategy).
-3. Set environment vars (`FLASK_SECRET_KEY`, `FLASK_RUN_PORT`).
-4. Run `python app.py` behind a reverse proxy (e.g., Gunicorn + Nginx).
+### Langkah Deployment
+1. Siapkan server beserta seluruh dependensi Python.
+2. Pindahkan data `.db` dan folder `uploads/` (atau gunakan strategi migrasi yang disetujui tim).
+3. Tetapkan variabel lingkungan yang dibutuhkan (`FLASK_SECRET_KEY`, `FLASK_RUN_PORT`).
+4. Jalankan `python app.py` melalui reverse proxy (contoh: Gunicorn + Nginx).
 
-## Roadmap & Future Enhancements
+## Roadmap Pengembangan
 
-### Short Term
-- [ ] Add authentication + audit trails for uploads.
-- [ ] Improve error states + loading indicators.
-- [ ] Add PDF export + direct Excel template templates.
+### Jangka Pendek
+- [ ] Menambahkan autentikasi pengguna dan jejak audit unggahan.
+- [ ] Meningkatkan pengalaman error handling dan indikator loading.
+- [ ] Menambah fitur ekspor PDF dan template Excel langsung.
 
-### Medium Term
-- [ ] Add scheduled aggregation refresh + data lake sync.
-- [ ] Implement multi-language support (i18n).
-- [ ] Introduce API versioning and request throttling.
+### Jangka Menengah
+- [ ] Menjadwalkan refresh agregasi secara otomatis.
+- [ ] Integrasi sinkronisasi data dengan data lake.
+- [ ] Menambahkan dukungan multi-bahasa untuk antarmuka.
+- [ ] Menyediakan versioning API serta pembatasan request.
 
-### Long Term
-- [ ] Scale via microservices or worker queues.
-- [ ] Add AI signatures for anomaly detection.
-- [ ] Connect to BPS production dashboards or data lakes.
+### Jangka Panjang
+- [ ] Mengarah ke arsitektur berbasis layanan/worker queue apabila skala pertumbuhan meningkat.
+- [ ] Menambahkan analitik deteksi anomali.
+- [ ] Integrasi dengan dashboard BPS tingkat produksi.
 
-## Contributing & Support
+## Kontribusi & Dukungan
 
-### How to Contribute
-1. Fork repository.
-2. Create feature branch.
-3. Write code + tests.
-4. Run lint/test commands.
-5. Submit PR for review.
+### Cara Berkontribusi
+1. Fork repositori.
+2. Buat branch fitur.
+3. Lakukan perubahan kode dan tambah pengujian.
+4. Jalankan perintah lint/test yang diperlukan.
+5. Ajukan PR untuk proses review.
 
-### Support
-- Documentation: this README + `planning.md`.
-- Questions: open GitHub Issues.
+### Dukungan
+- Dokumentasi referensi: README ini dan `planning.md`.
+- Pertanyaan operasional: buat tiket pada GitHub Issues.
 
-## License
+## Lisensi
 MIT License.
