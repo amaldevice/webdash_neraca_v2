@@ -4,7 +4,13 @@
         <label for="uploader" class="label">
             <span class="label-text">Pengunggah</span>
         </label>
-        <input id="uploader" name="uploader" class="control" required>
+        <input
+            id="uploader"
+            name="uploader"
+            class="control"
+            value="{{ form_values.uploader if form_values else '' }}"
+            required
+        >
         <label class="label">
             <span class="field-help">Nama penanggung jawab unggahan.</span>
         </label>
@@ -14,7 +20,13 @@
         <label for="version" class="label">
             <span class="label-text">Versi</span>
         </label>
-        <input id="version" name="version" class="control" required>
+        <input
+            id="version"
+            name="version"
+            class="control"
+            value="{{ form_values.version if form_values else '' }}"
+            required
+        >
         <label class="label">
             <span class="field-help">Gunakan format v1.0, v2.0, dll.</span>
         </label>
@@ -25,8 +37,8 @@
             <span class="label-text">Jenis Data</span>
         </label>
         <select id="data_type" name="data_type" class="control">
-            <option value="flow">Flow</option>
-            <option value="stock">Stock</option>
+            <option value="flow" {% if not form_values or form_values.data_type == 'flow' %}selected{% endif %}>Flow</option>
+            <option value="stock" {% if form_values and form_values.data_type == 'stock' %}selected{% endif %}>Stock</option>
         </select>
         <label class="label">
             <span class="field-help">Flow = arus, Stock = posisi.</span>
@@ -38,11 +50,27 @@
             <span class="label-text">Periode</span>
         </label>
         <select id="time_period" name="time_period" class="control">
-            <option value="monthly">Bulanan</option>
-            <option value="quarterly">Triwulanan</option>
-            <option value="yearly">Tahunan</option>
+            <option value="monthly" {% if not form_values or form_values.time_period == 'monthly' %}selected{% endif %}>Bulanan</option>
+            <option value="quarterly" {% if form_values and form_values.time_period == 'quarterly' %}selected{% endif %}>Triwulanan</option>
+            <option value="yearly" {% if form_values and form_values.time_period == 'yearly' %}selected{% endif %}>Tahunan</option>
         </select>
     </div>
+
+    <div class="form-control">
+        <label for="layout_override" class="label">
+            <span class="label-text">Tipe Layout</span>
+        </label>
+        <select id="layout_override" name="layout_override" class="control">
+            <option value="auto" {% if not form_values or not form_values.layout_override or form_values.layout_override == 'auto' %}selected{% endif %}>Auto (deteksi otomatis)</option>
+            <option value="vertical" {% if form_values and form_values.layout_override == 'vertical' %}selected{% endif %}>Vertical (kolom period)</option>
+            <option value="horizontal" {% if form_values and form_values.layout_override == 'horizontal' %}selected{% endif %}>Horizontal (baris period)</option>
+        </select>
+        <label class="label">
+            <span class="field-help">Pilih jika format Excel tidak terdeteksi otomatis.</span>
+        </label>
+    </div>
+
+    <input type="hidden" name="preview_token" value="{{ upload_preview_token or '' }}">
     </div>
 
     <div class="rounded-2xl border border-dashed border-base-300 bg-base-200/30 p-4">
@@ -61,7 +89,8 @@
     </div>
 
     <div class="form-actions-bar">
-        <button type="submit" class="btn btn-primary">Unggah</button>
+        <button type="submit" name="action" value="preview" class="btn btn-primary">Unggah &amp; Pratinjau</button>
+        <button type="submit" name="action" value="save" class="btn-soft">Simpan Langsung</button>
         <a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
     </div>
 </form>

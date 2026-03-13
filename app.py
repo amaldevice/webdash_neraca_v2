@@ -4,6 +4,7 @@ import io
 import json
 import os
 import sqlite3
+import uuid
 from datetime import datetime
 
 import pandas as pd
@@ -11,13 +12,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.utils import PlotlyJSONEncoder
 
-from flask import Flask, Response, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, Response, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.utils import secure_filename
 
 from aggregator import fetch_aggregated_summary, refresh_aggregated_summary
-from excel_parser import parse_excel
+from excel_parser import parse_excel_payload
 from models import (
-    init_db, insert_entries, query_data_entries, get_total_entries_count,
+    init_db, insert_entries, query_data_entries, get_total_entries_count, get_conn,
     delete_data_entry, delete_data_by_filter, update_data_entry, insert_single_entry,
     get_filter_options, update_data_entry_full, get_unique_indicators,
     bulk_delete_entries, bulk_update_entries, calculate_period_comparisons
@@ -27,6 +28,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}
 ALLOWED_DATA_TYPES = {"flow", "stock"}
 ALLOWED_TIME_PERIODS = {"monthly", "quarterly", "yearly"}
+UPLOAD_PREVIEW_TTL_SECONDS = 20 * 60
+UPLOAD_PREVIEW_CACHE: dict[str, dict] = {}
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "uploads")
@@ -49,6 +52,175 @@ def validate_metadata(data_type: str, time_period: str) -> list[str]:
     return errors
 
 
+def _cleanup_upload_preview_cache() -> None:
+    now = datetime.utcnow().timestamp()
+    expired_tokens = [
+        token
+        for token, payload in UPLOAD_PREVIEW_CACHE.items()
+        if now - payload["created_at"] > UPLOAD_PREVIEW_TTL_SECONDS
+    ]
+    for token in expired_tokens:
+        UPLOAD_PREVIEW_CACHE.pop(token, None)
+    if expired_tokens:
+        session.pop("upload_preview_token", None)
+
+
+def _find_duplicate_entries_in_db(uploader: str, version: str, entries: list[dict]) -> list[dict]:
+    if not entries:
+        return []
+
+    unique_keys = []
+    seen = set()
+    for entry in entries:
+        key = (
+            entry.get("indicator_name"),
+            entry.get("year"),
+            entry.get("month"),
+            entry.get("quarter"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_keys.append(key)
+
+    if not unique_keys:
+        return []
+
+    with get_conn() as conn:
+        placeholders = ",".join(["(?, ?, ?, ?)"] * len(unique_keys))
+        sql = f"""
+            SELECT indicator_name, year, month, quarter
+            FROM data_entries
+            WHERE uploader_name = ? AND version = ? AND (indicator_name, year, month, quarter) IN ({placeholders})
+        """
+        params: list[object] = [uploader, version]
+        for indicator, year, month, quarter in unique_keys:
+            params.extend([indicator, year, month, quarter])
+        rows = conn.execute(sql, params).fetchall()
+
+    duplicates = []
+    for row in rows:
+        duplicates.append(
+            {
+                "indicator_name": row["indicator_name"],
+                "year": row["year"],
+                "month": row["month"],
+                "quarter": row["quarter"],
+            }
+        )
+    return duplicates
+
+
+def _filter_duplicate_entries(
+    entries: list[dict],
+    duplicate_records: list[dict],
+    skip_indexes: set[int],
+) -> tuple[list[dict], int]:
+    duplicate_keys = [
+        (
+            duplicate.get("indicator_name"),
+            duplicate.get("year"),
+            duplicate.get("month"),
+            duplicate.get("quarter"),
+        )
+        for duplicate in duplicate_records
+    ]
+    skip_keys = {key for i, key in enumerate(duplicate_keys) if i in skip_indexes}
+    deduped_entries = []
+    skipped_count = 0
+    for entry in entries:
+        key = (
+            entry.get("indicator_name"),
+            entry.get("year"),
+            entry.get("month"),
+            entry.get("quarter"),
+        )
+        if key in skip_keys:
+            skipped_count += 1
+            continue
+        deduped_entries.append(entry)
+    return deduped_entries, skipped_count
+
+
+def _parse_selected_duplicate_indexes(
+    raw_indexes: list[str],
+    duplicate_records: list[dict],
+) -> set[int]:
+    selected_indexes: set[int] = set()
+    max_index = len(duplicate_records)
+    for raw_index in raw_indexes:
+        try:
+            idx = int(raw_index)
+        except (TypeError, ValueError):
+            continue
+        if 0 <= idx < max_index:
+            selected_indexes.add(idx)
+    return selected_indexes
+
+
+def _cache_upload_preview(
+    destination: str,
+    file_name: str,
+    metadata: dict,
+    layout_override: str,
+    payload: dict,
+    duplicates: list[dict],
+) -> str:
+    upload_token = uuid.uuid4().hex
+    old_token = session.get("upload_preview_token")
+    if isinstance(old_token, str) and old_token != upload_token:
+        old_payload = UPLOAD_PREVIEW_CACHE.pop(old_token, None)
+        if old_payload is not None and "file_path" in old_payload and os.path.exists(old_payload["file_path"]):
+            os.remove(old_payload["file_path"])
+    UPLOAD_PREVIEW_CACHE[upload_token] = {
+        "created_at": datetime.utcnow().timestamp(),
+        "file_path": destination,
+        "file_name": file_name,
+        "metadata": metadata,
+        "layout_override": layout_override,
+        "layout": payload["layout"],
+        "header_row": payload["header_row"],
+        "source_rows": payload["source_rows"],
+        "source_columns": payload["source_columns"],
+        "source_mode": payload["source_mode"],
+        "warnings": payload.get("warnings", []),
+        "entries_preview": payload.get("sample", []),
+        "invalid_rows": payload.get("invalid_rows", []),
+        "total_records": len(payload.get("entries", [])),
+        "duplicate_records": duplicates,
+        "skip_duplicate_indexes": [str(i) for i in range(len(duplicates))],
+    }
+    session["upload_preview_token"] = upload_token
+    return upload_token
+
+
+def _to_preview_context(
+    payload: dict,
+    duplicates: list[dict] | None = None,
+    skip_duplicate_indexes: list[str] | None = None,
+) -> dict:
+    duplicate_records = duplicates if duplicates is not None else payload.get("duplicate_records", [])
+    if skip_duplicate_indexes is None:
+        skip_duplicate_indexes = payload.get("skip_duplicate_indexes", [])
+    return {
+        "file_name": payload.get("file_name"),
+        "layout": payload.get("layout"),
+        "source_mode": payload.get("source_mode"),
+        "header_row": payload.get("header_row"),
+        "source_rows": payload.get("source_rows"),
+        "source_columns": payload.get("source_columns"),
+        "layout_override": payload.get("layout_override"),
+        "warnings": payload.get("warnings", []),
+        "entries_preview": payload.get("entries_preview", []),
+        "sample_count": len(payload.get("entries_preview", [])),
+        "invalid_rows": payload.get("invalid_rows", []),
+        "total_records": payload.get("total_records"),
+        "duplicate_records": duplicate_records,
+        "skip_duplicate_indexes": skip_duplicate_indexes,
+        "upload_preview_token": payload.get("upload_preview_token"),
+    }
+
+
 @app.route("/", methods=["GET"])
 def landing_page():
     summary = fetch_aggregated_summary()
@@ -57,14 +229,192 @@ def landing_page():
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload_data():
+    _cleanup_upload_preview_cache()
+    preview_payload = None
+    form_values: dict = {}
+    if request.method == "GET" and request.args.get("clear_preview") == "1":
+        old_token = session.get("upload_preview_token")
+        if isinstance(old_token, str):
+            session.pop("upload_preview_token", None)
+            cached = UPLOAD_PREVIEW_CACHE.pop(old_token, None)
+            if cached is not None and "file_path" in cached and os.path.exists(cached["file_path"]):
+                os.remove(cached["file_path"])
+
     if request.method == "POST":
         uploader = request.form.get("uploader", "").strip()
         version = request.form.get("version", "").strip()
         data_type = request.form.get("data_type", "flow").strip()
         time_period = request.form.get("time_period", "monthly").strip()
-        file = request.files.get("excel_file")
+        layout_override = request.form.get("layout_override", "auto").strip().lower()
+        action = request.form.get("action", "preview").strip().lower()
+        preview_token = request.form.get("preview_token", "").strip()
+        form_values = {
+            "uploader": uploader,
+            "version": version,
+            "data_type": data_type,
+            "time_period": time_period,
+            "layout_override": layout_override,
+        }
         errors = []
 
+        if action == "confirm":
+            token_payload = UPLOAD_PREVIEW_CACHE.get(preview_token, {})
+            if not token_payload:
+                flash("Sesi pratinjau tidak ditemukan atau telah kedaluwarsa.", "error")
+                return redirect(url_for("upload_data"))
+
+            meta = token_payload["metadata"]
+            file_path = token_payload["file_path"]
+            preview_layout = token_payload.get("layout_override", "auto")
+            try:
+                payload = parse_excel_payload(
+                    file_path,
+                    meta["uploader"],
+                    meta["version"],
+                    meta["data_type"],
+                    meta["time_period"],
+                    layout_override=preview_layout,
+                    preview_limit=0,
+                )
+            except Exception as e:
+                flash(f"Gagal memproses berkas pratinjau: {str(e)}", "error")
+                return redirect(url_for("upload_data"))
+
+            entries = payload.get("entries", [])
+            if not entries:
+                flash("Sesi pratinjau tidak memuat data valid.", "error")
+                return redirect(url_for("upload_data"))
+
+            duplicates = _find_duplicate_entries_in_db(meta["uploader"], meta["version"], entries)
+            if duplicates:
+                selected_indexes = _parse_selected_duplicate_indexes(
+                    request.form.getlist("skip_duplicate_indexes"),
+                    duplicates,
+                )
+                selected_indexes_payload = [str(i) for i in sorted(selected_indexes)]
+                if len(selected_indexes) < len(duplicates):
+                    preview_payload = _to_preview_context(
+                        {
+                            "file_name": token_payload["file_name"],
+                            "layout": payload["layout"],
+                            "source_mode": payload["source_mode"],
+                            "header_row": payload["header_row"],
+                            "source_rows": payload["source_rows"],
+                            "source_columns": payload["source_columns"],
+                            "layout_override": preview_layout,
+                            "warnings": payload.get("warnings", []),
+                            "entries_preview": payload.get("sample", []),
+                            "invalid_rows": payload.get("invalid_rows", []),
+                            "total_records": len(entries),
+                            "upload_preview_token": preview_token,
+                        },
+                        duplicates=duplicates,
+                        skip_duplicate_indexes=selected_indexes_payload,
+                    )
+                    flash(
+                        f"Hanya {len(selected_indexes)} dari {len(duplicates)} kandidat duplikasi yang dipilih. "
+                        "Centang semua kandidat duplikasi yang ingin dikecualikan agar proses lanjut.",
+                        "warning",
+                    )
+                    return render_template(
+                        "upload.html",
+                        mode="upload",
+                        preview=preview_payload,
+                        upload_preview_token=preview_token,
+                        form_values=form_values,
+                    )
+
+                form_values = {
+                    "uploader": meta["uploader"],
+                    "version": meta["version"],
+                    "data_type": meta["data_type"],
+                    "time_period": meta["time_period"],
+                    "layout_override": preview_layout,
+                }
+                deduped_entries, skipped_count = _filter_duplicate_entries(entries, duplicates, selected_indexes)
+                if not deduped_entries:
+                    flash("Semua baris pada file adalah duplikasi terpilih. Tidak ada data baru untuk disimpan.", "warning")
+                    preview_payload = _to_preview_context(
+                        {
+                            "file_name": token_payload["file_name"],
+                            "layout": payload["layout"],
+                            "source_mode": payload["source_mode"],
+                            "header_row": payload["header_row"],
+                            "source_rows": payload["source_rows"],
+                            "source_columns": payload["source_columns"],
+                            "layout_override": preview_layout,
+                            "warnings": payload.get("warnings", []),
+                            "entries_preview": payload.get("sample", []),
+                            "invalid_rows": payload.get("invalid_rows", []),
+                            "total_records": len(entries),
+                            "upload_preview_token": preview_token,
+                            "skip_duplicate_indexes": selected_indexes_payload,
+                        },
+                        duplicates=duplicates,
+                    )
+                    return render_template(
+                        "upload.html",
+                        mode="upload",
+                        preview=preview_payload,
+                        upload_preview_token=preview_token,
+                        form_values=form_values,
+                    )
+                try:
+                    insert_entries(deduped_entries)
+                    refresh_aggregated_summary()
+                    UPLOAD_PREVIEW_CACHE.pop(preview_token, None)
+                    session.pop("upload_preview_token", None)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    if skipped_count > 0:
+                        flash(
+                            f"{len(deduped_entries)} baris disimpan, {skipped_count} baris duplikasi dikecualikan.",
+                            "success",
+                        )
+                    else:
+                        flash(f"{len(deduped_entries)} baris data berhasil disimpan.", "success")
+                    return redirect(url_for("upload_data"))
+                except sqlite3.IntegrityError as e:
+                    error_msg = str(e)
+                    if "UNIQUE constraint failed" in error_msg:
+                        flash(
+                                "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
+                                "Centang kandidat duplikasi yang ingin dikecualikan, lalu klik Konfirmasi & Simpan lagi.",
+                            "error",
+                        )
+                    else:
+                        flash(f"Terjadi kesalahan database: {error_msg}", "error")
+                except Exception as e:
+                    flash(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")
+                return redirect(url_for("upload_data"))
+
+            try:
+                insert_entries(entries)
+                refresh_aggregated_summary()
+                UPLOAD_PREVIEW_CACHE.pop(preview_token, None)
+                session.pop("upload_preview_token", None)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                flash(f"{len(entries)} baris data berhasil disimpan.", "success")
+                return redirect(url_for("upload_data"))
+            except sqlite3.IntegrityError as e:
+                error_msg = str(e)
+                if "UNIQUE constraint failed" in error_msg:
+                    flash(
+                        "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
+                        "Silakan gunakan versi yang berbeda atau tandai semua kandidat duplikasi yang akan dikecualikan.",
+                        "error",
+                    )
+                else:
+                    flash(f"Terjadi kesalahan database: {error_msg}", "error")
+            except Exception as e:
+                flash(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")
+            return redirect(url_for("upload_data"))
+
+        if action not in {"preview", "save", "direct_upload"}:
+            action = "preview"
+
+        file = request.files.get("excel_file")
         if not uploader:
             errors.append("Nama pengunggah wajib diisi.")
         if not version:
@@ -76,32 +426,191 @@ def upload_data():
         if errors:
             for error in errors:
                 flash(error, "error")
+            return render_template(
+                "upload.html",
+                mode="upload",
+                preview=None,
+                upload_preview_token=None,
+                form_values=form_values,
+            )
         else:
-            filename = secure_filename(file.filename)
+            filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
             os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
             destination = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(destination)
-            entries = parse_excel(destination, uploader, version, data_type, time_period)
+
+            try:
+                payload = parse_excel_payload(
+                    destination,
+                    uploader,
+                    version,
+                    data_type,
+                    time_period,
+                    layout_override=layout_override or "auto",
+                )
+            except Exception as e:
+                os.remove(destination)
+                flash(f"Gagal membaca berkas Excel: {str(e)}", "error")
+                return render_template(
+                    "upload.html",
+                    mode="upload",
+                    preview=None,
+                    upload_preview_token=None,
+                    form_values=form_values,
+                )
+
+            entries = payload.get("entries", [])
             if not entries:
-                flash("File Excel tidak berisi data yang valid.", "error")
-            else:
+                for warning in payload.get("warnings", []):
+                    flash(warning, "warning")
+                if not payload.get("warnings"):
+                    flash("File Excel tidak berisi data yang valid.", "error")
+                os.remove(destination)
+                return render_template(
+                    "upload.html",
+                    mode="upload",
+                    preview=None,
+                    upload_preview_token=None,
+                    form_values=form_values,
+                )
+
+            duplicates = _find_duplicate_entries_in_db(uploader, version, entries)
+            if action == "save":
+                if duplicates:
+                    upload_token = _cache_upload_preview(
+                        destination,
+                        file.filename or filename,
+                        {
+                            "uploader": uploader,
+                            "version": version,
+                            "data_type": data_type,
+                            "time_period": time_period,
+                        },
+                        layout_override or "auto",
+                        payload,
+                        duplicates,
+                    )
+                    preview_payload = _to_preview_context(
+                        {
+                            "file_name": file.filename or filename,
+                            "layout": payload["layout"],
+                            "source_mode": payload["source_mode"],
+                            "header_row": payload["header_row"],
+                            "source_rows": payload["source_rows"],
+                            "source_columns": payload["source_columns"],
+                            "layout_override": layout_override,
+                            "warnings": payload.get("warnings", []),
+                            "entries_preview": payload.get("sample", []),
+                            "invalid_rows": payload.get("invalid_rows", []),
+                            "total_records": len(entries),
+                            "upload_preview_token": upload_token,
+                        },
+                        duplicates=duplicates,
+                        skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
+                    )
+                    flash(
+                        f"Ditemukan {len(duplicates)} konflik duplikasi. "
+                        "Gunakan Konfirmasi pada pratinjau untuk memilih opsi lewati duplikasi.",
+                        "error",
+                    )
+                    return render_template(
+                        "upload.html",
+                        mode="upload",
+                        preview=preview_payload,
+                        upload_preview_token=upload_token,
+                        form_values=form_values,
+                    )
+
                 try:
                     insert_entries(entries)
                     refresh_aggregated_summary()
+                    os.remove(destination)
                     flash(f"{len(entries)} baris data berhasil disimpan.", "success")
+                    return redirect(url_for("upload_data"))
                 except sqlite3.IntegrityError as e:
-                    # Handle database constraint violations
                     error_msg = str(e)
                     if "UNIQUE constraint failed" in error_msg:
-                        flash("Data dengan pengunggah, versi, dan indikator yang sama sudah ada. Gunakan versi yang berbeda atau periksa file Excel Anda.", "error")
+                        flash(
+                            "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
+                            "Silakan gunakan versi yang berbeda atau tandai semua kandidat duplikasi yang akan dikecualikan.",
+                            "error",
+                        )
                     else:
                         flash(f"Terjadi kesalahan database: {error_msg}", "error")
                 except Exception as e:
-                    # Handle other unexpected errors
                     flash(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")
-            return redirect(url_for("upload_data"))
+                return render_template(
+                    "upload.html",
+                    mode="upload",
+                    preview=None,
+                    upload_preview_token=None,
+                    form_values=form_values,
+                )
 
-    return render_template("upload.html", mode="upload")
+            upload_token = _cache_upload_preview(
+                destination,
+                file.filename or filename,
+                {
+                    "uploader": uploader,
+                    "version": version,
+                    "data_type": data_type,
+                    "time_period": time_period,
+                },
+                layout_override or "auto",
+                payload,
+                duplicates,
+            )
+            preview_payload = _to_preview_context(
+                {
+                    "file_name": file.filename or filename,
+                    "layout": payload["layout"],
+                    "source_mode": payload["source_mode"],
+                    "header_row": payload["header_row"],
+                    "source_rows": payload["source_rows"],
+                    "source_columns": payload["source_columns"],
+                    "layout_override": layout_override,
+                    "warnings": payload.get("warnings", []),
+                    "entries_preview": payload.get("sample", []),
+                    "invalid_rows": payload.get("invalid_rows", []),
+                    "total_records": len(entries),
+                    "upload_preview_token": upload_token,
+                },
+                duplicates=duplicates,
+                skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
+            )
+            if duplicates:
+                flash(f"Ditemukan {len(duplicates)} konflik duplikasi dengan data yang sudah ada.", "warning")
+            else:
+                flash("Klik tombol konfirmasi untuk menyimpan data yang sudah dipratinjau.", "info")
+
+            return render_template(
+                "upload.html",
+                mode="upload",
+                preview=preview_payload,
+                upload_preview_token=upload_token,
+                form_values=form_values,
+            )
+
+    preview_token = session.get("upload_preview_token")
+    if isinstance(preview_token, str) and preview_token in UPLOAD_PREVIEW_CACHE:
+        payload = UPLOAD_PREVIEW_CACHE[preview_token]
+        meta = payload.get("metadata", {})
+        form_values = {
+            "uploader": meta.get("uploader", ""),
+            "version": meta.get("version", ""),
+            "data_type": meta.get("data_type", "flow"),
+            "time_period": meta.get("time_period", "monthly"),
+            "layout_override": payload.get("layout_override", "auto"),
+        }
+        preview_payload = _to_preview_context(payload)
+
+    return render_template(
+        "upload.html",
+        mode="upload",
+        preview=preview_payload,
+        upload_preview_token=session.get("upload_preview_token"),
+        form_values=form_values,
+    )
 
 
 @app.route("/manual", methods=["GET", "POST"])

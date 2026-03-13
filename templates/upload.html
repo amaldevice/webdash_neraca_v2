@@ -26,4 +26,320 @@
 {% if mode == "manual" %}
 {% include "partials/_script_upload_period_format.html" %}
 {% endif %}
+
+{% if mode == "upload" and preview %}
+<section class="panel">
+    <div class="section-title">
+        <div>
+            <h3 class="text-lg font-semibold">Ringkasan Pratinjau Unggahan</h3>
+            <p class="hint">Periksa hasil parser sebelum menyimpan ke database.</p>
+        </div>
+    </div>
+
+    <form method="POST" class="space-y-5" aria-label="Konfirmasi pratinjau unggahan">
+        {% set invalid_count = preview.invalid_rows|length %}
+        {% set duplicate_count = preview.duplicate_records|length %}
+        {% set warning_count = preview.warnings|length %}
+        {% set total_records = preview.total_records or 0 %}
+        {% if total_records > 0 %}
+            {% set invalid_rate = (invalid_count / total_records * 100) %}
+            {% set duplicate_rate = (duplicate_count / total_records * 100) %}
+            {% set warning_rate = (warning_count / total_records * 100) %}
+        {% else %}
+            {% set invalid_rate = 0 %}
+            {% set duplicate_rate = 0 %}
+            {% set warning_rate = 0 %}
+        {% endif %}
+        <article class="rounded-2xl border border-base-300 bg-base-50/60 p-4">
+            <div class="mb-4 flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <h4 class="font-semibold">Ringkasan File</h4>
+                    <p class="text-sm text-base-content/65">Informasi parsing yang paling penting.</p>
+                </div>
+                <div>
+                    {% if preview.duplicate_records %}
+                    <span class="badge badge-error">Perlu Revisi</span>
+                    {% else %}
+                    <span class="badge badge-success">Siap Disimpan</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-grid">
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Berkas</p>
+                    <p class="font-semibold mt-2 truncate" title="{{ preview.file_name }}">{{ preview.file_name }}</p>
+                </article>
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Status Pratinjau</p>
+                    <p class="font-semibold mt-2">
+                        {% if preview.duplicate_records %}
+                        Duplikasi terdeteksi
+                        {% else %}
+                        Validasi awal lolos
+                        {% endif %}
+                    </p>
+                </article>
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Layout</p>
+                    <p class="font-semibold mt-2">
+                        {{ preview.layout }}
+                        {% if preview.layout_override and preview.layout_override != "auto" %}
+                        <span class="text-sm text-base-content/70">(override: {{ preview.layout_override }})</span>
+                        {% endif %}
+                    </p>
+                    <p class="text-sm text-base-content/70">Sumber: {{ preview.source_mode }}</p>
+                </article>
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Header Terdeteksi</p>
+                    <p class="font-semibold mt-2">Baris {{ preview.header_row }}</p>
+                </article>
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Jumlah Baris</p>
+                    <p class="font-semibold mt-2">{{ preview.total_records }} baris</p>
+                    <p class="text-sm text-base-content/70">{{ preview.sample_count }} baris ditampilkan</p>
+                </article>
+                <article class="stat-card">
+                    <p class="text-xs text-base-content/70">Dimensi Sheet</p>
+                    <p class="font-semibold mt-2">{{ preview.source_rows }} × {{ preview.source_columns }}</p>
+                    <p class="text-sm text-base-content/70">baris × kolom</p>
+                </article>
+            </div>
+        </article>
+
+        <div class="grid gap-4 xl:grid-cols-3">
+            <details class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-2xl" open>
+                <summary class="collapse-title font-semibold">Kondisi Kualitas Data</summary>
+                <div class="collapse-content">
+                    <div class="space-y-2 text-sm">
+                        <div class="rounded-xl border border-base-200 p-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <p class="font-semibold">Baris tidak valid</p>
+                                    <p class="text-xs text-base-content/70">{{ invalid_count }} baris</p>
+                                </div>
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-error/40 bg-error/10 text-error text-xs">⚠</span>
+                            </div>
+                            <div class="mt-2 h-2 w-full rounded-full bg-base-200">
+                                <div class="h-full rounded-full bg-error transition-all" style="width: {{ invalid_rate }}%;"></div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-base-200 p-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <p class="font-semibold">Kandidat duplikasi</p>
+                                    <p class="text-xs text-base-content/70">{{ duplicate_count }} baris</p>
+                                </div>
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-warning/40 bg-warning/10 text-warning text-xs">⧗</span>
+                            </div>
+                            <div class="mt-2 h-2 w-full rounded-full bg-base-200">
+                                <div class="h-full rounded-full bg-warning transition-all" style="width: {{ duplicate_rate }}%;"></div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-base-200 p-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <p class="font-semibold">Peringatan parser</p>
+                                    <p class="text-xs text-base-content/70">{{ warning_count }} item</p>
+                                </div>
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary text-xs">ℹ</span>
+                            </div>
+                            <div class="mt-2 h-2 w-full rounded-full bg-base-200">
+                                <div class="h-full rounded-full bg-primary transition-all" style="width: {{ warning_rate }}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="collapse collapse-arrow border border-error/40 bg-error/5 rounded-2xl">
+                <summary class="collapse-title font-semibold">Kandidat Duplikasi ({{ preview.duplicate_records|length }})</summary>
+                <div class="collapse-content space-y-3">
+                    {% if preview.duplicate_records %}
+                    <div class="rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-sm text-error">
+                        <p class="font-semibold">Pilih baris duplikasi yang ingin dikecualikan agar tidak tersimpan.</p>
+                        <p class="text-xs text-base-content/75 mt-1">
+                            Jika masih ada duplikasi yang belum dipilih, proses simpan akan menunggu sampai semua konflik diperlakukan sebagai pengecualian.
+                        </p>
+                    </div>
+                    <p class="text-xs font-medium text-base-content/80" data-duplicate-selection-summary>
+                        {{ preview.skip_duplicate_indexes|default([], true)|length }} dari {{ preview.duplicate_records|length }} kandidat dipilih untuk dikecualikan.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            class="btn btn-xs btn-soft"
+                            onclick="toggleDuplicateSelection(true)"
+                        >
+                            Pilih Semua
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-xs btn-soft"
+                            onclick="toggleDuplicateSelection(false)"
+                        >
+                            Batal Semua
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-xs btn-soft"
+                            onclick="invertDuplicateSelection()"
+                        >
+                            Balik Pilihan
+                        </button>
+                    </div>
+                    <div class="max-h-52 overflow-auto pr-2 space-y-2">
+                        {% for dup in preview.duplicate_records %}
+                        {% set idx = loop.index0 %}
+                        <label class="w-full rounded-xl border border-base-200/80 bg-base-100/85 px-3 py-2.5 shadow-sm hover:bg-base-50">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <input
+                                        type="checkbox"
+                                        name="skip_duplicate_indexes"
+                                        value="{{ idx }}"
+                                        class="checkbox checkbox-warning checkbox-sm"
+                                        {% if (idx|string) in (preview.skip_duplicate_indexes or []) %}checked{% endif %}
+                                    >
+                                    <span class="text-sm truncate">
+                                        {{ dup.indicator_name }} — {{ dup.year }}{% if dup.month %}-{{ dup.month }}{% else %} Q{{ dup.quarter }}{% endif %}
+                                    </span>
+                                </div>
+                                {% if dup.month %}
+                                <span class="badge badge-error badge-sm gap-1">
+                                    <span aria-hidden="true">⛔</span>
+                                    ERROR
+                                </span>
+                                {% else %}
+                                <span class="badge badge-warning badge-sm gap-1">
+                                    <span aria-hidden="true">⚠</span>
+                                    WARNING
+                                </span>
+                                {% endif %}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-base-content/70">Tidak ada kandidat duplikasi.</p>
+                    {% endif %}
+                </div>
+            </details>
+
+            <details class="collapse collapse-arrow border border-base-300 bg-base-100 rounded-2xl">
+                <summary class="collapse-title font-semibold">Contoh data yang akan disimpan ({{ preview.sample_count }} baris)</summary>
+                <div class="collapse-content">
+                    <div class="table-wrap overflow-x-auto mt-1">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Indikator</th>
+                                    <th>Nilai</th>
+                                    <th>Periode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in preview.entries_preview %}
+                                <tr>
+                                    <td class="max-w-[22rem] truncate" title="{{ row.indicator_name }}">{{ row.indicator_name }}</td>
+                                    <td class="font-semibold">{{ "{:,.2f}".format(row.value) if row.value is not none else "-" }}</td>
+                                    <td>{{ row.time_period }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        {% if preview.warnings %}
+        <div class="alert alert-warning">
+            <div>
+                <p class="font-semibold mb-2">Peringatan Parser</p>
+                <ul class="list-disc list-inside space-y-1">
+                    {% for warning in preview.warnings %}
+                    <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if preview.invalid_rows %}
+        <div class="rounded-2xl border border-warning bg-warning/10 p-4">
+            <h4 class="font-semibold">Rincian baris tidak valid ({{ preview.invalid_rows|length }})</h4>
+            <div class="mt-2 max-h-52 overflow-auto pr-2">
+                <ul class="list-decimal list-inside text-sm space-y-1">
+                    {% for row in preview.invalid_rows %}
+                    <li>Baris {{ row }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="flex flex-wrap gap-2">
+            <input type="hidden" name="action" value="confirm">
+            <input type="hidden" name="preview_token" value="{{ preview.upload_preview_token }}">
+            {% if preview.duplicate_records %}
+            <button type="submit" class="btn btn-success">Konfirmasi & Simpan</button>
+            <a href="{{ url_for('upload_data', clear_preview=1) }}" class="btn btn-soft">Perbarui Berkas</a>
+            {% else %}
+            <button type="submit" class="btn btn-success">Konfirmasi & Simpan</button>
+            {% endif %}
+            <a href="{{ url_for('upload_data', clear_preview=1) }}" class="btn-soft">Batalkan</a>
+        </div>
+</form>
+</section>
+<script>
+function getDuplicateSelectionInputs() {
+    const form = document.querySelector('form[aria-label="Konfirmasi pratinjau unggahan"]');
+    if (!form) {
+        return [];
+    }
+    return form.querySelectorAll('input[name="skip_duplicate_indexes"]');
+}
+
+function toggleDuplicateSelection(checked) {
+    const inputs = getDuplicateSelectionInputs();
+    inputs.forEach((input) => {
+        input.checked = checked;
+    });
+    updateDuplicateSelectionSummary();
+}
+
+function invertDuplicateSelection() {
+    const inputs = getDuplicateSelectionInputs();
+    inputs.forEach((input) => {
+        input.checked = !input.checked;
+    });
+    updateDuplicateSelectionSummary();
+}
+
+function updateDuplicateSelectionSummary() {
+    const summary = document.querySelector('[data-duplicate-selection-summary]');
+    if (!summary) {
+        return;
+    }
+    const inputs = getDuplicateSelectionInputs();
+    const selectedCount = Array.from(inputs).filter((input) => input.checked).length;
+    summary.textContent = `${selectedCount} dari ${inputs.length} kandidat dipilih untuk dikecualikan.`;
+}
+
+function initDuplicateSelectionSummary() {
+    const form = document.querySelector('form[aria-label="Konfirmasi pratinjau unggahan"]');
+    if (!form) {
+        return;
+    }
+    updateDuplicateSelectionSummary();
+    form.addEventListener("change", (event) => {
+        if (event.target && event.target.name === "skip_duplicate_indexes") {
+            updateDuplicateSelectionSummary();
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initDuplicateSelectionSummary);
+</script>
+{% endif %}
 {% endblock %}

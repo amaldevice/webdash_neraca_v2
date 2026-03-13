@@ -1,7 +1,12 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-<section class="toast toast-top toast-end z-50 mt-16" aria-live="polite" aria-atomic="true">
-    <div class="space-y-2">
+<section
+    class="fixed left-1/2 top-20 z-50 w-full px-3 -translate-x-1/2 pointer-events-none"
+    style="max-width: min(96vw, 72rem);"
+    aria-live="polite"
+    aria-atomic="true"
+>
+    <div class="mx-auto w-full space-y-2 pointer-events-auto">
         {% for category, msg in messages %}
             {% if category == 'error' %}
                 {% set alert_class = 'alert-error' %}
@@ -12,8 +17,8 @@
             {% else %}
                 {% set alert_class = 'alert-info' %}
             {% endif %}
-            <div class="alert {{ alert_class }} shadow-md max-w-sm" role="status">
-                <span class="text-sm">{{ msg }}</span>
+            <div class="alert {{ alert_class }} shadow-md border border-current/15" role="status">
+                <span class="text-sm break-words whitespace-pre-wrap leading-relaxed">{{ msg }}</span>
                 <button type="button" class="btn btn-ghost btn-xs flash-close" aria-label="Tutup notifikasi" onclick="this.closest('.alert').remove()">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
