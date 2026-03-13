@@ -1,0 +1,51 @@
+<script>
+function getDuplicateSelectionInputs() {
+    const form = document.querySelector('form[aria-label="Konfirmasi pratinjau unggahan"]');
+    if (!form) {
+        return [];
+    }
+    return form.querySelectorAll('input[name="skip_duplicate_indexes"]');
+}
+
+function toggleDuplicateSelection(checked) {
+    const inputs = getDuplicateSelectionInputs();
+    inputs.forEach((input) => {
+        input.checked = checked;
+    });
+    updateDuplicateSelectionSummary();
+}
+
+function invertDuplicateSelection() {
+    const inputs = getDuplicateSelectionInputs();
+    inputs.forEach((input) => {
+        input.checked = !input.checked;
+    });
+    updateDuplicateSelectionSummary();
+}
+
+function updateDuplicateSelectionSummary() {
+    const summary = document.querySelector('[data-duplicate-selection-summary]');
+    if (!summary) {
+        return;
+    }
+    const inputs = getDuplicateSelectionInputs();
+    const selectedCount = Array.from(inputs).filter((input) => input.checked).length;
+    summary.textContent = `${selectedCount} dari ${inputs.length} kandidat dipilih untuk dikecualikan.`;
+}
+
+function initDuplicateSelectionSummary() {
+    const form = document.querySelector('form[aria-label="Konfirmasi pratinjau unggahan"]');
+    if (!form) {
+        return;
+    }
+    updateDuplicateSelectionSummary();
+    form.addEventListener("change", (event) => {
+        if (event.target && event.target.name === "skip_duplicate_indexes") {
+            updateDuplicateSelectionSummary();
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initDuplicateSelectionSummary);
+</script>
+

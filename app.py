@@ -17,6 +17,7 @@ from werkzeug.utils import secure_filename
 
 from aggregator import fetch_aggregated_summary, refresh_aggregated_summary
 from excel_parser import parse_excel_payload
+from periods import parse_period_date
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count, get_conn,
     delete_data_entry, delete_data_by_filter, update_data_entry, insert_single_entry,
@@ -54,13 +55,19 @@ def validate_metadata(data_type: str, time_period: str) -> list[str]:
 
 def _cleanup_upload_preview_cache() -> None:
     now = datetime.utcnow().timestamp()
-    expired_tokens = [
-        token
-        for token, payload in UPLOAD_PREVIEW_CACHE.items()
-        if now - payload["created_at"] > UPLOAD_PREVIEW_TTL_SECONDS
-    ]
-    for token in expired_tokens:
-        UPLOAD_PREVIEW_CACHE.pop(token, None)
+    expired_tokens = []
+    for token, payload in list(UPLOAD_PREVIEW_CACHE.items()):
+        if now - payload["created_at"] > UPLOAD_PREVIEW_TTL_SECONDS:
+            expired_tokens.append(token)
+            # Hapus file fisik jika masih ada
+            file_path = payload.get("file_path")
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    # Jika gagal menghapus (mis. locked), lanjutkan saja
+                    pass
+            UPLOAD_PREVIEW_CACHE.pop(token, None)
     if expired_tokens:
         session.pop("upload_preview_token", None)
 
@@ -219,6 +226,55 @@ def _to_preview_context(
         "skip_duplicate_indexes": skip_duplicate_indexes,
         "upload_preview_token": payload.get("upload_preview_token"),
     }
+
+
+def _build_upload_preview(
+    *,
+    destination: str,
+    display_name: str,
+    uploader: str,
+    version: str,
+    data_type: str,
+    time_period: str,
+    layout_override: str,
+    payload: dict,
+    entries: list[dict],
+    duplicates: list[dict],
+) -> tuple[str, dict]:
+    """Create cached preview state and normalized preview context for templates."""
+    effective_layout_override = layout_override or "auto"
+    upload_token = _cache_upload_preview(
+        destination,
+        display_name,
+        {
+            "uploader": uploader,
+            "version": version,
+            "data_type": data_type,
+            "time_period": time_period,
+        },
+        effective_layout_override,
+        payload,
+        duplicates,
+    )
+    preview_payload = _to_preview_context(
+        {
+            "file_name": display_name,
+            "layout": payload["layout"],
+            "source_mode": payload.get("source_mode", "headered"),
+            "header_row": payload["header_row"],
+            "source_rows": payload["source_rows"],
+            "source_columns": payload["source_columns"],
+            "layout_override": layout_override,
+            "warnings": payload.get("warnings", []),
+            "entries_preview": payload.get("sample", []),
+            "invalid_rows": payload.get("invalid_rows", []),
+            "total_records": len(entries),
+            "upload_preview_token": upload_token,
+        },
+        duplicates=duplicates,
+        skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
+    )
+    return upload_token, preview_payload
 
 
 @app.route("/", methods=["GET"])
@@ -477,36 +533,17 @@ def upload_data():
             duplicates = _find_duplicate_entries_in_db(uploader, version, entries)
             if action == "save":
                 if duplicates:
-                    upload_token = _cache_upload_preview(
-                        destination,
-                        file.filename or filename,
-                        {
-                            "uploader": uploader,
-                            "version": version,
-                            "data_type": data_type,
-                            "time_period": time_period,
-                        },
-                        layout_override or "auto",
-                        payload,
-                        duplicates,
-                    )
-                    preview_payload = _to_preview_context(
-                        {
-                            "file_name": file.filename or filename,
-                            "layout": payload["layout"],
-                            "source_mode": payload["source_mode"],
-                            "header_row": payload["header_row"],
-                            "source_rows": payload["source_rows"],
-                            "source_columns": payload["source_columns"],
-                            "layout_override": layout_override,
-                            "warnings": payload.get("warnings", []),
-                            "entries_preview": payload.get("sample", []),
-                            "invalid_rows": payload.get("invalid_rows", []),
-                            "total_records": len(entries),
-                            "upload_preview_token": upload_token,
-                        },
+                    upload_token, preview_payload = _build_upload_preview(
+                        destination=destination,
+                        display_name=file.filename or filename,
+                        uploader=uploader,
+                        version=version,
+                        data_type=data_type,
+                        time_period=time_period,
+                        layout_override=layout_override,
+                        payload=payload,
+                        entries=entries,
                         duplicates=duplicates,
-                        skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
                     )
                     flash(
                         f"Ditemukan {len(duplicates)} konflik duplikasi. "
@@ -564,7 +601,7 @@ def upload_data():
                 {
                     "file_name": file.filename or filename,
                     "layout": payload["layout"],
-                    "source_mode": payload["source_mode"],
+                    "source_mode": payload.get("source_mode", "headered"),
                     "header_row": payload["header_row"],
                     "source_rows": payload["source_rows"],
                     "source_columns": payload["source_columns"],
@@ -646,34 +683,6 @@ def manual_input():
     return render_template("upload.html", mode="manual")
 
 
-def _parse_period_date(time_period: str, period_date: str) -> tuple[int | None, int | None, int | None]:
-    """Parse period_date string into year, month, quarter based on time_period format."""
-    try:
-        if time_period.lower() == 'monthly':
-            # Format: YYYY-MM
-            if '-' in period_date and len(period_date.split('-')) == 2:
-                year_str, month_str = period_date.split('-')
-                year = int(year_str)
-                month = int(month_str)
-                quarter = (month - 1) // 3 + 1  # Calculate quarter from month
-                return year, month, quarter
-        elif time_period.lower() == 'quarterly':
-            # Format: YYYY-Q1/Q2/Q3/Q4
-            if '-Q' in period_date:
-                year_str, quarter_str = period_date.split('-Q')
-                year = int(year_str)
-                quarter = int(quarter_str)
-                return year, None, quarter
-        elif time_period.lower() == 'yearly':
-            # Format: YYYY
-            year = int(period_date)
-            return year, None, None
-    except (ValueError, IndexError):
-        pass
-
-    return None, None, None
-
-
 def _build_manual_entry(
     uploader: str,
     version: str,
@@ -689,7 +698,7 @@ def _build_manual_entry(
         return None
 
     # Parse period_date based on time_period
-    year, month, quarter = _parse_period_date(time_period, period_date)
+    year, month, quarter = parse_period_date(time_period, period_date)
 
     return {
         "uploader_name": uploader,
@@ -1257,30 +1266,7 @@ def export_period_analysis_excel():
     ws_dashboard = wb.active
     ws_dashboard.title = "Dashboard"
 
-    # Title
-    ws_dashboard['A1'] = f"📊 Analisis Periode: {indicator}"
-    ws_dashboard['A1'].font = title_font
-    ws_dashboard.merge_cells('A1:D1')
-    
-    ws_dashboard['A2'] = f"Tahun Analisis: {results.get('analysis_year', 'Semua Tahun')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-    ws_dashboard['A2'].font = subtitle_font
-    ws_dashboard.merge_cells('A2:D2')
-
-    # Summary Section
-    ws_dashboard['A4'] = "📈 Ringkasan Data"
-    ws_dashboard['A4'].font = section_font
-    ws_dashboard.merge_cells('A4:D4')
-
-    # Headers
-    headers = ["Metrik", "Jumlah Data", "Rata-rata Perubahan", "Status"]
-    for col, header in enumerate(headers, 1):
-        cell = ws_dashboard.cell(row=5, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = center_align
-        cell.border = thin_border
-
-    # Data rows
+    # Data rows for dashboard summary
     row_data = [
         ("M ke M (Bulanan)", len(results.get('monthly_comparison', [])), _calc_avg_change(results.get('monthly_comparison', [])), "✓" if has_mm else "✗"),
         ("Q ke Q (Kuartal)", len(results.get('quarterly_comparison', [])), _calc_avg_change(results.get('quarterly_comparison', [])), "✓" if has_qq else "✗"),
@@ -1289,22 +1275,49 @@ def export_period_analysis_excel():
         ("C ke C (YoY)", len(results.get('current_to_current', [])), _calc_avg_change(results.get('current_to_current', [])), "✓" if has_cc else "✗"),
     ]
 
-    for idx, (metric, count, avg_change, status) in enumerate(row_data, start=6):
-        ws_dashboard.cell(row=idx, column=1, value=metric).border = thin_border
-        ws_dashboard.cell(row=idx, column=2, value=count).border = thin_border
-        ws_dashboard.cell(row=idx, column=2).alignment = center_align
-        change_cell = ws_dashboard.cell(row=idx, column=3, value=avg_change)
-        change_cell.border = thin_border
-        change_cell.alignment = center_align
-        status_cell = ws_dashboard.cell(row=idx, column=4, value=status)
-        status_cell.border = thin_border
-        status_cell.alignment = center_align
+    def _fill_dashboard_sheet():
+        # Title
+        ws_dashboard['A1'] = f"📊 Analisis Periode: {indicator}"
+        ws_dashboard['A1'].font = title_font
+        ws_dashboard.merge_cells('A1:D1')
 
-    # Column widths
-    ws_dashboard.column_dimensions['A'].width = 22
-    ws_dashboard.column_dimensions['B'].width = 14
-    ws_dashboard.column_dimensions['C'].width = 20
-    ws_dashboard.column_dimensions['D'].width = 10
+        ws_dashboard['A2'] = f"Tahun Analisis: {results.get('analysis_year', 'Semua Tahun')} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        ws_dashboard['A2'].font = subtitle_font
+        ws_dashboard.merge_cells('A2:D2')
+
+        # Summary Section
+        ws_dashboard['A4'] = "📈 Ringkasan Data"
+        ws_dashboard['A4'].font = section_font
+        ws_dashboard.merge_cells('A4:D4')
+
+        # Headers
+        headers = ["Metrik", "Jumlah Data", "Rata-rata Perubahan", "Status"]
+        for col, header in enumerate(headers, 1):
+            cell = ws_dashboard.cell(row=5, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_align
+            cell.border = thin_border
+
+        # Data rows
+        for idx, (metric, count, avg_change, status) in enumerate(row_data, start=6):
+            ws_dashboard.cell(row=idx, column=1, value=metric).border = thin_border
+            ws_dashboard.cell(row=idx, column=2, value=count).border = thin_border
+            ws_dashboard.cell(row=idx, column=2).alignment = center_align
+            change_cell = ws_dashboard.cell(row=idx, column=3, value=avg_change)
+            change_cell.border = thin_border
+            change_cell.alignment = center_align
+            status_cell = ws_dashboard.cell(row=idx, column=4, value=status)
+            status_cell.border = thin_border
+            status_cell.alignment = center_align
+
+        # Column widths
+        ws_dashboard.column_dimensions['A'].width = 22
+        ws_dashboard.column_dimensions['B'].width = 14
+        ws_dashboard.column_dimensions['C'].width = 20
+        ws_dashboard.column_dimensions['D'].width = 10
+
+    _fill_dashboard_sheet()
 
     # ========== HELPER FUNCTION FOR DATA SHEETS ==========
     def create_data_sheet(sheet_name, headers, data_items, period_col_name):
@@ -1474,34 +1487,38 @@ def export_period_analysis_excel():
 
     # ========== SHEET 7: METADATA ==========
     ws_meta = wb.create_sheet("Metadata")
-    ws_meta['A1'] = "📋 Informasi Analisis"
-    ws_meta['A1'].font = title_font
-    ws_meta.merge_cells('A1:C1')
 
-    metadata_items = [
-        ("Indikator", indicator),
-        ("Tahun Analisis", results.get('analysis_year', 'Semua Tahun')),
-        ("Tanggal Export", datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
-        ("Jumlah Periode M-M", str(len(results.get('monthly_comparison', [])))),
-        ("Jumlah Periode Q-Q", str(len(results.get('quarterly_comparison', [])))),
-        ("Jumlah Periode Y-Y", str(len(results.get('yearly_comparison', [])))),
-        ("Jumlah Data C-C", str(len(results.get('current_to_current', [])))),
-        ("", ""),
-        ("Catatan", "Data ini dihasilkan oleh Sistem Data BPS"),
-        ("Disclaimer", "Data untuk analisis internal. Validasi ke sumber resmi BPS sebelum dipublikasikan."),
-    ]
+    def _fill_metadata_sheet():
+        ws_meta['A1'] = "📋 Informasi Analisis"
+        ws_meta['A1'].font = title_font
+        ws_meta.merge_cells('A1:C1')
 
-    for idx, (label, value) in enumerate(metadata_items, start=3):
-        label_cell = ws_meta.cell(row=idx, column=1, value=label)
-        label_cell.font = Font(bold=True if label else False)
-        value_cell = ws_meta.cell(row=idx, column=2, value=value)
-        if label == "Catatan" or label == "Disclaimer":
-            value_cell.font = Font(italic=True, size=9)
-            ws_meta.merge_cells(f'B{idx}:C{idx}')
+        metadata_items = [
+            ("Indikator", indicator),
+            ("Tahun Analisis", results.get('analysis_year', 'Semua Tahun')),
+            ("Tanggal Export", datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            ("Jumlah Periode M-M", str(len(results.get('monthly_comparison', [])))),
+            ("Jumlah Periode Q-Q", str(len(results.get('quarterly_comparison', [])))),
+            ("Jumlah Periode Y-Y", str(len(results.get('yearly_comparison', [])))),
+            ("Jumlah Data C-C", str(len(results.get('current_to_current', [])))),
+            ("", ""),
+            ("Catatan", "Data ini dihasilkan oleh Sistem Data BPS"),
+            ("Disclaimer", "Data untuk analisis internal. Validasi ke sumber resmi BPS sebelum dipublikasikan."),
+        ]
 
-    ws_meta.column_dimensions['A'].width = 20
-    ws_meta.column_dimensions['B'].width = 50
-    ws_meta.column_dimensions['C'].width = 20
+        for idx, (label, value) in enumerate(metadata_items, start=3):
+            label_cell = ws_meta.cell(row=idx, column=1, value=label)
+            label_cell.font = Font(bold=True if label else False)
+            value_cell = ws_meta.cell(row=idx, column=2, value=value)
+            if label == "Catatan" or label == "Disclaimer":
+                value_cell.font = Font(italic=True, size=9)
+                ws_meta.merge_cells(f'B{idx}:C{idx}')
+
+        ws_meta.column_dimensions['A'].width = 20
+        ws_meta.column_dimensions['B'].width = 50
+        ws_meta.column_dimensions['C'].width = 20
+
+    _fill_metadata_sheet()
 
     # Save to BytesIO
     output = io.BytesIO()

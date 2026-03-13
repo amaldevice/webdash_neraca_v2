@@ -67,8 +67,9 @@
                     <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
                     <td class="font-medium">#{{ entry.id }}</td>
                     <td>
-                        <div class="font-medium truncate max-w-[100px]">{{ entry.indicator_name }}</div>
+                        <div class="font-medium truncate max-w-[120px]">{{ entry.indicator_name }}</div>
                         <div class="text-xs text-base-content/60">{{ entry.uploader_name }}</div>
+                        <div class="text-xs text-base-content/60">v{{ entry.version }}</div>
                     </td>
                     <td class="font-semibold">{{ entry.value }}</td>
                     <td>
@@ -113,11 +114,17 @@
             <table class="data-table management-table">
                 <thead class="text-sm">
                     <tr>
-                        <th class="w-10"><input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()"></th>
+                        <th class="w-10">
+                            <input type="checkbox" id="select-all" class="checkbox checkbox-sm" onclick="toggleSelectAll()">
+                        </th>
                         <th>ID</th>
+                        <th>Pengunggah</th>
+                        <th>Versi</th>
                         <th>Indikator</th>
                         <th>Nilai</th>
-                        <th>Metadata</th>
+                        <th>Jenis Data</th>
+                        <th>Periode</th>
+                        <th>Periode Data</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -126,19 +133,16 @@
                     <tr data-entry-id="{{ entry.id }}">
                         <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
                         <td class="font-medium">#{{ entry.id }}</td>
+                        <td>{{ entry.uploader_name }}</td>
+                        <td>{{ entry.version }}</td>
                         <td>
                             <div class="font-medium">{{ entry.indicator_name }}</div>
-                            <div class="text-xs text-base-content/60">{{ entry.uploader_name }} • v{{ entry.version }}</div>
                         </td>
                         <td class="font-semibold">{{ entry.value }}</td>
-                        <td>
                         {% set row = entry %}
-                        <div class="flex flex-wrap gap-1">
-                            {% include "partials/_data_type_badge.html" %}
-                            {% include "partials/_time_period_badge.html" %}
-                            <span class="chip">{{ entry.tanggal_data }}</span>
-                        </div>
-                        </td>
+                        <td>{% include "partials/_data_type_badge.html" %}</td>
+                        <td>{% include "partials/_time_period_badge.html" %}</td>
+                        <td>{{ entry.tanggal_data }}</td>
                         <td>
                             <div class="flex flex-wrap gap-1">
                                 <button

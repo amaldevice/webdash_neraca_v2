@@ -6,6 +6,8 @@ from contextlib import closing
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional
 
+from periods import parse_period_date
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, "data.db")
 
@@ -842,8 +844,8 @@ def insert_single_entry(
 ) -> bool:
     """Insert a single data entry"""
     try:
-        # Parse period_date based on time_period
-        year, month, quarter = _parse_period_date(time_period, period_date)
+        # Parse period_date based on time_period (shared utility)
+        year, month, quarter = parse_period_date(time_period, period_date)
 
         with closing(get_conn()) as conn:
             cursor = conn.execute(
@@ -873,34 +875,6 @@ def insert_single_entry(
             return cursor.rowcount > 0
     except Exception:
         return False
-
-
-def _parse_period_date(time_period: str, period_date: str) -> tuple[int | None, int | None, int | None]:
-    """Parse period_date string into year, month, quarter based on time_period format."""
-    try:
-        if time_period.lower() == 'monthly':
-            # Format: YYYY-MM
-            if '-' in period_date and len(period_date.split('-')) == 2:
-                year_str, month_str = period_date.split('-')
-                year = int(year_str)
-                month = int(month_str)
-                quarter = (month - 1) // 3 + 1  # Calculate quarter from month
-                return year, month, quarter
-        elif time_period.lower() == 'quarterly':
-            # Format: YYYY-Q1/Q2/Q3/Q4
-            if '-Q' in period_date:
-                year_str, quarter_str = period_date.split('-Q')
-                year = int(year_str)
-                quarter = int(quarter_str)
-                return year, None, quarter
-        elif time_period.lower() == 'yearly':
-            # Format: YYYY
-            year = int(period_date)
-            return year, None, None
-    except (ValueError, IndexError):
-        pass
-
-    return None, None, None
 
 
 def bulk_delete_entries(entry_ids: List[str]) -> int:
