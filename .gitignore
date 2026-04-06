@@ -39,6 +39,7 @@ package-lock.json
 *~
 
 # Testing
+.playwright-cli/
 .playwright-mcp/
 playwright-report/
 test-results/
@@ -50,6 +51,7 @@ tests/__pycache__/
 uploads/*.xlsx
 uploads/*.csv
 uploads/*.xls
+uploads/_preview_sessions/
 
 # OS
 .DS_Store

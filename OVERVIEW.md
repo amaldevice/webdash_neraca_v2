@@ -5,8 +5,10 @@ Dokumen ini memberikan gambaran tidak general per folder dan per file utama agar
 ## Root (`d:\webdash_neraca\`)
 
 - Menyimpan semua file aplikasi inti dan konfigurasi runtime.
-- Berkas utama backend: `app.py`, `aggregator.py`, `excel_parser.py`, `models.py`.
-- Semua UI template di `templates/`, lalu style di `assets/` dan `static/`.
+- Berkas utama backend: `app.py` (factory), paket **`excel_parser/`**, paket **`models/`**, shim `aggregator.py`.
+- Rute HTTP: paket **`routes/`**; logika layanan: **`services/`** (termasuk `upload_flow`, `upload_preview`).
+- UI template di `templates/`, style di `assets/` dan `static/`.
+- **E2E:** `e2e/` + `playwright.config.ts` + root `package.json` (`npm run test:e2e`). CSS Tailwind dapat memakai `metadata/package.json` terpisah.
 
 ## `assets/`
 

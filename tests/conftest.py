@@ -26,7 +26,7 @@ def app_module(db_path):
     import app as app_module
 
     importlib.reload(app_module)
-    app_module.app.config.update(TESTING=True)
+    app_module.app = app_module.create_app(testing=True)
     return app_module
 
 

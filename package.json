@@ -1,0 +1,13 @@
+{
+  "name": "webdash-neraca",
+  "private": true,
+  "description": "Root tooling: Playwright E2E (Python app started via webServer). Tailwind/CSS may use metadata/package.json.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}

@@ -4,29 +4,10 @@ Dokumen ini mengumpulkan penjelasan seluruh berkas Python utama agar agent bisa 
 
 ## `app.py`
 
-- Menjadi entrypoint Flask dan orchestrator request.
-- Menyimpan konfigurasi app (`UPLOAD_FOLDER`, `DATABASE`, `MAX_CONTENT_LENGTH`, `SECRET_KEY`).
-- Menyediakan helper validasi:
-  - `allowed_file()`: validasi ekstensi upload Excel.
-  - `validate_metadata()`: cek `data_type` dan `time_period`.
-  - `_parse_period_date()`: normalisasi format periode dari input manual.
-  - `_build_manual_entry()`: bangun dict entri manual lengkap.
-  - `_get_range_params()`, `get_available_years()`: parse query/pagination.
-- Endpoint utama:
-  - `/` landing
-  - `/upload`, `/manual`
-  - `/preview-data`
-  - `/data-management`
-  - `/export`
-- Endpoint analitik:
-  - `/generate-plot`
-  - `/generate-period-analysis`
-  - `/export-period-analysis`
-- Menangani alur:
-  - upload file Excel → parse di `excel_parser.py` → simpan via `models.py`
-  - input manual (single entry) → validasi + insert
-  - export data dan filter dinamis
-  - panggil `aggregator.refresh_aggregated_summary()` saat ada insert/update agar cache ringkasan terbarui
+- **Factory** Flask: `create_app(testing=...)` memanggil `configure_flask_app` dari `config.py`, `register_routes(app)` dari paket `routes/`, dan `init_db()`.
+- Ekspor modul `app = create_app()` untuk WSGI / impor lama.
+- Alias kompatibilitas tes: `_parse_period_date`, `_build_manual_entry`, re-export `allowed_file`, `validate_metadata` dari `services.validation`.
+- Rute konkret didaftarkan di `routes/pages.py`, `routes/upload_routes.py`, `routes/manage.py` (bukan lagi seluruhnya di `app.py`).
 
 ## `aggregator.py`
 
@@ -39,40 +20,22 @@ Dokumen ini mengumpulkan penjelasan seluruh berkas Python utama agar agent bisa 
     - fallback refresh jika cache belum ada.
 - Inti: memisahkan pengambilan ringkasan berat dari request preview biasa.
 
-## `excel_parser.py`
+## Paket `excel_parser/`
 
-- Fokus pada parsing file Excel menjadi struktur data standar sebelum insert DB.
-- `detect_template_format()`
-  - mendeteksi apakah layout file memakai pola horizontal atau vertikal.
-- Helper transform:
-  - `_to_float()` untuk normalisasi angka.
-  - `_parse_period()` parser periode (`YYYY`, `YYYY-MM`, `YYYY-QN`).
-  - `_normalize_record()` menyamakan key-value agar seragam ke skema DB.
-- `parse_vertical_layout()` dan `parse_horizontal_layout()`
-  - membaca sheet sesuai struktur masing-masing format.
-- `parse_excel(file_storage, metadata)` (fungsi utama)
-  - orchestrasi baca file, deteksi format, parse, dan hasilkan list dict siap persist.
+- **`constants.py`** — `MAX_DETECTION_ROWS`, `MAX_LAYOUT_LOOKAHEAD_ROWS`, `PREVIEW_SAMPLE_LIMIT`.
+- **`normalize.py`** — `_to_float`, `_parse_period`, `_trim_sparse_data`, helper sel kosong / mirip-periode.
+- **`layout.py`** — `detect_template_format`, `_detect_layout`, `_materialize_data_frame`.
+- **`records.py`** — `_normalize_record`, `_period_text` (skema DB + timestamp ISO).
+- **`parse_layouts.py`** — `_parse_vertical_layout`, `_parse_horizontal_layout`.
+- **`payload.py`** — **`parse_excel_payload`**, `parse_excel` (orkestrasi `read_excel` + fallback legacy).
+- **`__init__.py`** — re-export API publik + simbol internal untuk tes (`from excel_parser import …`).
 
-## `models.py`
+## Paket `models/`
 
-- Akses data SQLite dan semua operasi persistensi.
-- Inisialisasi DB:
-  - `init_db()`, `get_conn()`
-  - schema `data_entries` dan `aggregated_summary` + index unik
-- CRUD dasar dan query:
-  - `insert_entries()`, `query_data_entries()`, `get_total_entries_count()`
-  - `update_data_entry()`, `update_data_entry_full()`, `delete_data_entry()`
-  - `delete_data_by_filter()`, `bulk_delete_entries()`, `bulk_update_entries()`
-  - `insert_single_entry()` untuk input manual
-- Filtering periode:
-  - `_parse_period_filter_value()`, `_apply_period_range_filter()`
-  - mendukung format `YYYY`, `YYYY-MM`, `YYYY-Qn`
-- Utilitas metadata:
-  - `get_filter_options()`, `get_unique_indicators()`
-- Agregasi dan cache:
-  - `save_aggregated_summary()`, `load_cached_summary()`, `get_aggregated_cards()`, `get_latest_metadata()`
-- Analisis periodik:
-  - `calculate_period_comparisons()`
-  - helper: `calculate_monthly_comparison()`, `calculate_quarterly_comparison()`, `calculate_yearly_comparison()`, `calculate_ytd_comparison()`, `calculate_current_to_current()`
-- Penunjang fitur:
-  - `get_total_entries_count()`, pemecahan string indicator metadata, dan query helper agar endpoint analitik tetap konsisten.
+- **`connection`**: `DB_PATH`, `init_db()`, `get_conn()` (path efektif dari `models.DB_PATH` agar tes bisa monkeypatch).
+- **`mutations`**: insert/update/delete/bulk, `clear_all_data`, dll.
+- **`queries`**: `query_data_entries`, `get_total_entries_count`, …
+- **`browse`**: kartu agregat, filter options, metadata, tahun distinct, indikator unik.
+- **`summary_store`**: `save_aggregated_summary`, `load_cached_summary`.
+- **`data_filters`**: klausa filter SQL bersama untuk query/hapus.
+- **`__init__.py`**: re-export API publik + fungsi analitik periode dari `services.period_comparisons`.

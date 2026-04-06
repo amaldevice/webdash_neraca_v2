@@ -8,19 +8,45 @@ import os
 import tempfile
 import time
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
 import pandas as pd
 import sqlite3
-from datetime import datetime
+
+_TESTS_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _temp_db_attach(case: unittest.TestCase) -> None:
+    """Point models.DB_PATH at a fresh file DB (shared across connections in tests)."""
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+    tmp.close()
+    case._temp_db_path = tmp.name
+    import models
+
+    models.DB_PATH = case._temp_db_path
+    models.init_db()
+
+
+def _temp_db_detach(case: unittest.TestCase) -> None:
+    import models
+
+    models.DB_PATH = str(_TESTS_ROOT / "data.db")
+    try:
+        os.unlink(case._temp_db_path)
+    except OSError:
+        pass
+
 
 # Import the application modules
-from app import app, allowed_file, validate_metadata, _parse_period_date, _build_manual_entry
+from app import _build_manual_entry, _parse_period_date, allowed_file, app, validate_metadata
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
     calculate_period_comparisons, _to_float
 )
 from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
+from services.timeutil import utc_now_iso
 
 
 class TestValidation(unittest.TestCase):
@@ -83,11 +109,10 @@ class TestValidation(unittest.TestCase):
         self.assertEqual((year, month, quarter), (None, None, None))
 
         year, month, quarter = _parse_period_date("monthly", "2024-13")  # Invalid month
-        self.assertEqual((year, month, quarter), (2024, 13, 5))  # Still parses, but month > 12
-        # Quarter calculation: (13-1) // 3 + 1 = 12 // 3 + 1 = 4 + 1 = 5
+        self.assertEqual((year, month, quarter), (None, None, None))
 
         year, month, quarter = _parse_period_date("quarterly", "2024-Q5")  # Invalid quarter
-        self.assertEqual((year, month, quarter), (2024, None, 5))  # Still parses, but quarter > 4
+        self.assertEqual((year, month, quarter), (None, None, None))
 
 
 class TestExcelParser(unittest.TestCase):
@@ -171,51 +196,36 @@ class TestDatabaseOperations(unittest.TestCase):
     """Test database operations"""
 
     def setUp(self):
-        """Set up test database"""
-        # Import models and set up temporary database
+        """Use a temp file DB so every connection shares one SQLite database."""
         import sys
         from pathlib import Path
+
         ROOT = Path(__file__).resolve().parents[1]
         if str(ROOT) not in sys.path:
             sys.path.insert(0, str(ROOT))
 
         import models
-        # Create temporary database file for this test
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
         self.temp_db.close()
-        # Set DB_PATH before initializing
         models.DB_PATH = self.temp_db.name
-        # Reinitialize database with new path
         models.init_db()
 
     def tearDown(self):
-        """Clean up test database"""
         import sys
         from pathlib import Path
+
         ROOT = Path(__file__).resolve().parents[1]
         if str(ROOT) not in sys.path:
             sys.path.insert(0, str(ROOT))
 
         import models
+
         models.DB_PATH = os.path.join(ROOT, "data.db")
-        # Clean up temp file
         try:
             os.unlink(self.temp_db.name)
-        except:
+        except OSError:
             pass
-
-    def setUp(self):
-        """Set up test database"""
-        self.test_db = ":memory:"
-        # Override the database path for testing
-        import models
-        models.DB_PATH = self.test_db
-        init_db()
-
-    def tearDown(self):
-        """Clean up test database"""
-        import models
-        models.DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
 
     def test_insert_entries_success(self):
         """Test successful entry insertion"""
@@ -228,7 +238,7 @@ class TestDatabaseOperations(unittest.TestCase):
             "time_period": "monthly",
             "year": 2024,
             "month": 1,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": utc_now_iso()
         }]
         # Should not raise exception
         insert_entries(entries)
@@ -249,7 +259,8 @@ class TestDatabaseOperations(unittest.TestCase):
             "time_period": "monthly",
             "year": 2024,
             "month": 1,
-            "created_at": datetime.utcnow().isoformat()
+            "quarter": 1,
+            "created_at": utc_now_iso()
         }]
 
         # First insertion should succeed
@@ -272,7 +283,7 @@ class TestDatabaseOperations(unittest.TestCase):
                 "time_period": "monthly",
                 "year": 2024,
                 "month": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             }
             for i in range(5)
         ]
@@ -303,7 +314,7 @@ class TestDatabaseOperations(unittest.TestCase):
                 "time_period": "monthly",
                 "year": 2024,
                 "month": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             }
             for i in range(3)
         ]
@@ -330,10 +341,7 @@ class TestPeriodAnalysis(unittest.TestCase):
 
     def setUp(self):
         """Set up test database with sample data"""
-        self.test_db = ":memory:"
-        import models
-        models.DB_PATH = self.test_db
-        init_db()
+        _temp_db_attach(self)
 
         # Insert sample data for testing
         sample_data = [
@@ -347,7 +355,7 @@ class TestPeriodAnalysis(unittest.TestCase):
                 "year": 2024,
                 "month": 1,
                 "quarter": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             },
             {
                 "uploader_name": "test_user",
@@ -359,7 +367,7 @@ class TestPeriodAnalysis(unittest.TestCase):
                 "year": 2024,
                 "month": 2,
                 "quarter": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             },
             {
                 "uploader_name": "test_user",
@@ -371,15 +379,13 @@ class TestPeriodAnalysis(unittest.TestCase):
                 "year": 2024,
                 "month": 3,
                 "quarter": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             }
         ]
         insert_entries(sample_data)
 
     def tearDown(self):
-        """Clean up test database"""
-        import models
-        models.DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
+        _temp_db_detach(self)
 
     def test_calculate_period_comparisons_valid(self):
         """Test period comparison calculation with valid data"""
@@ -396,6 +402,12 @@ class TestPeriodAnalysis(unittest.TestCase):
 
 class TestSecurityVulnerabilities(unittest.TestCase):
     """Test for security vulnerabilities"""
+
+    def setUp(self):
+        _temp_db_attach(self)
+
+    def tearDown(self):
+        _temp_db_detach(self)
 
     def test_sql_injection_prevention(self):
         """Test that SQL injection is prevented"""
@@ -430,6 +442,12 @@ class TestSecurityVulnerabilities(unittest.TestCase):
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and edge cases"""
+
+    def setUp(self):
+        _temp_db_attach(self)
+
+    def tearDown(self):
+        _temp_db_detach(self)
 
     def test_database_connection_failure(self):
         """Test graceful handling of database connection failures"""
@@ -475,7 +493,7 @@ class TestErrorHandling(unittest.TestCase):
                     "time_period": "monthly",
                     "year": 2024,
                     "month": 1,
-                    "created_at": datetime.utcnow().isoformat()
+                    "created_at": utc_now_iso()
                 }
                 insert_entries([entry])
                 results.append(f"Thread {thread_id} success")
@@ -501,6 +519,12 @@ class TestErrorHandling(unittest.TestCase):
 class TestPerformanceIssues(unittest.TestCase):
     """Test for performance issues and memory leaks"""
 
+    def setUp(self):
+        _temp_db_attach(self)
+
+    def tearDown(self):
+        _temp_db_detach(self)
+
     def test_large_dataset_pagination(self):
         """Test pagination performance with large datasets"""
         # Insert many records
@@ -515,7 +539,7 @@ class TestPerformanceIssues(unittest.TestCase):
                 "time_period": "monthly",
                 "year": 2024,
                 "month": 1,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": utc_now_iso()
             })
 
         start_time = time.time()

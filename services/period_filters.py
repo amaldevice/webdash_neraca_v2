@@ -1,0 +1,111 @@
+# -*- coding: utf-8 -*-
+"""SQL period-range helpers for listing/count queries (no DB I/O)."""
+from __future__ import annotations
+
+import re
+from typing import List, Optional
+
+
+def parse_period_filter_value(
+    period_value: Optional[str],
+) -> tuple[Optional[int], Optional[int], Optional[int]]:
+    """Parse an input period value into (year, month, quarter)."""
+    if not period_value:
+        return None, None, None
+
+    normalized = str(period_value).strip().upper()
+    if not normalized:
+        return None, None, None
+
+    quarterly_match = re.fullmatch(r"^(\d{4})-Q([1-4])$", normalized)
+    if quarterly_match:
+        year = int(quarterly_match.group(1))
+        quarter = int(quarterly_match.group(2))
+        return year, None, quarter
+
+    monthly_match = re.fullmatch(r"^(\d{4})-(\d{1,2})$", normalized)
+    if monthly_match:
+        year = int(monthly_match.group(1))
+        month = int(monthly_match.group(2))
+        if 1 <= month <= 12:
+            return year, month, None
+        return None, None, None
+
+    year_match = re.fullmatch(r"^(\d{4})$", normalized)
+    if year_match:
+        return int(year_match.group(1)), None, None
+
+    return None, None, None
+
+
+def period_index(
+    year: Optional[int],
+    month: Optional[int],
+    quarter: Optional[int],
+    is_start: bool,
+) -> Optional[int]:
+    """Convert a parsed period to a comparable month index (YYYYMM-style)."""
+    if year is None:
+        return None
+
+    if month:
+        return year * 100 + month
+
+    if quarter:
+        normalized_quarter = max(1, min(4, quarter))
+        return year * 100 + ((normalized_quarter - 1) * 3 + (1 if is_start else 3))
+
+    return year * 100 + (1 if is_start else 12)
+
+
+def apply_period_range_filter(
+    clauses: List[str],
+    params: List,
+    time_period_filter: Optional[str],
+    period_start: Optional[str],
+    period_end: Optional[str],
+) -> None:
+    """Append period filter clauses (start/end) to query clauses and params."""
+    start_year, start_month, start_quarter = parse_period_filter_value(period_start)
+    end_year, end_month, end_quarter = parse_period_filter_value(period_end)
+
+    if time_period_filter == "monthly":
+        start_month = start_month or 1 if start_year else None
+        end_month = end_month or 12 if end_year else None
+        if start_year is not None and start_month is not None:
+            clauses.append("(year > ? OR (year = ? AND COALESCE(month, 1) >= ?))")
+            params.extend([start_year, start_year, start_month])
+        if end_year is not None and end_month is not None:
+            clauses.append("(year < ? OR (year = ? AND COALESCE(month, 12) <= ?))")
+            params.extend([end_year, end_year, end_month])
+        return
+
+    if time_period_filter == "quarterly":
+        start_quarter = start_quarter or 1 if start_year else None
+        end_quarter = end_quarter or 4 if end_year else None
+        if start_year is not None and start_quarter is not None:
+            clauses.append("(year > ? OR (year = ? AND COALESCE(quarter, 1) >= ?))")
+            params.extend([start_year, start_year, start_quarter])
+        if end_year is not None and end_quarter is not None:
+            clauses.append("(year < ? OR (year = ? AND COALESCE(quarter, 4) <= ?))")
+            params.extend([end_year, end_year, end_quarter])
+        return
+
+    if time_period_filter == "yearly":
+        if start_year is not None:
+            clauses.append("year >= ?")
+            params.append(start_year)
+        if end_year is not None:
+            clauses.append("year <= ?")
+            params.append(end_year)
+        return
+
+    start_index = period_index(start_year, start_month, start_quarter, is_start=True)
+    end_index = period_index(end_year, end_month, end_quarter, is_start=False)
+    period_expression = "(year * 100 + COALESCE(month, COALESCE(quarter * 3, 1)))"
+    if start_index is not None:
+        clauses.append(f"{period_expression} >= ?")
+        params.append(start_index)
+    if end_index is not None:
+        clauses.append(f"{period_expression} <= ?")
+        params.append(end_index)
