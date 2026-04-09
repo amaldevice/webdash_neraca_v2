@@ -20,6 +20,7 @@
   - Parser Excel sudah di-advance ke alur preview: mendukung deteksi layout campuran/metadata, normalisasi angka lokal, dan `parse_excel_payload` dengan ringkasan diagnostics (`layout`, `header_row`, `warnings`, `invalid_rows`, `sample`).
   - Upload halaman `Upload` diubah jadi dua tahap: pratinjau terlebih dulu lalu konfirmasi sebelum insert.
   - Opsi override layout (`auto`/`vertical`/`horizontal`) ditambahkan pada form upload.
+  - Template upload dasar kini tersedia di `/upload` dengan dua format sheet: `Template_Horizontal` dan `Template_Vertical`, masing-masing berisi contoh dan penjelasan di file template Excel.
   - Validasi duplikasi dilakukan sebelum insert terhadap kombinasi `uploader + version + indicator + year + month + quarter`; duplikasi ditampilkan di pratinjau.
   - Pratinjau kini menyediakan opsi lewati data duplikasi secara granular per baris kandidat duplikasi (checkbox per row), termasuk kontrol cepat "Pilih Semua", "Batal Semua", dan "Balik Pilihan" + ringkasan jumlah pilihan agar user tahu kandidat yang dikecualikan.
   - Sistem notifikasi upload ditata ulang agar lebih stabil: posisi tetap di area atas halaman, lebar adaptif tidak mengganggu layout form, dan teks terbungkus rapi tanpa menimpa komponen lain.
@@ -395,4 +396,8 @@ Pisahkan helper matematis agar rumus tidak bercampur dengan pembagian indikator.
 
 
 
+
+
+## Repo Hygiene
+- Menambahkan/menegaskan `tmp/` pada `.gitignore` dan menghapus folder `tmp/` dari tracking git di branch `alternative_main` agar tidak lagi masuk repository.
 
