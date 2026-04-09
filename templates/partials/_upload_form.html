@@ -79,14 +79,38 @@
             <h4 class="font-semibold">Berkas Sumber</h4>
         </div>
         <div class="form-control">
-        <label for="excel_file" class="label">
-            <span class="label-text">File Excel</span>
-        </label>
-        <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered file-input-primary w-full" accept=".xls,.xlsx" required>
-        <label class="label">
-            <span class="field-help">Format .xls atau .xlsx. Maksimalkan akurasi kolom sebelum unggah.</span>
-        </label>
-    </div>
+            <label for="excel_file" class="label">
+                <span class="label-text">File Excel</span>
+            </label>
+            <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered file-input-primary w-full" accept=".xls,.xlsx" required>
+            <label class="label">
+                <span class="field-help">Format .xls atau .xlsx. Pastikan satu sheet aktif berisi data.</span>
+            </label>
+        </div>
+
+        <div class="form-control">
+            <a
+                href="{{ url_for('static', filename='templates/upload_template.xlsx') }}"
+                class="btn btn-soft w-full"
+                download="upload_template.xlsx"
+            >
+                Unduh Template Excel
+            </a>
+            <label class="label">
+                <span class="field-help">
+                    File template kini berisi 2 sheet:
+                    <strong>Template_Horizontal</strong> (indikator di kolom kiri, periode di baris header) dan
+                    <strong>Template_Vertical</strong> (periode di kolom kiri, indikator di baris header).
+                </span>
+            </label>
+        </div>
+        <div class="label">
+            <span class="field-help">
+                Upload parser hanya membaca sheet aktif/pertama, jadi aktifkan sheet yang sesuai format yang ingin dipakai.
+                Untuk format lain, pilih <strong>layout override</strong> <strong>vertical</strong> atau <strong>horizontal</strong>.
+            </span>
+        </div>
+            </div>
     </div>
 
     <div class="form-actions-bar">

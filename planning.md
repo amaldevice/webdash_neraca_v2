@@ -401,3 +401,8 @@ Pisahkan helper matematis agar rumus tidak bercampur dengan pembagian indikator.
 ## Repo Hygiene
 - Menambahkan/menegaskan `tmp/` pada `.gitignore` dan menghapus folder `tmp/` dari tracking git di branch `alternative_main` agar tidak lagi masuk repository.
 
+
+## Upload UX Update
+- Menambahkan tautan unduh template Excel (static/templates/upload_template.xlsx) pada form unggah, termasuk panduan format horizontal/vertikal dan catatan pemilihan sheet aktif untuk parsing.
+
+
