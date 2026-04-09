@@ -55,6 +55,22 @@ python app.py
 - [x] **Aksi massal**: Halaman Data-Management menyediakan pembaruan massal, penghapusan massal, dan penghapusan berbasis filter.
 - [x] **Alur analisis periode**: Halaman Aggregated mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
 
+### Ringkasan Berkas Python
+
+- `app.py`: Fabrikasi app Flask dan route utama aplikasi.
+- `aggregator.py`: Wrapper akses agregat yang menjaga kompatibilitas `aggregated_summary`.
+- `excel_parser.py` (legacy): Modul parser lama (masih tetap dipertahankan untuk kompatibilitas).
+- `models.py` (legacy): Entrypoint kompatibilitas untuk paket `models/`.
+- `models/`: Paket model utama (`connection`, `queries`, `mutations`, `browse`, `summary_store`, `data_filters`).
+- `services/aggregation.py`: Perhitungan ringkas agregat dan helper refresh cache.
+- `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
+- `services/period_analysis_workbook.py`: Generator workbook analisis periode ke Excel.
+- `services/period_comparisons.py`: Orkestrasi kalkulasi analisis periodik.
+- `services/period_comparison_calculators.py`: Helper kalkulasi growth (`M/M`, `Q/Q`, `Y/Y`, `YTD`, `C/C`).
+- `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
+- `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
+- `services/manual_entries.py`: Helper normalisasi dan validasi input manual.
+
 ### Cakupan Fitur yang sebelumnya belum terdokumentasi
 - `playwright_period_filter_smoke.spec.js` sudah tersedia sebagai smoke test untuk validasi alur filter rentang periode.
 - Konsistensi komponen tombol, formulir, dan susunan tabel lintas halaman sudah distandarkan (pratinjau dan manajemen data).

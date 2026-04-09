@@ -213,12 +213,8 @@ class TestSecurityVulnerabilities:
                 assert response.status_code in [200, 302]
 
     def test_csrf_token_validation_missing(self, test_client):
-        """Test bahwa CSRF token tidak diperlukan (karena Flask-WTF tidak digunakan)"""
-        # This test documents that CSRF protection is missing
-        # In a real security audit, this would be marked as a vulnerability
-
+        """Test bahwa endpoint upload menolak request tanpa CSRF token."""
         with test_client as client:
-            # This should work without CSRF token
             df = pd.DataFrame({'Indicator': ['GDP'], '2024-01': [100]})
             excel_buffer = BytesIO()
             df.to_excel(excel_buffer, index=False)
@@ -235,14 +231,10 @@ class TestSecurityVulnerabilities:
             response = client.post('/upload',
                                  data=data,
                                  content_type='multipart/form-data',
+                                 skip_csrf=True,
                                  data_file=file_data)
 
-            # Should succeed (documenting lack of CSRF protection)
-            assert response.status_code in [200, 302]
-
-            # This indicates a security vulnerability: no CSRF protection
-            pytest.xfail("SECURITY VULNERABILITY: No CSRF protection implemented. "
-                         "Severity: HIGH - Allows CSRF attacks")
+            assert response.status_code == 400
 
     def test_file_upload_path_traversal(self, test_client):
         """Test path traversal dalam file upload"""
@@ -407,16 +399,12 @@ class TestSecurityVulnerabilities:
         # This test documents session security
         with test_client as client:
             # Check if session cookies are properly configured
-            response = client.get('/')
+            response = client.get('/upload')
             cookies = response.headers.getlist('Set-Cookie')
 
             # Check for secure session configuration
             session_secure = any('HttpOnly' in cookie for cookie in cookies)
-            # Note: This would be a vulnerability if sessions are not HttpOnly
-
-            if not session_secure:
-                pytest.xfail("SECURITY VULNERABILITY: Session cookies not marked as HttpOnly. "
-                             "Severity: MEDIUM - Allows session hijacking via XSS")
+            assert session_secure
 
     def test_information_disclosure_in_errors(self, test_client):
         """Test information disclosure dalam error messages"""
@@ -453,32 +441,39 @@ class TestSecurityVulnerabilities:
                         assert "password" not in message.lower()
 
     def test_rate_limiting_bypass(self, test_client):
-        """Test bahwa tidak ada rate limiting (vulnerability)"""
-        # This test documents lack of rate limiting
+        """Test rate limiting pada endpoint upload."""
+        # This test verifies repeated submissions are throttled.
         with test_client as client:
-            # Send multiple rapid requests
-            for i in range(10):
-                df = pd.DataFrame({'Indicator': [f'GDP{i}'], '2024-01': [100]})
-                excel_buffer = BytesIO()
-                df.to_excel(excel_buffer, index=False)
-                excel_buffer.seek(0)
+            previous_limit = client.application.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS")
+            previous_window = client.application.config.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS")
+            client.application.config["UPLOAD_RATE_LIMIT_MAX_REQUESTS"] = 3
+            client.application.config["UPLOAD_RATE_LIMIT_WINDOW_SECONDS"] = 60
+            try:
+                rate_limited = False
+                # Send multiple rapid requests
+                for i in range(10):
+                    df = pd.DataFrame({'Indicator': [f'GDP{i}'], '2024-01': [100]})
+                    excel_buffer = BytesIO()
+                    df.to_excel(excel_buffer, index=False)
+                    excel_buffer.seek(0)
 
-                data = {
-                    'uploader': f'TestUser{i}',
-                    'version': 'v1.0',
-                    'data_type': 'flow',
-                    'time_period': 'monthly'
-                }
-                file_data = (excel_buffer, 'test.xlsx')
+                    data = {
+                        'uploader': f'TestUser{i}',
+                        'version': 'v1.0',
+                        'data_type': 'flow',
+                        'time_period': 'monthly'
+                    }
+                    file_data = (excel_buffer, 'test.xlsx')
 
-                response = client.post('/upload',
-                                     data=data,
-                                     content_type='multipart/form-data',
-                                     data_file=file_data)
+                    response = client.post('/upload',
+                                         data=data,
+                                         content_type='multipart/form-data',
+                                         data_file=file_data)
 
-                # All requests should succeed (no rate limiting)
-                assert response.status_code in [200, 302]
+                    if response.status_code == 429:
+                        rate_limited = True
 
-            # This indicates a security vulnerability: no rate limiting
-            pytest.xfail("SECURITY VULNERABILITY: No rate limiting implemented. "
-                         "Severity: MEDIUM - Allows DoS attacks and brute force")
+                assert rate_limited
+            finally:
+                client.application.config["UPLOAD_RATE_LIMIT_MAX_REQUESTS"] = previous_limit
+                client.application.config["UPLOAD_RATE_LIMIT_WINDOW_SECONDS"] = previous_window

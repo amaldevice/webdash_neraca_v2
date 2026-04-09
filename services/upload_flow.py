@@ -12,6 +12,7 @@ import sqlite3
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Literal
+from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from excel_parser import parse_excel_payload
 from models import insert_entries
@@ -124,7 +125,7 @@ def parse_and_validate_upload_payload(
     time_period: str,
     *,
     layout_override: str = "auto",
-    preview_limit: int = 0,
+    preview_limit: int = PREVIEW_SAMPLE_LIMIT,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[str]]:
     """
     Parse payload from an uploaded file and return (payload, entries, warnings).
@@ -518,7 +519,7 @@ def process_upload_confirm(
             meta["data_type"],
             meta["time_period"],
             layout_override=preview_layout,
-            preview_limit=0,
+            preview_limit=PREVIEW_SAMPLE_LIMIT,
         )
     except Exception as e:
         return build_upload_response(
@@ -589,6 +590,7 @@ def process_upload_post_file(
             data_type,
             time_period,
             layout_override=layout_override or "auto",
+            preview_limit=PREVIEW_SAMPLE_LIMIT,
         )
     except Exception as e:
         os.remove(destination)

@@ -2,7 +2,11 @@
 """Excel upload + manual entry routes."""
 from __future__ import annotations
 
-from flask import Flask, current_app, flash, redirect, render_template, request, session, url_for
+from collections import defaultdict, deque
+import secrets
+import threading
+import time
+from flask import Flask, Response, current_app, flash, make_response, redirect, render_template, request, session, url_for
 
 from services.upload_flow import (
     MANUAL_ROUTE_MODE,
@@ -15,6 +19,7 @@ from services.upload_flow import (
     process_upload_confirm,
     process_upload_post_file,
     save_uploaded_excel,
+    build_upload_response,
     upload_folder_from_config,
 )
 from services.upload_preview import (
@@ -25,6 +30,70 @@ from services.upload_preview import (
 )
 
 
+_UPLOAD_RATE_LIMIT_LOCK = threading.Lock()
+_UPLOAD_RATE_LIMIT_STATE: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _upload_csrf_token() -> str:
+    """Read-or-create CSRF token bound to session."""
+    token = session.get("_upload_csrf_token")
+    if not isinstance(token, str) or not token:
+        token = secrets.token_urlsafe(32)
+        session["_upload_csrf_token"] = token
+    return token
+
+
+def _validate_upload_csrf_token() -> bool:
+    expected = session.get("_upload_csrf_token")
+    provided = request.form.get("csrf_token", "")
+    if not expected or not provided:
+        return False
+    return secrets.compare_digest(str(expected), str(provided))
+
+
+def _upload_client_key() -> str:
+    client_key = session.get("_upload_client_id")
+    if not isinstance(client_key, str) or not client_key.strip():
+        client_key = secrets.token_urlsafe(16)
+        session["_upload_client_id"] = client_key
+    return client_key
+
+
+def _upload_is_rate_limited() -> tuple[bool, int, int]:
+    max_requests = int(current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0))
+    window_seconds = int(current_app.config.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", 60))
+    if max_requests <= 0:
+        return False, max_requests, window_seconds
+
+    key = _upload_client_key()
+    now = time.monotonic()
+    with _UPLOAD_RATE_LIMIT_LOCK:
+        bucket = _UPLOAD_RATE_LIMIT_STATE[key]
+        while bucket and now - bucket[0] > window_seconds:
+            bucket.popleft()
+        if len(bucket) >= max_requests:
+            return True, 0, window_seconds
+        bucket.append(now)
+        return False, max_requests - len(bucket), window_seconds
+
+
+def _render_upload_template(
+    *,
+    preview: dict | None,
+    upload_preview_token: str | None,
+    form_values: dict | None = None,
+) -> Response:
+    return make_response(
+        render_template(
+        UPLOAD_TEMPLATE_NAME,
+        mode=UPLOAD_ROUTE_MODE,
+        preview=preview,
+        upload_preview_token=upload_preview_token,
+        form_values=form_values or {},
+        upload_csrf_token=_upload_csrf_token(),
+        )
+    )
+
 def _apply_upload_flow_response(resp):
     for msg, cat in resp.flashes:
         flash(msg, cat)
@@ -32,12 +101,10 @@ def _apply_upload_flow_response(resp):
         session.pop("upload_preview_token", None)
     if resp.kind == "redirect":
         return redirect(url_for("upload_data"))
-    return render_template(
-        UPLOAD_TEMPLATE_NAME,
-        mode=UPLOAD_ROUTE_MODE,
+    return _render_upload_template(
         preview=resp.preview,
         upload_preview_token=resp.upload_preview_token,
-        form_values=resp.form_values or {},
+        form_values=resp.form_values,
     )
 
 
@@ -61,7 +128,37 @@ def upload_data():
             delete_preview_session(upload_folder, old_token)
 
     if request.method == "POST":
+        if request.path == "/upload":
+            is_rate_limited, _, window_seconds = _upload_is_rate_limited()
+            if is_rate_limited:
+                response = _render_upload_template(
+                    preview=None,
+                    upload_preview_token=session.get("upload_preview_token"),
+                    form_values={},
+                )
+                response.status_code = 429
+                response.headers["Retry-After"] = str(window_seconds)
+                response.headers["X-RateLimit-Limit"] = str(
+                    current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0)
+                )
+                response.headers["X-RateLimit-Remaining"] = "0"
+                response.headers["X-RateLimit-Window-Seconds"] = str(window_seconds)
+                flash("Terlalu banyak unggahan dalam waktu singkat. Coba lagi nanti.", "error")
+                return response
+
         form_values, action, preview_token, skip_dup = parse_upload_form(request.form)
+        if not _validate_upload_csrf_token():
+            response = _apply_upload_flow_response(
+                build_upload_response(
+                    "render",
+                    [("Token CSRF tidak valid. Kirim ulang form dengan token terbaru.", "error")],
+                    preview=None,
+                    upload_preview_token=preview_token or session.get("upload_preview_token"),
+                    form_values=form_values,
+                )
+            )
+            response.status_code = 400
+            return response
 
         if action == "confirm":
             return _apply_upload_flow_response(
@@ -80,9 +177,7 @@ def upload_data():
         if errors:
             for error in errors:
                 flash(error, "error")
-            return render_template(
-                UPLOAD_TEMPLATE_NAME,
-                mode=UPLOAD_ROUTE_MODE,
+            return _render_upload_template(
                 preview=None,
                 upload_preview_token=None,
                 form_values=form_values,
@@ -110,9 +205,7 @@ def upload_data():
         }
         preview_payload = to_preview_context(payload)
 
-    return render_template(
-        UPLOAD_TEMPLATE_NAME,
-        mode=UPLOAD_ROUTE_MODE,
+    return _render_upload_template(
         preview=preview_payload,
         upload_preview_token=session.get("upload_preview_token"),
         form_values=form_values,

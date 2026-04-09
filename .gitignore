@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.venv/
 .Python
 env/
 venv/
@@ -43,6 +44,7 @@ package-lock.json
 .playwright-mcp/
 playwright-report/
 test-results/
+.pytest_cache/
 tests/logs/
 simple_tests/__pycache__/
 tests/__pycache__/
@@ -63,3 +65,11 @@ Thumbs.db
 # Local temp files
 *.tmp
 *~
+tmp/
+
+# Local data / temporary project files
+Dummy1*.xlsx
+BPS_Analysis_NTP_20260409_083729.xlsx
+REKAP Bank indonesia_rev.xlsx
+static/e2e_agent_browser.xlsx
+webdash_agent_e2e_server_previewfix.py

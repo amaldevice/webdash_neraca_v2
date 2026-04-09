@@ -5,6 +5,7 @@ Konfigurasi pytest untuk functional tests
 import importlib.util
 import os
 import tempfile
+import secrets
 from pathlib import Path
 
 from flask.testing import FlaskClient
@@ -37,20 +38,33 @@ ensure_directories = _TEST_CONFIG.ensure_directories
 class LegacyCompatTestClient(FlaskClient):
     """Small compatibility shim for legacy ``data_file`` uploads."""
 
-    def post(self, *args, data=None, data_file=None, **kwargs):
+    def post(self, *args, data=None, data_file=None, skip_csrf=False, csrf_token=None, **kwargs):
+        target = str(args[0]) if args else ""
+        request_data = {}
+        if data is not None:
+            if isinstance(data, MultiDict):
+                request_data = {k: v for k, v in data.to_dict().items()}
+            else:
+                request_data = dict(data)
+
         if data_file is not None:
-            request_data = {}
-            if data is not None:
-                if isinstance(data, MultiDict):
-                    request_data = {k: v for k, v in data.to_dict().items()}
-                else:
-                    request_data = dict(data)
             if "action" not in request_data:
                 request_data["action"] = "save"
             if "excel_file" not in request_data:
                 request_data["excel_file"] = data_file
-            data = request_data
+        if target.startswith("/upload") and not skip_csrf:
+            with self.session_transaction() as sess:
+                token = (
+                    csrf_token
+                    or sess.get("_upload_csrf_token")
+                    or secrets.token_urlsafe(16)
+                )
+                sess["_upload_csrf_token"] = token
+            request_data["csrf_token"] = token
+
+        if data_file is not None:
             kwargs.setdefault("content_type", "multipart/form-data")
+        data = request_data if request_data else data
         return super().post(*args, data=data, **kwargs)
 
 

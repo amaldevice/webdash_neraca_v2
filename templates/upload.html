@@ -281,6 +281,7 @@
         <div class="flex flex-wrap gap-2">
             <input type="hidden" name="action" value="confirm">
             <input type="hidden" name="preview_token" value="{{ preview.upload_preview_token }}">
+            <input type="hidden" name="csrf_token" value="{{ upload_csrf_token }}">
             {% if preview.duplicate_records %}
             <button type="submit" class="btn btn-success">Konfirmasi & Simpan</button>
             <a href="{{ url_for('upload_data', clear_preview=1) }}" class="btn btn-soft">Perbarui Berkas</a>

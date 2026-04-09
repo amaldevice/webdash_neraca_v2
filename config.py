@@ -21,6 +21,8 @@ ALLOWED_TIME_PERIODS = {"monthly", "quarterly", "yearly"}
 UPLOAD_PREVIEW_TTL_SECONDS = 20 * 60
 MAX_UPLOAD_BYTES = 16 * 1024 * 1024
 DEFAULT_SECRET_KEY = "change-me-for-production"
+DEFAULT_UPLOAD_RATE_LIMIT_PER_MINUTE = 120
+DEFAULT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS = 60
 
 
 def resolve_secret_key() -> str:
@@ -44,6 +46,15 @@ def configure_flask_app(app: Flask, *, testing: bool = False) -> None:
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
     key = resolve_secret_key()
     app.config["SECRET_KEY"] = key
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SECURE"] = _env_truthy("SESSION_COOKIE_SECURE")
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["UPLOAD_RATE_LIMIT_MAX_REQUESTS"] = int(
+        os.environ.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", str(DEFAULT_UPLOAD_RATE_LIMIT_PER_MINUTE))
+    )
+    app.config["UPLOAD_RATE_LIMIT_WINDOW_SECONDS"] = int(
+        os.environ.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", str(DEFAULT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS))
+    )
 
     if key == DEFAULT_SECRET_KEY and _env_truthy("REQUIRE_FLASK_SECRET"):
         raise RuntimeError(
