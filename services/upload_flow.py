@@ -23,6 +23,7 @@ from services.upload_preview import (
     cache_upload_preview,
     delete_preview_session,
     excel_preview_source_from_payload,
+    find_duplicate_entries_by_indicator_period,
     filter_duplicate_entries,
     find_duplicate_entries_in_db,
     load_preview_session,
@@ -65,6 +66,8 @@ class UploadFlowResponse:
 class ManualFlowResponse:
     kind: Literal["render", "redirect"]
     flashes: list[tuple[str, str]] = field(default_factory=list)
+    form_values: dict[str, Any] | None = None
+    manual_duplicate: dict[str, Any] | None = None
 
 
 def parse_upload_form(form) -> tuple[dict[str, str], str, str, list[str]]:
@@ -464,7 +467,7 @@ def handle_upload_post_file_save_with_duplicates(
         [
             (
                 f"Ditemukan {len(duplicates)} konflik duplikasi. "
-                "Gunakan Konfirmasi pada pratinjau; kandidat yang tidak dikecualikan akan menimpa data yang sudah ada.",
+                "Gunakan Konfirmasi pada pratinjau; kandidat yang tidak dikecualikan akan diproses kembali sesuai kebijakan conflict handling.",
                 "warning",
             )
         ],
@@ -549,7 +552,7 @@ def handle_upload_post_file_preview(
     if duplicates:
         info_flash = (
             f"Ditemukan {len(duplicates)} konflik duplikasi dengan data yang sudah ada. "
-            "Jika dilanjutkan, baris duplikasi yang tidak dikecualikan akan menimpa data lama.",
+            "Jika dilanjutkan, kandidat duplikasi akan diproses dan dapat menimpa data lama pada kombinasi unik yang sama.",
             "warning",
         )
     else:
@@ -750,17 +753,29 @@ def process_manual_input_post(
     period_date: str,
     indicator: str,
     value: str,
+    confirm_duplicate: bool = False,
 ) -> ManualFlowResponse:
+    form_values: dict[str, str] = {
+        "uploader": uploader,
+        "version": version,
+        "data_type": data_type,
+        "time_period": time_period,
+        "period_date": period_date,
+        "indicator": indicator,
+        "value": value,
+    }
     if not uploader or not version or not indicator or not value or not period_date:
         return ManualFlowResponse(
             kind="render",
             flashes=[("Semua kolom metadata dan data wajib diisi.", "error")],
+            form_values=form_values,
         )
     validation_errors = validate_metadata(data_type, time_period)
     if validation_errors:
         return ManualFlowResponse(
             kind="render",
             flashes=[(e, "error") for e in validation_errors],
+            form_values=form_values,
         )
     manual_entry = build_manual_entry(
         uploader, version, data_type, time_period, period_date, indicator, value
@@ -769,13 +784,47 @@ def process_manual_input_post(
         return ManualFlowResponse(
             kind="render",
             flashes=[("Nilai indikator tidak valid.", "error")],
+            form_values=form_values,
         )
+
+    duplicates = find_duplicate_entries_by_indicator_period([manual_entry])
+    if duplicates and not confirm_duplicate:
+        period = (
+            f"{manual_entry['year']}-{manual_entry['month']:02d}"
+            if manual_entry["month"]
+            else (
+                f"{manual_entry['year']}-Q{manual_entry['quarter']}"
+                if manual_entry["quarter"]
+                else str(manual_entry["year"])
+            )
+        )
+        return ManualFlowResponse(
+            kind="render",
+            flashes=[
+                (
+                    f"Ditemukan {len(duplicates)} data existing dengan kunci indikator + periode "
+                    f"({manual_entry['indicator_name']} / {period}). "
+                    "Konfirmasi ulang untuk tetap menyimpan entri manual.",
+                    "warning",
+                )
+            ],
+            form_values=form_values,
+            manual_duplicate={
+                "exists": True,
+                "indicator": manual_entry["indicator_name"],
+                "period": period,
+                "count": len(duplicates),
+                "existing_records": duplicates,
+            },
+        )
+
     try:
-        insert_entries([manual_entry])
+        upsert_entries([manual_entry])
         refresh_aggregated_summary()
         return ManualFlowResponse(
             kind="redirect",
             flashes=[("Entri manual berhasil dicatat dan disimpan.", "success")],
+            form_values=form_values,
         )
     except sqlite3.IntegrityError as exc:
         flash_msg = (
@@ -783,4 +832,8 @@ def process_manual_input_post(
             if "UNIQUE constraint failed" in str(exc)
             else f"Terjadi kesalahan database: {exc}"
         )
-        return ManualFlowResponse(kind="render", flashes=[(flash_msg, "error")])
+        return ManualFlowResponse(
+            kind="render",
+            flashes=[(flash_msg, "error")],
+            form_values=form_values,
+        )

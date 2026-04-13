@@ -54,6 +54,34 @@ python app.py
 - [x] **Validasi metadata**: Memastikan atribut seperti `uploader`, `version`, `data_type`, dan `time_period` tervalidasi sejak proses unggah/input.
 - [x] **Aksi massal**: Halaman Data-Management menyediakan pembaruan massal, penghapusan massal, dan penghapusan berbasis filter.
 - [x] **Alur analisis periode**: Halaman Aggregated mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
+- [x] **Deteksi duplikasi lintas unggah/manual**: Sistem menandai konflik awal berdasarkan kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`), sekaligus tetap menjaga penyimpanan berdasarkan unique key database.
+
+### Catatan penting: warning bukan berarti overwrite otomatis
+- Deteksi awal dan penyimpanan memakai kunci yang berbeda.
+- Deteksi awal menandai konflik jika indikator + periode sama, untuk memberi sinyal di preview (termasuk kasus lintas `uploader` dan `version`).
+- Penyimpanan akhir tetap mengikuti unique constraint DB `uploader + version + indicator + year + month + quarter`.
+- Contoh praktis:
+  - Data existing: `uploader=A`, `version=v1`, `indicator=GDP`, `2024-03`.
+  - Upload baru: `uploader=B`, `version=v2`, `indicator=GDP`, `2024-03`.
+  - Hasil: muncul warning karena indikator+periode cocok, namun tetap akan disimpan sebagai baris baru karena kombinasi unik DB berbeda.
+- Overwrite/replace terjadi hanya saat kombinasi unik DB persis sama.
+
+### FAQ cepat: duplikasi upload/manual
+- **Q: Kenapa upload saya dapat warning duplikasi tapi tetap berhasil disimpan?**
+  - **A:** Warning muncul dari pengecekan awal indikator+periode. Jika `uploader`/`version` berbeda, data tetap dianggap berbeda oleh constraint unik dan disimpan sebagai baris baru.
+- **Q: Kapan warning berarti data akan ditimpa?**
+  - **A:** Saat kombinasi unik `uploader + version + indicator + year + month + quarter` benar-benar sama, maka proses simpan akan menimpa data lama (overwrite) sesuai mode konfirmasi.
+- **Q: Kenapa saya harus waspada jika warning muncul?**
+  - **A:** Karena warning memberi konteks bahwa indikator+periode sudah ada di sistem; jika unique key juga sama, tindakan simpan bisa mengganti data sebelumnya.
+
+### Cara baca template Excel: vertikal vs horizontal
+- Pada format **vertikal**, setiap baris mewakili satu periode. Karena itu `periode` biasanya muncul sebagai kolom eksplisit (contoh: `periode`, `2026-01`, `2026-02`, dst.).
+- Pada format **horizontal**, `periode` diperlakukan sebagai label judul header, sementara tiap baris mewakili satu indikator. Karena itu kolom pertama baris data berisi nama indikator (`Contoh_Bunga`, `Contoh_Inflasi`, ...), dan header kolom di kanan berisi periode (`2026-01`, `2026-02`, dst.).
+- Akibatnya contoh:
+  - `periode	2026-01	2026-02	...`
+  - `Contoh_Bunga	125000	131200	...`
+  - `Contoh_Inflasi	2.5	2.7	...`
+  adalah perilaku yang normal untuk template horizontal; sel `periode` di `A1` diperlakukan sebagai label baris header, bukan kolom data terpisah.
 
 ### Ringkasan Berkas Python
 

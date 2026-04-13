@@ -155,43 +155,88 @@ def _lookup_existing_duplicate_records(
     version: str,
     unique_keys: list[tuple],
 ) -> list[dict]:
+    """Legacy helper: keep compatibility, now delegates to indicator+period matching."""
+    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
+
+
+def find_duplicate_entries_in_db(
+    _uploader: str | None = None,
+    _version: str | None = None,
+    entries: list[dict] | None = None,
+) -> list[dict]:
+    if entries is None:
+        return []
+    if not entries:
+        return []
+    unique_keys = _collect_duplicate_lookup_keys(entries)
+    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
+
+
+def _build_indicator_period_match_clause(
+    params: list[object],
+    indicator: str,
+    year: int,
+    month: int | None,
+    quarter: int | None,
+) -> str:
+    clauses = ["indicator_name = ?", "year = ?"]
+    params.extend([indicator, year])
+    if month is None:
+        clauses.append("month IS NULL")
+    else:
+        clauses.append("month = ?")
+        params.append(month)
+    if quarter is None:
+        clauses.append("quarter IS NULL")
+    else:
+        clauses.append("quarter = ?")
+        params.append(quarter)
+    return "(" + " AND ".join(clauses) + ")"
+
+
+def _lookup_existing_duplicate_records_by_indicator_period(unique_keys: list[tuple]) -> list[dict]:
     if not unique_keys:
         return []
 
-    # SQLite default limit is 999 bound parameters, so batch large duplicate
-    # lookups to stay below the limit (4 params per key + 2 base params).
-    max_batch_size = max(1, (999 - 2) // 4)  # => 249
+    # Keep parameter count within SQLite bind-variable limit (999).
+    max_batch_size = max(1, (999) // 4)  # => 249, same as full-lookup worst case
     rows = []
     for offset in range(0, len(unique_keys), max_batch_size):
         batch = unique_keys[offset : offset + max_batch_size]
-        placeholders = ",".join(["(?, ?, ?, ?)"] * len(batch))
-        sql = f"""
-            SELECT indicator_name, year, month, quarter
-            FROM data_entries
-            WHERE uploader_name = ? AND version = ? AND (indicator_name, year, month, quarter) IN ({placeholders})
-        """
-        params: list[object] = [uploader, version]
+        params: list[object] = []
+        where_parts: list[str] = []
         for indicator, year, month, quarter in batch:
-            params.extend([indicator, year, month, quarter])
+            where_parts.append(
+                _build_indicator_period_match_clause(params, indicator, year, month, quarter)
+            )
+        sql = f"""
+            SELECT id, uploader_name, version, indicator_name, year, month, quarter, value
+            FROM data_entries
+            WHERE {" OR ".join(where_parts)}
+        """
         with get_conn() as conn:
             rows.extend(conn.execute(sql, params).fetchall())
 
     return [
         {
+            "id": row["id"],
+            "uploader_name": row["uploader_name"],
+            "version": row["version"],
             "indicator_name": row["indicator_name"],
             "year": row["year"],
             "month": row["month"],
             "quarter": row["quarter"],
+            "value": row["value"],
         }
         for row in rows
     ]
 
 
-def find_duplicate_entries_in_db(uploader: str, version: str, entries: list[dict]) -> list[dict]:
+def find_duplicate_entries_by_indicator_period(entries: list[dict]) -> list[dict]:
     if not entries:
         return []
     unique_keys = _collect_duplicate_lookup_keys(entries)
-    return _lookup_existing_duplicate_records(uploader, version, unique_keys)
+    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
 
 
 def filter_duplicate_entries(

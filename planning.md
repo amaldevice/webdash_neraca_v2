@@ -21,8 +21,9 @@
   - Upload halaman `Upload` diubah jadi dua tahap: pratinjau terlebih dulu lalu konfirmasi sebelum insert.
   - Opsi override layout (`auto`/`vertical`/`horizontal`) ditambahkan pada form upload.
   - Template upload dasar kini tersedia di `/upload` dengan dua format sheet: `Template_Horizontal` dan `Template_Vertical`, masing-masing berisi contoh dan penjelasan di file template Excel.
-  - Validasi duplikasi dilakukan sebelum insert terhadap kombinasi `uploader + version + indicator + year + month + quarter`; duplikasi ditampilkan di pratinjau.
+  - Deteksi awal duplikasi upload/input sekarang memakai kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`) untuk menandai konflik di pratinjau, sementara operasi simpan tetap pakai aturan unik `uploader + version + indicator + year + month + quarter` agar override tetap konsisten.
   - Tabel Kandidat Duplikasi sekarang menampilkan kolom Nilai agar formatnya konsisten dengan tabel Contoh data yang akan disimpan (dengan baris ceklis sebagai kolom aksi).
+  - Input Manual sekarang memiliki deteksi awal duplikasi berdasarkan kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`) dan menampilkan opsi konfirmasi sebelum simpan jika konflik ditemukan.
   - Pratinjau kini menyediakan opsi lewati data duplikasi secara granular per baris kandidat duplikasi (checkbox per row), termasuk kontrol cepat "Pilih Semua", "Batal Semua", dan "Balik Pilihan" + ringkasan jumlah pilihan agar user tahu kandidat yang dikecualikan.
   - Konflik duplikasi bisa ditimpa (overwrite) saat konfirmasi: kandidat yang tidak dikecualikan akan menggantikan data lama yang sama berdasarkan unique key (`uploader`, `version`, `indicator`, `year`, `month`, `quarter`), dengan peringatan eksplisit untuk kasus duplikasi sebagian atau seluruhnya.
   - Sistem notifikasi upload ditata ulang agar lebih stabil: posisi tetap di area atas halaman, lebar adaptif tidak mengganggu layout form, dan teks terbungkus rapi tanpa menimpa komponen lain.
@@ -154,6 +155,8 @@ Pisahkan orchestrasi upload menjadi helper kecil agar alur parse, validasi, dupl
 - [x] **UPL-1.10** Jalankan regresi upload 2: conflict path dan error path
 - [x] **UPL-1.11** Terapkan perilaku konfirmasi duplikasi berbasis overwrite (upsert) + peringatan ketat.
 - [x] **MAN-1.1** Tambahkan filter rentang Nilai (`value_min` / `value_max`) di `preview_data` dan `data_management` untuk memfilter query dan ekspor.
+- [x] **MAN-1.2** Tambahkan deteksi awal duplikasi pada input manual berdasarkan kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`) sebelum insert.
+- [x] **UPL-1.12** Selaraskan deteksi awal duplikasi upload agar berbasis indikator + periode (tanpa mem-filter uploader/version) agar konsisten dengan input manual.
 
 ### Step-by-step (2–5 menit per step)
 
@@ -414,3 +417,10 @@ Pisahkan helper matematis agar rumus tidak bercampur dengan pembagian indikator.
 - Menambahkan tautan unduh template Excel (static/templates/upload_template.xlsx) pada form unggah, termasuk panduan format horizontal/vertikal dan catatan pemilihan sheet aktif untuk parsing.
 
 
+## Update 2026-04-13 (follow-up batch)
+- Menyelesaikan iterasi lanjutan pada alur upload/manual & tampilan:
+  - penyesuaian `routes/upload_routes.py` untuk flow upload-preview/manual.
+  - update `services/upload_flow.py` dan `services/upload_preview.py` sesuai perilaku duplikasi dan sesi pratinjau terbaru.
+  - pembaharuan template manual/upload (`templates/partials/_manual_form.html`, `templates/upload.html`) agar alur form dan notifikasi lebih selaras.
+  - perluasan test terkait `tests/test_upload_flow.py`, `tests/test_upload_preview.py`, `tests/test_models.py`, `tests/test_mutations_baseline.py`, `tests/test_data_management_actions.py`, `tests/simple_tests/functional_tests/test_manual_entry.py`.
+- Menambahkan catatan rencana kerja dokumen di `docs/superpowers/plans/2026-04-13-logging-and-mysql-migration.md`.
