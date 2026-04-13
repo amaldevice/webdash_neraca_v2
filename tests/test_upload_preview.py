@@ -114,7 +114,7 @@ def test_build_upload_preview_returns_payload_and_token(app_module, tmp_path):
         assert session["upload_preview_token"] == token
         assert preview["upload_preview_token"] == token
         assert preview["duplicate_records"] == duplicates
-        assert preview["skip_duplicate_indexes"] == ["0"]
+        assert preview["skip_duplicate_indexes"] == []
 
 
 def test_load_preview_session_expired_session_is_removed(tmp_path):

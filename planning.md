@@ -22,8 +22,11 @@
   - Opsi override layout (`auto`/`vertical`/`horizontal`) ditambahkan pada form upload.
   - Template upload dasar kini tersedia di `/upload` dengan dua format sheet: `Template_Horizontal` dan `Template_Vertical`, masing-masing berisi contoh dan penjelasan di file template Excel.
   - Validasi duplikasi dilakukan sebelum insert terhadap kombinasi `uploader + version + indicator + year + month + quarter`; duplikasi ditampilkan di pratinjau.
+  - Tabel Kandidat Duplikasi sekarang menampilkan kolom Nilai agar formatnya konsisten dengan tabel Contoh data yang akan disimpan (dengan baris ceklis sebagai kolom aksi).
   - Pratinjau kini menyediakan opsi lewati data duplikasi secara granular per baris kandidat duplikasi (checkbox per row), termasuk kontrol cepat "Pilih Semua", "Batal Semua", dan "Balik Pilihan" + ringkasan jumlah pilihan agar user tahu kandidat yang dikecualikan.
+  - Konflik duplikasi bisa ditimpa (overwrite) saat konfirmasi: kandidat yang tidak dikecualikan akan menggantikan data lama yang sama berdasarkan unique key (`uploader`, `version`, `indicator`, `year`, `month`, `quarter`), dengan peringatan eksplisit untuk kasus duplikasi sebagian atau seluruhnya.
   - Sistem notifikasi upload ditata ulang agar lebih stabil: posisi tetap di area atas halaman, lebar adaptif tidak mengganggu layout form, dan teks terbungkus rapi tanpa menimpa komponen lain.
+  - Filter di Pratinjau Data dan Manajemen Data kini mendukung rentang Nilai (`value_min`/`value_max`) untuk menyaring data berdasarkan batas bawah dan/atau atas.
 
 - **Dokumentasi detail:** `README.md` kini memuat ringkasan per-folder (ssets, 	emplates, static) dan ringkasan operasional setiap file utama Python untuk keperluan onboarding/refactor cepat.
 - [x] Buat dokumentasi detail per-folder: `assets/README.md`, `static/README.md`, `templates/README.md`, `templates/partials/README.md`.
@@ -149,6 +152,8 @@ Pisahkan orchestrasi upload menjadi helper kecil agar alur parse, validasi, dupl
 - [x] **UPL-1.8** Refaktor `process_upload_post_file` jadi orchestrator tipis
 - [x] **UPL-1.9** Jalankan regresi upload 1: validasi happy path
 - [x] **UPL-1.10** Jalankan regresi upload 2: conflict path dan error path
+- [x] **UPL-1.11** Terapkan perilaku konfirmasi duplikasi berbasis overwrite (upsert) + peringatan ketat.
+- [x] **MAN-1.1** Tambahkan filter rentang Nilai (`value_min` / `value_max`) di `preview_data` dan `data_management` untuk memfilter query dan ekspor.
 
 ### Step-by-step (2–5 menit per step)
 
@@ -182,6 +187,9 @@ Pisahkan orchestrasi upload menjadi helper kecil agar alur parse, validasi, dupl
 - [x] Step UPL-1.10: Jalankan kasus konflik/duplikasi.
 - [x] Step UPL-1.10 Verify: `python -m pytest tests/test_upload_flow.py -k duplicate -q`
 - [x] Step UPL-1.10 Log: tambah entry.
+- [x] Step UPL-1.11: Terapkan overwrite/overwrite-warning pada jalur konfirmasi duplikasi di `process_upload_confirm`.
+- [x] Step UPL-1.11 Verify: `python -m pytest tests/test_upload_flow.py -k duplicate and not all -q`
+- [x] Step UPL-1.11 Log: tambah entry.
 
 ## Team B - Upload Preview 2: services/upload_preview.py
 

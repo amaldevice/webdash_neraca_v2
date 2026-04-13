@@ -11,6 +11,8 @@ def _build_data_entry_filter_clauses(
     indicator: Optional[str],
     period_start: Optional[str],
     period_end: Optional[str],
+    value_min: Optional[float],
+    value_max: Optional[float],
 ) -> Tuple[List[str], List]:
     clauses: List[str] = []
     params: List = []
@@ -34,4 +36,11 @@ def _build_data_entry_filter_clauses(
         period_start=period_start,
         period_end=period_end,
     )
+
+    if value_min is not None:
+        clauses.append("value >= ?")
+        params.append(value_min)
+    if value_max is not None:
+        clauses.append("value <= ?")
+        params.append(value_max)
     return clauses, params

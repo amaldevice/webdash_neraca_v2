@@ -158,11 +158,14 @@
                     <div class="rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-sm text-error">
                         <p class="font-semibold">Pilih baris duplikasi yang ingin dikecualikan agar tidak tersimpan.</p>
                         <p class="text-xs text-base-content/75 mt-1">
-                            Jika masih ada duplikasi yang belum dipilih, proses simpan akan menunggu sampai semua konflik diperlakukan sebagai pengecualian.
+                            Baris duplikasi yang tidak dicentang akan dianggap akan menimpa data lama dengan versi terbaru saat disimpan.
                         </p>
                     </div>
                     <p class="text-xs font-medium text-base-content/80" data-duplicate-selection-summary>
                         {{ preview.skip_duplicate_indexes|default([], true)|length }} dari {{ preview.duplicate_records|length }} kandidat dipilih untuk dikecualikan.
+                    </p>
+                    <p class="text-xs font-semibold text-warning" data-duplicate-overwrite-summary>
+                        Atur checklist untuk menentukan baris yang tidak ingin ditimpa.
                     </p>
                     <div class="flex flex-wrap gap-2">
                         <button
@@ -187,37 +190,44 @@
                             Balik Pilihan
                         </button>
                     </div>
-                    <div class="max-h-52 overflow-auto pr-2 space-y-2">
-                        {% for dup in preview.duplicate_records %}
-                        {% set idx = loop.index0 %}
-                        <label class="w-full rounded-xl border border-base-200/80 bg-base-100/85 px-3 py-2.5 shadow-sm hover:bg-base-50">
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <input
-                                        type="checkbox"
-                                        name="skip_duplicate_indexes"
-                                        value="{{ idx }}"
-                                        class="checkbox checkbox-warning checkbox-sm"
-                                        {% if (idx|string) in (preview.skip_duplicate_indexes or []) %}checked{% endif %}
-                                    >
-                                    <span class="text-sm truncate">
-                                        {{ dup.indicator_name }} — {{ dup.year }}{% if dup.month %}-{{ dup.month }}{% else %} Q{{ dup.quarter }}{% endif %}
-                                    </span>
-                                </div>
-                                {% if dup.month %}
-                                <span class="badge badge-error badge-sm gap-1">
-                                    <span aria-hidden="true">⛔</span>
-                                    ERROR
-                                </span>
-                                {% else %}
-                                <span class="badge badge-warning badge-sm gap-1">
-                                    <span aria-hidden="true">⚠</span>
-                                    WARNING
-                                </span>
-                                {% endif %}
-                            </div>
-                        </label>
-                        {% endfor %}
+                    <div class="max-h-52 overflow-auto pr-2">
+                        <table class="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Ceklis</th>
+                                    <th>Indikator</th>
+                                    <th>Nilai</th>
+                                    <th>Periode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dup in preview.duplicate_records %}
+                                {% set idx = loop.index0 %}
+                                <tr>
+                                    <td>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                name="skip_duplicate_indexes"
+                                                value="{{ idx }}"
+                                                class="checkbox checkbox-warning checkbox-sm"
+                                                {% if (idx|string) in (preview.skip_duplicate_indexes or []) %}checked{% endif %}
+                                            >
+                                        </label>
+                                    </td>
+                                    <td class="max-w-[22rem] truncate" title="{{ dup.indicator_name }}">{{ dup.indicator_name }}</td>
+                                    <td class="font-semibold">{{ "{:,.2f}".format(dup.value) if dup.value is not none else "-" }}</td>
+                                    <td>
+                                        {% if dup.month %}
+                                        {{ dup.year }}-{{ "%02d"|format(dup.month|int) }}
+                                        {% else %}
+                                        {{ dup.year }}-Q{{ dup.quarter }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     {% else %}
                     <p class="text-sm text-base-content/70">Tidak ada kandidat duplikasi.</p>

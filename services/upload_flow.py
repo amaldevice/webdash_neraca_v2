@@ -15,7 +15,7 @@ from typing import Any, Literal
 from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from excel_parser import parse_excel_payload
-from models import insert_entries
+from models import insert_entries, upsert_entries
 from services.aggregation import refresh_aggregated_summary
 from services.manual_entries import build_manual_entry
 from services.upload_preview import (
@@ -146,6 +146,35 @@ def parse_and_validate_upload_payload(
     return payload, payload.get("entries", []), payload.get("warnings", [])
 
 
+def _hydrate_duplicate_records_with_values(
+    duplicate_records: list[dict[str, Any]],
+    entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Enrich duplicate candidates with uploaded values so UI can show nilai in preview rows.
+    """
+    value_by_key: dict[tuple, Any] = {}
+    for entry in entries:
+        key = (
+            entry.get("indicator_name"),
+            entry.get("year"),
+            entry.get("month"),
+            entry.get("quarter"),
+        )
+        if key not in value_by_key:
+            value_by_key[key] = entry.get("value")
+    hydrated: list[dict[str, Any]] = []
+    for duplicate in duplicate_records:
+        key = (
+            duplicate.get("indicator_name"),
+            duplicate.get("year"),
+            duplicate.get("month"),
+            duplicate.get("quarter"),
+        )
+        hydrated.append({**duplicate, "value": value_by_key.get(key)})
+    return hydrated
+
+
 def prepare_duplicate_plan(
     entries: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
@@ -174,6 +203,56 @@ def persist_upload_entries(entries: list[dict[str, Any]]) -> None:
     """
     insert_entries(entries)
     refresh_aggregated_summary()
+
+
+def persist_upload_entries_with_overwrite(entries: list[dict[str, Any]]) -> None:
+    """
+    Persist entries using upsert agar duplikasi pada indeks unik ditimpa.
+    Dipakai untuk alur konfirmasi duplikasi saat user memilih baris tertentu untuk dikecualikan.
+    """
+    upsert_entries(entries)
+    refresh_aggregated_summary()
+
+
+def _build_duplicate_confirmation_summary(
+    duplicates: list[dict[str, Any]],
+    selected_indexes: set[int],
+    deduped_entries: list[dict[str, Any]],
+) -> tuple[int, int, int]:
+    """
+    Hitung ringkasan penanganan duplikasi saat confirm.
+
+    Return:
+      - skipped_count: jumlah kandidat duplikasi yang dikecualikan.
+      - overwrite_count: jumlah kandidat duplikasi yang akan ditimpa.
+      - safe_rows_count: jumlah baris non-duplikasi yang akan disimpan.
+    """
+    duplicate_keys = [
+        (
+            duplicate.get("indicator_name"),
+            duplicate.get("year"),
+            duplicate.get("month"),
+            duplicate.get("quarter"),
+        )
+        for duplicate in duplicates
+    ]
+    skipped_count = len(selected_indexes)
+    overwrite_indexes = [i for i in range(len(duplicate_keys)) if i not in selected_indexes]
+    overwrite_keys = {duplicate_keys[i] for i in overwrite_indexes if 0 <= i < len(duplicate_keys)}
+    overwrite_count = len(overwrite_indexes)
+
+    deduped_duplicate_count = 0
+    for entry in deduped_entries:
+        key = (
+            entry.get("indicator_name"),
+            entry.get("year"),
+            entry.get("month"),
+            entry.get("quarter"),
+        )
+        if key in overwrite_keys:
+            deduped_duplicate_count += 1
+    safe_rows_count = len(deduped_entries) - deduped_duplicate_count
+    return skipped_count, overwrite_count, safe_rows_count
 
 
 def build_upload_response(
@@ -213,31 +292,11 @@ def handle_upload_confirm_with_duplicates(
         duplicates=duplicates,
         skip_duplicate_indexes_raw=skip_duplicate_indexes_raw,
     )
-    if len(selected_indexes) < len(duplicates):
-        preview_payload = to_preview_context(
-            excel_preview_source_from_payload(
-                file_name=token_payload.get("file_name", ""),
-                payload=parse_payload,
-                layout_override=preview_layout,
-                upload_preview_token=preview_token,
-                total_records=len(entries),
-            ),
-            duplicates=duplicates,
-            skip_duplicate_indexes=selected_indexes_payload,
-        )
-        return build_upload_response(
-            "render",
-            [
-                (
-                    f"Hanya {len(selected_indexes)} dari {len(duplicates)} kandidat duplikasi yang dipilih. "
-                    "Centang semua kandidat duplikasi yang ingin dikecualikan agar proses lanjut.",
-                    "warning",
-                )
-            ],
-            preview=preview_payload,
-            upload_preview_token=preview_token,
-            form_values=form_values,
-        )
+    _, overwrite_count, safe_rows_count = _build_duplicate_confirmation_summary(
+        duplicates,
+        selected_indexes,
+        deduped_entries,
+    )
 
     metadata = token_payload.get("metadata", {})
     form_values = {
@@ -267,17 +326,39 @@ def handle_upload_confirm_with_duplicates(
             form_values=form_values,
         )
     try:
-        persist_upload_entries(deduped_entries)
+        persist_upload_entries_with_overwrite(deduped_entries)
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
             os.remove(file_path)
-        if skipped_count > 0:
-            msg = f"{len(deduped_entries)} baris disimpan, {skipped_count} baris duplikasi dikecualikan."
+
+        if overwrite_count > 0 and skipped_count > 0:
+            msg = (
+                f"{len(deduped_entries)} baris disimpan, {overwrite_count} baris duplikasi ditimpa, "
+                f"{skipped_count} baris duplikasi dikecualikan."
+            )
+        elif overwrite_count > 0:
+            msg = f"{len(deduped_entries)} baris disimpan, {overwrite_count} baris duplikasi ditimpa."
+        elif safe_rows_count > 0:
+            msg = f"{len(deduped_entries)} baris disimpan."
         else:
             msg = f"{len(deduped_entries)} baris data berhasil disimpan."
+
+        flashes: list[tuple[str, str]] = []
+        if overwrite_count > 0:
+            overwrite_warning = (
+                f"PERINGATAN: {overwrite_count} baris duplikasi ditimpa sesuai pilihan saat ini."
+                if len(duplicates) == 1
+                else f"PERINGATAN: {overwrite_count} baris duplikasi akan ditimpa sesuai pilihan saat ini."
+            )
+            flashes.append((overwrite_warning, "warning"))
+            if skipped_count > 0:
+                flashes.append((f"{skipped_count} baris duplikasi lainnya dikecualikan.", "warning"))
+        else:
+            flashes.append((f"{skipped_count} baris duplikasi dikecualikan.", "warning"))
+        flashes.append((msg, "success"))
         return build_upload_response(
             "redirect",
-            [(msg, "success")],
+            flashes,
             pop_upload_session_token=True,
         )
     except sqlite3.IntegrityError as e:
@@ -383,8 +464,8 @@ def handle_upload_post_file_save_with_duplicates(
         [
             (
                 f"Ditemukan {len(duplicates)} konflik duplikasi. "
-                "Gunakan Konfirmasi pada pratinjau untuk memilih opsi lewati duplikasi.",
-                "error",
+                "Gunakan Konfirmasi pada pratinjau; kandidat yang tidak dikecualikan akan menimpa data yang sudah ada.",
+                "warning",
             )
         ],
         preview=preview_payload,
@@ -463,10 +544,14 @@ def handle_upload_post_file_preview(
             total_records=len(entries),
         ),
         duplicates=duplicates,
-        skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
+        skip_duplicate_indexes=[],
     )
     if duplicates:
-        info_flash = (f"Ditemukan {len(duplicates)} konflik duplikasi dengan data yang sudah ada.", "warning")
+        info_flash = (
+            f"Ditemukan {len(duplicates)} konflik duplikasi dengan data yang sudah ada. "
+            "Jika dilanjutkan, baris duplikasi yang tidak dikecualikan akan menimpa data lama.",
+            "warning",
+        )
     else:
         info_flash = ("Klik tombol konfirmasi untuk menyimpan data yang sudah dipratinjau.", "info")
     return build_upload_response(
@@ -529,7 +614,10 @@ def process_upload_confirm(
     if not entries:
         return build_upload_response("redirect", [("Sesi pratinjau tidak memuat data valid.", "error")])
 
-    duplicates = find_duplicate_entries_in_db(meta["uploader"], meta["version"], entries)
+    duplicates = _hydrate_duplicate_records_with_values(
+        find_duplicate_entries_in_db(meta["uploader"], meta["version"], entries),
+        entries,
+    )
     if duplicates:
         return handle_upload_confirm_with_duplicates(
             upload_folder=upload_folder,
@@ -605,7 +693,10 @@ def process_upload_post_file(
     if not entries:
         return handle_upload_post_file_no_entries(destination, form_values, warnings)
 
-    duplicates = find_duplicate_entries_in_db(uploader, version, entries)
+    duplicates = _hydrate_duplicate_records_with_values(
+        find_duplicate_entries_in_db(uploader, version, entries),
+        entries,
+    )
     if action == "save":
         if duplicates:
             return handle_upload_post_file_save_with_duplicates(

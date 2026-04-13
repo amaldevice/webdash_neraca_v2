@@ -12,7 +12,7 @@ from services.list_view import (
     parse_entries_pagination,
 )
 from services.period_analysis_export import build_period_analysis_excel_response
-from services.request_params import get_period_range_params
+from services.request_params import get_period_range_params, get_value_range_params
 
 
 def data_management():
@@ -22,6 +22,7 @@ def data_management():
     uploader = filter_source.get("uploader", "")
     indicator = filter_source.get("indicator", "")
     period_start, period_end = get_period_range_params(filter_source)
+    value_min, value_max = get_value_range_params(filter_source)
 
     page, limit, offset = parse_entries_pagination(request)
 
@@ -34,6 +35,8 @@ def data_management():
             indicator=indicator,
             period_start=period_start,
             period_end=period_end,
+            value_min=value_min,
+            value_max=value_max,
         ):
             flash(msg, category)
         return redirect(
@@ -43,12 +46,23 @@ def data_management():
                 time_period=time_period,
                 uploader=uploader,
                 indicator=indicator,
-                start_period=period_start,
-                end_period=period_end,
+                start_period=period_start or "",
+                end_period=period_end or "",
+                value_min=value_min if value_min is not None else "",
+                value_max=value_max if value_max is not None else "",
             )
         )
 
-    qkw = entries_query_kwargs(data_type, time_period, uploader, indicator, period_start, period_end)
+    qkw = entries_query_kwargs(
+        data_type,
+        time_period,
+        uploader,
+        indicator,
+        period_start,
+        period_end,
+        value_min,
+        value_max,
+    )
     entries = query_data_entries(**qkw, limit=limit, offset=offset)
 
     total_entries = get_total_entries_count(**qkw)
@@ -60,6 +74,8 @@ def data_management():
         indicator=indicator,
         period_start=period_start,
         period_end=period_end,
+        value_min=value_min,
+        value_max=value_max,
         page=page,
         limit=limit,
         total_entries=total_entries,

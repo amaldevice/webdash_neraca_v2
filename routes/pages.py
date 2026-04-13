@@ -20,7 +20,7 @@ from services.list_view import (
     parse_entries_pagination,
 )
 from services.raw_export import build_raw_data_export_response
-from services.request_params import get_period_range_params
+from services.request_params import get_period_range_params, get_value_range_params
 
 
 def landing_page():
@@ -34,12 +34,22 @@ def preview_data():
     uploader = request.args.get("uploader", "")
     indicator = request.args.get("indicator", "")
     period_start, period_end = get_period_range_params(request.args)
+    value_min, value_max = get_value_range_params(request.args)
 
     page, limit, offset = parse_entries_pagination(request)
 
     summary = fetch_aggregated_summary()
 
-    qkw = entries_query_kwargs(data_type, time_period, uploader, indicator, period_start, period_end)
+    qkw = entries_query_kwargs(
+        data_type,
+        time_period,
+        uploader,
+        indicator,
+        period_start,
+        period_end,
+        value_min,
+        value_max,
+    )
     entries = query_data_entries(**qkw, limit=limit, offset=offset)
 
     total_entries = get_total_entries_count(**qkw)
@@ -51,6 +61,8 @@ def preview_data():
         indicator=indicator,
         period_start=period_start,
         period_end=period_end,
+        value_min=value_min,
+        value_max=value_max,
         page=page,
         limit=limit,
         total_entries=total_entries,
@@ -70,7 +82,17 @@ def export_data():
     uploader = request.args.get("uploader")
     indicator = request.args.get("indicator")
     period_start, period_end = get_period_range_params(request.args)
-    qkw = entries_query_kwargs(data_type, time_period, uploader, indicator, period_start, period_end)
+    value_min, value_max = get_value_range_params(request.args)
+    qkw = entries_query_kwargs(
+        data_type,
+        time_period,
+        uploader,
+        indicator,
+        period_start,
+        period_end,
+        value_min,
+        value_max,
+    )
     entries = query_data_entries(**qkw, limit=1000)
     return build_raw_data_export_response(entries, fmt)
 

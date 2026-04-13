@@ -114,6 +114,23 @@ class TestDashboard:
         assert 'alice' in page_text, "Harus menampilkan data Alice"
         assert 'flow' in page_text, "Harus menampilkan data flow"
 
+    def test_dashboard_filter_by_value_min(self, populated_db):
+        """Test filter dashboard berdasarkan nilai minimum"""
+        response = populated_db.get('/preview-data?value_min=150')
+        soup = BeautifulSoup(response.data, 'html.parser')
+        page_text = soup.get_text().lower()
+        assert '250' in page_text, "Harus menampilkan nilai di atas batas minimum"
+        assert '150' in page_text, "Harus menampilkan nilai tepat batas minimum"
+        assert '100.5' not in page_text, "Nilai di bawah batas minimum harus hilang"
+
+    def test_dashboard_filter_by_value_range(self, populated_db):
+        """Test filter dashboard berdasarkan rentang nilai"""
+        response = populated_db.get('/preview-data?value_min=200&value_max=300')
+        soup = BeautifulSoup(response.data, 'html.parser')
+        page_text = soup.get_text().lower()
+        assert '250' in page_text, "Nilai 250 harus masuk rentang 200-300"
+        assert '150' not in page_text, "Nilai 150 harus di luar rentang"
+
     def test_dashboard_pagination(self, populated_db):
         """Test pagination di dashboard"""
         # Test dengan limit kecil untuk memaksa pagination
@@ -136,10 +153,14 @@ class TestDashboard:
         uploader_select = soup.find('select', {'name': 'uploader'}) or soup.find('input', {'name': 'uploader'})
         data_type_select = soup.find('select', {'name': 'data_type'}) or soup.find('input', {'name': 'data_type'})
         time_period_select = soup.find('select', {'name': 'time_period'}) or soup.find('input', {'name': 'time_period'})
+        value_min_input = soup.find('input', {'name': 'value_min'})
+        value_max_input = soup.find('input', {'name': 'value_max'})
 
         assert uploader_select is not None, "Harus ada filter uploader"
         assert data_type_select is not None, "Harus ada filter data_type"
         assert time_period_select is not None, "Harus ada filter time_period"
+        assert value_min_input is not None, "Harus ada filter nilai minimum"
+        assert value_max_input is not None, "Harus ada filter nilai maksimum"
 
     def test_dashboard_no_results_filter(self, test_client):
         """Test filter yang tidak menghasilkan hasil"""

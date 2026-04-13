@@ -94,6 +94,30 @@ def _insert_entries_payload(conn: sqlite3.Connection, entries: Iterable[Dict], n
     return cursor
 
 
+def _upsert_entries_payload(conn: sqlite3.Connection, entries: Iterable[Dict], now: str) -> Optional[sqlite3.Cursor]:
+    cursor = conn.cursor()
+    for entry in entries:
+        cursor.execute(
+            """
+            INSERT INTO data_entries (
+                uploader_name, version, template_type, data_type, time_period,
+                indicator_name, value, unit, region_code, year, month, quarter, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(uploader_name, version, indicator_name, year, month, quarter)
+            DO UPDATE SET
+                template_type = excluded.template_type,
+                data_type = excluded.data_type,
+                time_period = excluded.time_period,
+                value = excluded.value,
+                unit = excluded.unit,
+                region_code = excluded.region_code,
+                created_at = excluded.created_at
+            """,
+            _compose_insert_values(entry, now),
+        )
+    return cursor
+
+
 def _update_data_entry_payload(
     conn: sqlite3.Connection,
     entry_id: str,
@@ -134,6 +158,18 @@ def insert_entries(entries: Iterable[Dict]) -> None:
     )
 
 
+def upsert_entries(entries: Iterable[Dict]) -> None:
+    now = utc_now_iso()
+    entries_list = list(entries)
+    if not entries_list:
+        return
+    _execute_mutation(
+        "upsert_entries",
+        lambda conn: _upsert_entries_payload(conn, entries_list, now),
+        raise_on_error=True,
+    )
+
+
 def delete_data_entry(entry_id: str) -> bool:
     """Delete a single data entry by ID"""
     affected_rows = _run_mutation("delete_data_entry", lambda conn: _delete_entry_by_id_payload(conn, entry_id))
@@ -160,10 +196,12 @@ def delete_data_by_filter(
     indicator: Optional[str] = None,
     period_start: Optional[str] = None,
     period_end: Optional[str] = None,
+    value_min: Optional[float] = None,
+    value_max: Optional[float] = None,
 ) -> int:
     """Delete data entries based on filters"""
     clauses, params = _build_data_entry_filter_clauses(
-        data_type, time_period, uploader, indicator, period_start, period_end
+        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
     )
 
     if not clauses:
