@@ -376,3 +376,49 @@ def test_process_manual_input_post_success(db_path):
     r = process_manual_input_post("M1", "v9", "flow", "monthly", "2024-06", "PIB", "99.5")
     assert r.kind == "redirect"
     assert models.get_total_entries_count() == 1
+
+
+def test_process_manual_input_post_duplicate_detection(db_path):
+    existing = _minimal_entry()
+    existing["uploader_name"] = "SeedUser"
+    existing["version"] = "v2"
+    existing["value"] = 42.0
+    models.insert_entries([existing])
+
+    r = process_manual_input_post(
+        "M1",
+        "v9",
+        "flow",
+        "monthly",
+        "2024-03",
+        "GDP",
+        "99.5",
+        confirm_duplicate=False,
+    )
+    assert r.kind == "render"
+    assert r.manual_duplicate is not None
+    assert r.manual_duplicate["count"] >= 1
+    assert r.manual_duplicate["indicator"] == "GDP"
+    assert any("duplikasi" in msg.lower() for msg, _ in r.flashes)
+    assert models.get_total_entries_count() == 1
+
+
+def test_process_manual_input_post_duplicate_confirmation_inserts_row(db_path):
+    existing = _minimal_entry()
+    existing["uploader_name"] = "SeedUser"
+    existing["version"] = "v2"
+    existing["value"] = 42.0
+    models.insert_entries([existing])
+
+    r = process_manual_input_post(
+        "M1",
+        "v9",
+        "flow",
+        "monthly",
+        "2024-03",
+        "GDP",
+        "99.5",
+        confirm_duplicate=True,
+    )
+    assert r.kind == "redirect"
+    assert models.get_total_entries_count() == 2

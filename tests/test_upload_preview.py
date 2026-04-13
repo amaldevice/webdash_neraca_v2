@@ -227,9 +227,15 @@ def test_find_duplicate_entries_in_db_detects_existing_rows(db_path):
             "quarter": 1,
         }],
     )
-    assert found == [
-        {"indicator_name": "GDP", "year": 2024, "month": 1, "quarter": 1},
-    ]
+    assert len(found) == 1
+    first = found[0]
+    assert first["uploader_name"] == "U1"
+    assert first["version"] == "v1"
+    assert first["indicator_name"] == "GDP"
+    assert first["year"] == 2024
+    assert first["month"] == 1
+    assert first["quarter"] == 1
+    assert first["value"] == 1.0
 
 
 def test_to_preview_context_returns_default_sample_count_and_duplicates():

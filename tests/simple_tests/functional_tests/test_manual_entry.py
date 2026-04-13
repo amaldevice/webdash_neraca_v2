@@ -275,6 +275,50 @@ class TestManualEntry:
         assert response.status_code in [200, 302], "Input dengan bulan berbeda harus berhasil"
 
 
+def test_manual_entry_duplicate_warning_and_confirmation(test_client):
+    from models import insert_entries, query_data_entries
+
+    seed_entry = {
+        "uploader_name": "SeedUser",
+        "version": "v2",
+        "template_type": "manual",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "indicator_name": "GDPManual",
+        "value": 10.0,
+        "unit": None,
+        "region_code": None,
+        "year": 2024,
+        "month": 4,
+        "quarter": None,
+        "created_at": "2024-01-01T00:00:00",
+    }
+    insert_entries([seed_entry])
+
+    payload = {
+        "uploader": "NewUser",
+        "version": "v1",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "period_date": "2024-04",
+        "indicator": "GDPManual",
+        "value": "12.5",
+    }
+
+    response = test_client.post('/manual', data=payload)
+    assert response.status_code == 200
+    soup = BeautifulSoup(response.data, 'html.parser')
+    page_text = soup.get_text().lower()
+    assert 'deteksi duplikasi' in page_text
+    assert soup.find('input', {'name': 'confirm_duplicate'}) is not None
+
+    payload["confirm_duplicate"] = "1"
+    response = test_client.post('/manual', data=payload)
+    assert response.status_code in [200, 302]
+    entries = query_data_entries(indicator="GDPManual")
+    assert len(entries) == 2
+
+
 if __name__ == "__main__":
     # Jalankan test secara standalone
     pytest.main([__file__, "-v"])

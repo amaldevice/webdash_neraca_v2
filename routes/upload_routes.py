@@ -113,7 +113,12 @@ def _apply_manual_flow_response(resp):
         flash(msg, cat)
     if resp.kind == "redirect":
         return redirect(url_for("manual_input"))
-    return render_template(UPLOAD_TEMPLATE_NAME, mode=MANUAL_ROUTE_MODE)
+    return render_template(
+        UPLOAD_TEMPLATE_NAME,
+        mode=MANUAL_ROUTE_MODE,
+        form_values=resp.form_values or {},
+        manual_duplicate=resp.manual_duplicate,
+    )
 
 
 def upload_data():
@@ -221,13 +226,26 @@ def manual_input():
         period_date = request.form.get("period_date", "").strip()
         indicator = request.form.get("indicator", "").strip()
         value = request.form.get("value", "").strip()
+        confirm_duplicate = request.form.get("confirm_duplicate") == "1"
         return _apply_manual_flow_response(
             process_manual_input_post(
-                uploader, version, data_type, time_period, period_date, indicator, value
+                uploader,
+                version,
+                data_type,
+                time_period,
+                period_date,
+                indicator,
+                value,
+                confirm_duplicate=confirm_duplicate,
             )
         )
 
-    return render_template(UPLOAD_TEMPLATE_NAME, mode=MANUAL_ROUTE_MODE)
+    return render_template(
+        UPLOAD_TEMPLATE_NAME,
+        mode=MANUAL_ROUTE_MODE,
+        form_values={},
+        manual_duplicate=None,
+    )
 
 
 def register(app: Flask) -> None:

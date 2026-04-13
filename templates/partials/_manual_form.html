@@ -1,10 +1,18 @@
+{% set values = form_values or {} %}
+
 <form method="POST" class="space-y-5">
     <div class="form-grid">
     <div class="form-control">
         <label for="uploader" class="label">
             <span class="label-text">Pengunggah</span>
         </label>
-        <input id="uploader" name="uploader" class="control" required>
+        <input
+            id="uploader"
+            name="uploader"
+            class="control"
+            value="{{ values.get('uploader', '') }}"
+            required
+        >
         <label class="label">
             <span class="field-help">Nama penanggung jawab unggahan.</span>
         </label>
@@ -14,7 +22,13 @@
         <label for="version" class="label">
             <span class="label-text">Versi</span>
         </label>
-        <input id="version" name="version" class="control" required>
+        <input
+            id="version"
+            name="version"
+            class="control"
+            value="{{ values.get('version', '') }}"
+            required
+        >
         <label class="label">
             <span class="field-help">Gunakan format v1.0, v2.0, dll.</span>
         </label>
@@ -25,8 +39,8 @@
             <span class="label-text">Jenis Data</span>
         </label>
         <select id="data_type" name="data_type" class="control">
-            <option value="flow">Flow</option>
-            <option value="stock">Stock</option>
+            <option value="flow" {% if values.get('data_type', 'flow') == 'flow' %}selected{% endif %}>Flow</option>
+            <option value="stock" {% if values.get('data_type', 'flow') == 'stock' %}selected{% endif %}>Stock</option>
         </select>
         <label class="label">
             <span class="field-help">Flow = arus, Stock = posisi.</span>
@@ -38,9 +52,9 @@
             <span class="label-text">Periode</span>
         </label>
         <select id="time_period" name="time_period" class="control" onchange="updatePeriodFormat()">
-            <option value="monthly">Bulanan</option>
-            <option value="quarterly">Triwulanan</option>
-            <option value="yearly">Tahunan</option>
+            <option value="monthly" {% if values.get('time_period', 'monthly') == 'monthly' %}selected{% endif %}>Bulanan</option>
+            <option value="quarterly" {% if values.get('time_period', 'monthly') == 'quarterly' %}selected{% endif %}>Triwulanan</option>
+            <option value="yearly" {% if values.get('time_period', 'monthly') == 'yearly' %}selected{% endif %}>Tahunan</option>
         </select>
     </div>
     </div>
@@ -50,7 +64,15 @@
         <label for="period_date" class="label">
             <span class="label-text">Periode Data</span>
         </label>
-        <input id="period_date" name="period_date" type="text" class="control" placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan" required>
+        <input
+            id="period_date"
+            name="period_date"
+            type="text"
+            class="control"
+            value="{{ values.get('period_date', '') }}"
+            placeholder="Format: YYYY-MM untuk Bulanan, YYYY untuk Tahunan"
+            required
+        >
         <label class="label">
             <span class="field-help">Gunakan format periode sesuai pilihan di atas.</span>
         </label>
@@ -60,19 +82,74 @@
         <label for="indicator" class="label">
             <span class="label-text">Indikator</span>
         </label>
-        <input id="indicator" name="indicator" class="control" required>
+        <input
+            id="indicator"
+            name="indicator"
+            class="control"
+            value="{{ values.get('indicator', '') }}"
+            required
+        >
     </div>
 
     <div class="form-control">
         <label for="value" class="label">
             <span class="label-text">Nilai</span>
         </label>
-        <input id="value" name="value" type="number" step="any" class="control" required>
+        <input
+            id="value"
+            name="value"
+            type="number"
+            step="any"
+            class="control"
+            value="{{ values.get('value', '') }}"
+            required
+        >
     </div>
     </div>
 
+    {% if manual_duplicate and manual_duplicate.exists %}
+    <div class="rounded-2xl border border-warning bg-warning/5 p-4 space-y-3">
+        <h4 class="font-semibold">Deteksi duplikasi awal</h4>
+        <p class="text-sm text-warning-content">
+            Ditemukan {{ manual_duplicate.count }} data existing untuk indikator
+            <span class="font-semibold">{{ manual_duplicate.indicator }}</span>
+            dan periode <span class="font-semibold">{{ manual_duplicate.period }}</span>
+            berdasarkan kunci indikator + periode.
+        </p>
+        {% if manual_duplicate.existing_records %}
+        <p class="text-xs text-base-content/70">Contoh data matching:</p>
+        <div class="overflow-x-auto">
+            <table class="table table-xs w-full">
+                <thead>
+                    <tr>
+                        <th>Pengunggah</th>
+                        <th>Versi</th>
+                        <th>Nilai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in manual_duplicate.existing_records %}
+                    <tr>
+                        <td>{{ row.get('uploader_name', '-') }}</td>
+                        <td>{{ row.get('version', '-') }}</td>
+                        <td class="font-semibold">{{ "{:,.2f}".format(row.get('value')) if row.get('value') is not none else "-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="form-actions-bar">
+        {% if manual_duplicate and manual_duplicate.exists %}
+        <input type="hidden" name="confirm_duplicate" value="1">
+        <button type="submit" class="btn btn-warning">Simpan Entri Manual (Timpa)</button>
+        <a href="{{ url_for('manual_input') }}" class="btn-soft">Batal</a>
+        {% else %}
         <button type="submit" class="btn btn-primary">Simpan Entri Manual</button>
+        {% endif %}
         <a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
     </div>
 </form>
