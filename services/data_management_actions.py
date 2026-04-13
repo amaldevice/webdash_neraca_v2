@@ -26,6 +26,8 @@ def apply_data_management_post(
     indicator: str,
     period_start: str | None,
     period_end: str | None,
+    value_min: float | None,
+    value_max: float | None,
 ) -> List[FlashTuple]:
     """Run the requested action; side effects on DB. Caller applies flash() for each tuple."""
     messages: List[FlashTuple] = []
@@ -45,6 +47,8 @@ def apply_data_management_post(
             indicator=indicator or None,
             period_start=period_start,
             period_end=period_end,
+            value_min=value_min,
+            value_max=value_max,
         )
         messages.append((f"{deleted_count} data berhasil dihapus berdasarkan filter.", "success"))
 

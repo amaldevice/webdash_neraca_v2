@@ -144,8 +144,8 @@ def test_process_upload_confirm_inserts_without_duplicates(db_path, tmp_path):
     assert not fp.exists()
 
 
-def test_process_upload_confirm_partial_duplicate_selection_renders_warning(db_path, tmp_path):
-    """User checked fewer duplicate candidates than required — must re-render preview."""
+def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db_path, tmp_path):
+    """User checks some duplicate candidates to skip; remaining duplicates should be overwritten."""
     upload_dir = tmp_path / "u"
     upload_dir.mkdir()
     fp = upload_dir / "f.xlsx"
@@ -179,12 +179,15 @@ def test_process_upload_confirm_partial_duplicate_selection_renders_warning(db_p
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
-                r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
+                with patch.object(upload_flow, "delete_preview_session"):
+                    with patch.object(upload_flow, "refresh_aggregated_summary"):
+                        r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
 
-    assert r.kind == "render"
-    assert r.upload_preview_token == "tok"
-    assert "Hanya 1 dari 2" in r.flashes[0][0]
-    assert models.get_total_entries_count() == 0
+    assert r.kind == "redirect"
+    assert r.pop_upload_session_token is True
+    assert "ditimpa" in r.flashes[0][0]
+    assert "dikecualikan" in r.flashes[1][0]
+    assert models.get_total_entries_count() == 1
 
 
 def test_process_upload_confirm_all_duplicate_rows_skipped_renders(db_path, tmp_path):
@@ -260,10 +263,54 @@ def test_process_upload_confirm_skip_duplicate_inserts_remaining_rows(db_path, t
 
     assert r.kind == "redirect"
     assert r.pop_upload_session_token is True
-    assert "disimpan" in r.flashes[0][0]
+    assert "dikecualikan" in r.flashes[1][0]
     assert models.get_total_entries_count() == 1
     rows = models.query_data_entries(limit=5, indicator="FreshIndicator")
     assert len(rows) == 1
+
+
+def test_process_upload_confirm_duplicate_without_skip_overwrites_existing_row(db_path, tmp_path):
+    """If a duplicate isn't checked, confirmation overwrites the existing row."""
+    upload_dir = tmp_path / "u"
+    upload_dir.mkdir()
+    fp = upload_dir / "f.xlsx"
+    fp.write_bytes(b"x")
+    token_payload = {
+        "file_path": str(fp),
+        "file_name": "f.xlsx",
+        "metadata": {
+            "uploader": "U1",
+            "version": "v1",
+            "data_type": "flow",
+            "time_period": "monthly",
+        },
+        "layout_override": "auto",
+    }
+    entry = _minimal_entry()
+    parse_out = _parse_payload_with_entries([entry])
+    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": None}]
+    existing = {**entry, "value": 9.99}
+    models.insert_entries([existing])
+    form_values = {
+        "uploader": "U1",
+        "version": "v1",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "layout_override": "auto",
+    }
+
+    with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
+        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+            with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
+                with patch.object(upload_flow, "delete_preview_session"):
+                    with patch.object(upload_flow, "refresh_aggregated_summary"):
+                        r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
+
+    assert r.kind == "redirect"
+    assert r.pop_upload_session_token is True
+    row = models.query_data_entries(limit=1, indicator="GDP")[0]
+    assert row["value"] == entry["value"]
+    assert "ditimpa" in r.flashes[0][0]
 
 
 def test_process_upload_post_file_parse_error_deletes_file(tmp_path):

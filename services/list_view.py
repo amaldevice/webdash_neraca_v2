@@ -35,6 +35,8 @@ def entries_query_kwargs(
     indicator: Optional[str],
     period_start: Optional[str],
     period_end: Optional[str],
+    value_min: Optional[float],
+    value_max: Optional[float],
 ) -> dict[str, Any]:
     """Keyword args for query_data_entries / get_total_entries_count."""
     return {
@@ -44,6 +46,8 @@ def entries_query_kwargs(
         "indicator": indicator or None,
         "period_start": period_start,
         "period_end": period_end,
+        "value_min": value_min,
+        "value_max": value_max,
     }
 
 
@@ -55,6 +59,8 @@ def build_entries_filters_ui_dict(
     indicator: str,
     period_start: str | None,
     period_end: str | None,
+    value_min: float | None,
+    value_max: float | None,
     page: int,
     limit: int,
     total_entries: int,
@@ -67,6 +73,8 @@ def build_entries_filters_ui_dict(
         "indicator": indicator,
         "start_period": period_start,
         "end_period": period_end,
+        "value_min": value_min,
+        "value_max": value_max,
         "page": page,
         "limit": limit,
         "total_pages": total_pages,

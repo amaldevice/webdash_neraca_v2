@@ -24,7 +24,7 @@
                 </select>
             </div>
             <div class="toolbar-actions">
-            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator or filters.start_period or filters.end_period %}
+            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator or filters.start_period or filters.end_period or (filters.value_min is not none) or (filters.value_max is not none) %}
             <form method="POST" class="self-end md:pt-8">
                 <input type="hidden" name="action" value="delete_by_filter">
                 <input type="hidden" name="data_type" value="{{ filters.data_type }}">
@@ -33,6 +33,8 @@
                 <input type="hidden" name="indicator" value="{{ filters.indicator }}">
                 <input type="hidden" name="start_period" value="{{ filters.start_period or '' }}">
                 <input type="hidden" name="end_period" value="{{ filters.end_period or '' }}">
+                <input type="hidden" name="value_min" value="{{ filters.value_min if filters.value_min is not none else '' }}">
+                <input type="hidden" name="value_max" value="{{ filters.value_max if filters.value_max is not none else '' }}">
                 <button type="button" class="btn-danger-soft btn-sm js-confirm-action" data-confirm-title="Hapus data sesuai filter?" data-confirm-message="Semua data yang cocok dengan filter aktif akan dihapus." data-confirm-label="Hapus Data" data-confirm-submit="true">Hapus Berdasarkan Filter</button>
             </form>
             {% endif %}

@@ -42,6 +42,8 @@ def test_apply_delete_single_returns_success_message(db_path, monkeypatch):
         indicator="",
         period_start=None,
         period_end=None,
+        value_min=None,
+        value_max=None,
     )
     assert msgs == [("Data berhasil dihapus.", "success")]
     assert models.get_total_entries_count() == 0
@@ -85,6 +87,8 @@ def test_apply_bulk_update_invalid_value_returns_error(db_path, monkeypatch):
         indicator="",
         period_start=None,
         period_end=None,
+        value_min=None,
+        value_max=None,
     )
     assert msgs == [("Nilai harus berupa angka.", "error")]
 
@@ -139,6 +143,8 @@ def test_apply_bulk_delete_action_removes_multiple_rows(db_path, monkeypatch):
         indicator="",
         period_start=None,
         period_end=None,
+        value_min=None,
+        value_max=None,
     )
     assert ("2 data berhasil dihapus.", "success") in msgs
     assert models.get_total_entries_count() == 0
@@ -168,6 +174,8 @@ def test_apply_insert_action_adds_data_entry(db_path, monkeypatch):
         indicator="",
         period_start=None,
         period_end=None,
+        value_min=None,
+        value_max=None,
     )
     assert ("Data baru berhasil ditambahkan.", "success") in msgs
     assert models.get_total_entries_count() == 1
@@ -242,5 +250,56 @@ def test_apply_update_action_with_invalid_value_returns_validation_error(db_path
         indicator="",
         period_start=None,
         period_end=None,
+        value_min=None,
+        value_max=None,
     )
     assert msgs == [("Nilai harus berupa angka.", "error")]
+
+
+def test_apply_delete_by_filter_with_value_range_respects_bounds(db_path, monkeypatch):
+    monkeypatch.setattr(models, "DB_PATH", str(db_path))
+    models.init_db()
+    models.insert_entries(
+        [
+            {
+                "uploader_name": "u1",
+                "version": "v1",
+                "template_type": "manual",
+                "data_type": "flow",
+                "time_period": "monthly",
+                "indicator_name": "GDP",
+                "value": 10.0,
+                "year": 2024,
+                "month": 1,
+                "quarter": None,
+            },
+            {
+                "uploader_name": "u2",
+                "version": "v1",
+                "template_type": "manual",
+                "data_type": "flow",
+                "time_period": "monthly",
+                "indicator_name": "GDP",
+                "value": 200.0,
+                "year": 2024,
+                "month": 2,
+                "quarter": None,
+            },
+        ]
+    )
+
+    form = ImmutableMultiDict([("action", "delete_by_filter")])
+    msgs = apply_data_management_post(
+        form,
+        data_type="flow",
+        time_period="monthly",
+        uploader="",
+        indicator="GDP",
+        period_start=None,
+        period_end=None,
+        value_min=50.0,
+        value_max=150.0,
+    )
+
+    assert ("1 data berhasil dihapus berdasarkan filter.", "success") in msgs
+    assert models.get_total_entries_count() == 1

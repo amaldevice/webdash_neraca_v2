@@ -14,9 +14,11 @@ def get_total_entries_count(
     indicator: Optional[str] = None,
     period_start: Optional[str] = None,
     period_end: Optional[str] = None,
+    value_min: Optional[float] = None,
+    value_max: Optional[float] = None,
 ) -> int:
     clauses, params = _build_data_entry_filter_clauses(
-        data_type, time_period, uploader, indicator, period_start, period_end
+        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
     )
 
     base_query = "SELECT COUNT(*) FROM data_entries"
@@ -40,9 +42,11 @@ def query_data_entries(
     offset: Optional[int] = 0,
     period_start: Optional[str] = None,
     period_end: Optional[str] = None,
+    value_min: Optional[float] = None,
+    value_max: Optional[float] = None,
 ) -> List[Dict]:
     clauses, params = _build_data_entry_filter_clauses(
-        data_type, time_period, uploader, indicator, period_start, period_end
+        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
     )
 
     base_query = """

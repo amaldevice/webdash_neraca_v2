@@ -291,7 +291,7 @@ def _build_preview_session_payload(
         "invalid_rows": payload.get("invalid_rows", []),
         "total_records": len(payload.get("entries", [])),
         "duplicate_records": duplicates,
-        "skip_duplicate_indexes": [str(i) for i in range(len(duplicates))],
+        "skip_duplicate_indexes": [],
     }
 
 
@@ -397,6 +397,6 @@ def build_upload_preview(
             total_records=len(entries),
         ),
         duplicates=duplicates,
-        skip_duplicate_indexes=[str(i) for i in range(len(duplicates))],
+        skip_duplicate_indexes=[],
     )
     return upload_token, preview_payload

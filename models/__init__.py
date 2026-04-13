@@ -29,6 +29,7 @@ from .mutations import (
     delete_data_entry,
     insert_entries,
     insert_single_entry,
+    upsert_entries,
     update_data_entry,
     update_data_entry_full,
 )
@@ -57,6 +58,7 @@ __all__ = [
     "get_unique_indicators",
     "init_db",
     "insert_entries",
+    "upsert_entries",
     "insert_single_entry",
     "load_cached_summary",
     "query_data_entries",

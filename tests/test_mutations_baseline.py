@@ -107,3 +107,28 @@ def test_update_data_entry_keeps_row_count_and_changes_value(db_path):
     assert updated is True
     assert models.get_total_entries_count() == 1
     assert models.query_data_entries(limit=10)[0]["value"] == 123.45
+
+
+def test_upsert_entries_overwrites_existing_row(db_path):
+    base_entry = {
+        "uploader_name": "u1",
+        "version": "v1",
+        "template_type": "manual",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "indicator_name": "GDP",
+        "value": 100.0,
+        "unit": None,
+        "region_code": None,
+        "year": 2024,
+        "month": 1,
+        "quarter": None,
+    }
+    models.insert_entries([base_entry])
+
+    updated_entry = {**base_entry, "value": 999.0, "time_period": "monthly"}
+    models.upsert_entries([updated_entry])
+
+    assert models.get_total_entries_count() == 1
+    row = models.query_data_entries(limit=10, indicator="GDP")[0]
+    assert row["value"] == 999.0

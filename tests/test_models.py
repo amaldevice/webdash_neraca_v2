@@ -50,3 +50,35 @@ def test_insert_single_entry_and_query(db_path):
     assert created_y is True
     rows = models.query_data_entries(limit=10)
     assert len(rows) == 3
+
+
+def test_query_data_entries_with_value_min_filter(db_path):
+    models.clear_all_data()
+    models.insert_entries(
+        [
+            {"uploader_name": "A", "version": "v1", "template_type": "manual", "data_type": "flow", "time_period": "monthly",
+             "indicator_name": "GDP", "value": 10.0, "year": 2024, "month": 1, "quarter": None},
+            {"uploader_name": "B", "version": "v1", "template_type": "manual", "data_type": "flow", "time_period": "monthly",
+             "indicator_name": "GDP", "value": 100.0, "year": 2024, "month": 2, "quarter": None},
+        ]
+    )
+    rows = models.query_data_entries(limit=10, value_min=50.0)
+    assert len(rows) == 1
+    assert rows[0]["value"] == 100.0
+
+
+def test_query_data_entries_with_value_range_filters(db_path):
+    models.clear_all_data()
+    models.insert_entries(
+        [
+            {"uploader_name": "A", "version": "v1", "template_type": "manual", "data_type": "flow", "time_period": "monthly",
+             "indicator_name": "GDP", "value": 50.0, "year": 2024, "month": 1, "quarter": None},
+            {"uploader_name": "B", "version": "v1", "template_type": "manual", "data_type": "flow", "time_period": "monthly",
+             "indicator_name": "GDP", "value": 150.0, "year": 2024, "month": 2, "quarter": None},
+            {"uploader_name": "C", "version": "v1", "template_type": "manual", "data_type": "flow", "time_period": "monthly",
+             "indicator_name": "GDP", "value": 250.0, "year": 2024, "month": 3, "quarter": None},
+        ]
+    )
+    rows = models.query_data_entries(limit=10, value_min=75.0, value_max=200.0)
+    assert len(rows) == 1
+    assert rows[0]["value"] == 150.0

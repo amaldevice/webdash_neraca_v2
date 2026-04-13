@@ -14,3 +14,26 @@ def get_period_range_params(
         start_period.strip() if start_period is not None else None,
         end_period.strip() if end_period is not None else None,
     )
+
+
+def _to_float(value) -> float | None:
+    if value is None:
+        return None
+    value_str = str(value).strip()
+    if not value_str:
+        return None
+    try:
+        return float(value_str)
+    except (TypeError, ValueError):
+        return None
+
+
+def get_value_range_params(
+    source,
+    min_key: str = "value_min",
+    max_key: str = "value_max",
+) -> tuple[float | None, float | None]:
+    """Extract optional value-range parameters from request-like inputs."""
+    value_min = source.get(min_key, "", type=str)
+    value_max = source.get(max_key, "", type=str)
+    return _to_float(value_min), _to_float(value_max)
