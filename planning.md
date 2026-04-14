@@ -27,6 +27,8 @@
   - Pratinjau kini menyediakan opsi lewati data duplikasi secara granular per baris kandidat duplikasi (checkbox per row), termasuk kontrol cepat "Pilih Semua", "Batal Semua", dan "Balik Pilihan" + ringkasan jumlah pilihan agar user tahu kandidat yang dikecualikan.
   - Konflik duplikasi bisa ditimpa (overwrite) saat konfirmasi: kandidat yang tidak dikecualikan akan menggantikan data lama yang sama berdasarkan unique key (`uploader`, `version`, `indicator`, `year`, `month`, `quarter`), dengan peringatan eksplisit untuk kasus duplikasi sebagian atau seluruhnya.
   - Sistem notifikasi upload ditata ulang agar lebih stabil: posisi tetap di area atas halaman, lebar adaptif tidak mengganggu layout form, dan teks terbungkus rapi tanpa menimpa komponen lain.
+  - Parser universal sekarang dibedakan per mode `time_period` (`monthly`, `quarterly`, `yearly`) supaya periode `2021`, `2024` pada header tahunan tidak lagi salah jadi `1970`.
+  - Tampilan `tanggal_data` dan preview periode kini period-aware untuk `monthly`, `quarterly`, dan `yearly` (`YYYY-MM`, `YYYY-Qn`, `YYYY`) supaya `/data-management`, `/preview-data`, dan `/upload` tidak menampilkan `N/A` / `-` saat periodenya non-bulanan.
   - Filter di Pratinjau Data dan Manajemen Data kini mendukung rentang Nilai (`value_min`/`value_max`) untuk menyaring data berdasarkan batas bawah dan/atau atas.
 
 - **Dokumentasi detail:** `README.md` kini memuat ringkasan per-folder (ssets, 	emplates, static) dan ringkasan operasional setiap file utama Python untuk keperluan onboarding/refactor cepat.

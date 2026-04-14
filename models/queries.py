@@ -7,6 +7,26 @@ from .connection import get_conn
 from .data_filters import _build_data_entry_filter_clauses
 
 
+def _format_period_text(row: sqlite3.Row) -> str:
+    year = row["year"]
+    month = row["month"]
+    quarter = row["quarter"]
+
+    if year is None:
+        return "N/A"
+
+    year_int = int(year)
+    if month is not None:
+        month_int = int(month)
+        return f"{year_int}-{month_int:02d}"
+
+    if quarter is not None:
+        quarter_int = int(quarter)
+        return f"{year_int}-Q{quarter_int}"
+
+    return str(year_int)
+
+
 def get_total_entries_count(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
@@ -79,7 +99,7 @@ def query_data_entries(
             "year": row["year"],
             "month": row["month"],
             "quarter": row["quarter"],
-            "tanggal_data": f"{row['year']}-{row['month']:02d}" if row["year"] and row["month"] else "N/A",
+            "tanggal_data": _format_period_text(row),
         }
         for row in rows
     ]
