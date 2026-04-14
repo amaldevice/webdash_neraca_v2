@@ -26,11 +26,16 @@
   }
 
   .topbar-brand {
-    @apply inline-flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-3 py-2 shadow-sm transition hover:border-primary/30 hover:shadow;
+    @apply inline-flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-3 py-2 shadow-sm transition hover:shadow;
+  }
+
+  .topbar-brand:hover {
+    border-color: color-mix(in oklch, oklch(var(--p) / 1) 30%, oklch(var(--b3) / 1));
   }
 
   .topbar-brand-badge {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/90 text-primary-content text-xs font-semibold;
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-xl text-primary-content text-xs font-semibold;
+    background-color: color-mix(in oklch, oklch(var(--p) / 1) 90%, transparent);
   }
 
   .topbar-menu-shell {
@@ -46,7 +51,8 @@
   }
 
   .topbar-nav-link.active {
-    @apply bg-primary/12 text-primary;
+    @apply text-primary;
+    background-color: color-mix(in oklch, oklch(var(--p) / 1) 12%, transparent);
   }
 
   .topbar-icon-btn {
@@ -108,7 +114,19 @@
   input.control,
   select.control,
   textarea.control {
-    @apply w-full border-base-300 bg-base-100 placeholder:text-base-content/50 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full border-base-300 bg-base-100 transition focus:border-primary focus:outline-none focus:ring-2;
+  }
+
+  input.control::placeholder,
+  select.control::placeholder,
+  textarea.control::placeholder {
+    color: color-mix(in oklch, oklch(var(--bc) / 1) 50%, transparent);
+  }
+
+  input.control:focus,
+  select.control:focus,
+  textarea.control:focus {
+    --tw-ring-color: color-mix(in oklch, oklch(var(--p) / 1) 20%, transparent);
   }
 
   input.control {
