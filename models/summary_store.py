@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 from contextlib import closing
 from typing import Dict, Optional
 
@@ -7,10 +8,16 @@ from services.timeutil import utc_now_iso
 
 from .connection import get_conn
 
+_log = logging.getLogger(__name__)
+
 
 def save_aggregated_summary(summary: Dict) -> None:
     payload = json.dumps(summary, ensure_ascii=False)
     now = utc_now_iso()
+    _log.info(
+        "aggregated_summary_saved",
+        extra={"summary_json_bytes": len(payload.encode("utf-8"))},
+    )
     with closing(get_conn()) as conn:
         conn.execute("DELETE FROM aggregated_summary")
         conn.execute(

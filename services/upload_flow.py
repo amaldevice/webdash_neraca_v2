@@ -7,6 +7,7 @@ results. Preview disk I/O and duplicate checks live in `services.upload_preview`
 """
 from __future__ import annotations
 
+import logging
 import os
 import sqlite3
 import uuid
@@ -17,6 +18,7 @@ from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 from excel_parser import parse_excel_payload
 from models import insert_entries, upsert_entries
 from services.aggregation import refresh_aggregated_summary
+from services.audit_log import log_audit
 from services.manual_entries import build_manual_entry
 from services.upload_preview import (
     build_upload_preview,
@@ -32,6 +34,8 @@ from services.upload_preview import (
 )
 from services.validation import allowed_file, validate_metadata
 from werkzeug.utils import secure_filename
+
+_log = logging.getLogger(__name__)
 
 UPLOAD_TEMPLATE_NAME = "upload.html"
 UPLOAD_ROUTE_MODE = "upload"
@@ -157,6 +161,16 @@ def save_uploaded_excel(upload_folder: str, file) -> tuple[str, str, str]:
     destination = os.path.join(upload_folder, filename)
     file.save(destination)
     display = file.filename or filename
+    try:
+        size_bytes = os.path.getsize(destination)
+    except OSError:
+        size_bytes = None
+    log_audit(
+        "upload_file_saved",
+        stored_basename=filename,
+        display_name=display,
+        size_bytes=size_bytes,
+    )
     return destination, display, filename
 
 
@@ -406,6 +420,18 @@ def handle_upload_confirm_with_duplicates(
         else:
             flashes.append((f"{skipped_count} baris duplikasi dikecualikan.", "warning"))
         flashes.append((msg, "success"))
+        log_audit(
+            "upload_confirm_committed",
+            branch="with_duplicates",
+            row_count=len(deduped_entries),
+            duplicate_candidates=len(duplicates),
+            skipped_duplicates=skipped_count,
+            overwrite_duplicates=overwrite_count,
+            uploader=form_values.get("uploader"),
+            version=form_values.get("version"),
+            data_type=form_values.get("data_type"),
+            time_period=form_values.get("time_period"),
+        )
         return build_upload_response(
             "redirect",
             flashes,
@@ -417,8 +443,10 @@ def handle_upload_confirm_with_duplicates(
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
+        _log.warning("upload_confirm_integrity_error branch=with_duplicates")
         return build_upload_response("redirect", [(flash_msg, "error")])
     except Exception as e:
+        _log.warning("upload_confirm_failed branch=with_duplicates error=%s", e)
         return build_upload_response(
             "redirect",
             [(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")],
@@ -436,6 +464,16 @@ def handle_upload_confirm_without_duplicates(
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
             os.remove(file_path)
+        first = entries[0] if entries else {}
+        log_audit(
+            "upload_confirm_committed",
+            branch="without_duplicates",
+            row_count=len(entries),
+            uploader=first.get("uploader_name"),
+            version=first.get("version"),
+            data_type=first.get("data_type"),
+            time_period=first.get("time_period"),
+        )
         return build_upload_response(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
@@ -447,8 +485,10 @@ def handle_upload_confirm_without_duplicates(
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
+        _log.warning("upload_confirm_integrity_error branch=without_duplicates")
         return build_upload_response("redirect", [(flash_msg, "error")])
     except Exception as e:
+        _log.warning("upload_confirm_failed branch=without_duplicates error=%s", e)
         return build_upload_response(
             "redirect",
             [(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")],
@@ -460,6 +500,12 @@ def handle_upload_post_file_no_entries(
     form_values: dict[str, str],
     warnings: list[str],
 ) -> UploadFlowResponse:
+    log_audit(
+        "upload_post_no_valid_entries",
+        uploader=form_values.get("uploader"),
+        version=form_values.get("version"),
+        warning_count=len(warnings),
+    )
     flashes: list[tuple[str, str]] = []
     for warning in warnings:
         flashes.append((warning, "warning"))
@@ -503,6 +549,13 @@ def handle_upload_post_file_save_with_duplicates(
         entries=entries,
         duplicates=duplicates,
     )
+    log_audit(
+        "upload_preview_session_created",
+        row_count=len(entries),
+        duplicate_candidates=len(duplicates),
+        uploader=uploader,
+        version=version,
+    )
     return build_upload_response(
         "render",
         [
@@ -535,6 +588,7 @@ def handle_upload_post_file_save_without_duplicates(
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
+        _log.warning("upload_direct_save_integrity_error")
         return build_upload_response(
             "render",
             [(flash_msg, "error")],
@@ -543,6 +597,7 @@ def handle_upload_post_file_save_without_duplicates(
             form_values=form_values,
         )
     except Exception as e:
+        _log.warning("upload_direct_save_failed error=%s", e)
         return build_upload_response(
             "render",
             [(f"Terjadi kesalahan saat menyimpan data: {str(e)}", "error")],
@@ -596,6 +651,13 @@ def handle_upload_post_file_preview(
         )
     else:
         info_flash = ("Klik tombol konfirmasi untuk menyimpan data yang sudah dipratinjau.", "info")
+    log_audit(
+        "upload_preview_ready",
+        row_count=len(entries),
+        duplicate_candidates=len(duplicates),
+        uploader=form_values.get("uploader"),
+        version=form_values.get("version"),
+    )
     return build_upload_response(
         "render",
         [info_flash],
@@ -630,6 +692,7 @@ def process_upload_confirm(
     """
     token_payload = load_preview_session(upload_folder, preview_token) or {}
     if not token_payload:
+        log_audit("upload_confirm_rejected", reason="missing_or_expired_session")
         return build_upload_response(
             "redirect",
             [("Sesi pratinjau tidak ditemukan atau telah kedaluwarsa.", "error")],
@@ -649,6 +712,7 @@ def process_upload_confirm(
             preview_limit=PREVIEW_SAMPLE_LIMIT,
         )
     except Exception as e:
+        _log.warning("upload_confirm_parse_failed error=%s", e)
         return build_upload_response(
             "redirect",
             [(f"Gagal memproses berkas pratinjau: {str(e)}", "error")],
@@ -659,6 +723,7 @@ def process_upload_confirm(
     if internal_duplicate_warning:
         return build_upload_response("redirect", [(internal_duplicate_warning, "error")])
     if not entries:
+        log_audit("upload_confirm_rejected", reason="no_entries_in_session")
         return build_upload_response("redirect", [("Sesi pratinjau tidak memuat data valid.", "error")])
 
     duplicates = _hydrate_duplicate_records_with_values(
@@ -729,6 +794,7 @@ def process_upload_post_file(
         )
     except Exception as e:
         os.remove(destination)
+        _log.warning("upload_post_parse_failed uploader=%s error=%s", uploader, e)
         return build_upload_response(
             "render",
             [(f"Gagal membaca berkas Excel: {str(e)}", "error")],
@@ -779,6 +845,15 @@ def process_upload_post_file(
         try:
             response = handle_upload_post_file_save_without_duplicates(entries, form_values)
             if response.kind == "redirect":
+                log_audit(
+                    "upload_direct_save_committed",
+                    row_count=len(entries),
+                    uploader=uploader,
+                    version=version,
+                    data_type=data_type,
+                    time_period=time_period,
+                    action=action,
+                )
                 if os.path.exists(destination):
                     os.remove(destination)
                 return response
@@ -848,6 +923,15 @@ def process_manual_input_post(
 
     duplicates = find_duplicate_entries_by_indicator_period([manual_entry])
     if duplicates and not confirm_duplicate:
+        log_audit(
+            "manual_input_duplicate_prompt",
+            uploader=uploader,
+            version=version,
+            data_type=data_type,
+            time_period=time_period,
+            indicator=manual_entry["indicator_name"],
+            duplicate_candidates=len(duplicates),
+        )
         period = (
             f"{manual_entry['year']}-{manual_entry['month']:02d}"
             if manual_entry["month"]
@@ -880,6 +964,15 @@ def process_manual_input_post(
     try:
         upsert_entries([manual_entry])
         refresh_aggregated_summary()
+        log_audit(
+            "manual_input_committed",
+            uploader=uploader,
+            version=version,
+            data_type=data_type,
+            time_period=time_period,
+            indicator=manual_entry["indicator_name"],
+            had_duplicate_warning=bool(duplicates),
+        )
         return ManualFlowResponse(
             kind="redirect",
             flashes=[("Entri manual berhasil dicatat dan disimpan.", "success")],
@@ -891,6 +984,7 @@ def process_manual_input_post(
             if "UNIQUE constraint failed" in str(exc)
             else f"Terjadi kesalahan database: {exc}"
         )
+        _log.warning("manual_input_integrity_error")
         return ManualFlowResponse(
             kind="render",
             flashes=[(flash_msg, "error")],

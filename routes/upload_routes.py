@@ -8,6 +8,7 @@ import threading
 import time
 from flask import Flask, Response, current_app, flash, make_response, redirect, render_template, request, session, url_for
 
+from services.audit_log import log_audit
 from services.upload_flow import (
     MANUAL_ROUTE_MODE,
     UPLOAD_ROUTE_MODE,
@@ -136,6 +137,12 @@ def upload_data():
         if request.path == "/upload":
             is_rate_limited, _, window_seconds = _upload_is_rate_limited()
             if is_rate_limited:
+                log_audit(
+                    "upload_rate_limited",
+                    path=request.path,
+                    window_seconds=window_seconds,
+                    limit=current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0),
+                )
                 response = _render_upload_template(
                     preview=None,
                     upload_preview_token=session.get("upload_preview_token"),
@@ -153,6 +160,7 @@ def upload_data():
 
         form_values, action, preview_token, skip_dup = parse_upload_form(request.form)
         if not _validate_upload_csrf_token():
+            log_audit("upload_csrf_mismatch", path=request.path)
             response = _apply_upload_flow_response(
                 build_upload_response(
                     "render",

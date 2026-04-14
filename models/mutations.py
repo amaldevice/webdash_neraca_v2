@@ -45,6 +45,11 @@ def _execute_mutation(
         with closing(get_conn()) as conn:
             cursor = mutation_fn(conn)
             conn.commit()
+            rc = cursor.rowcount if cursor is not None and cursor.rowcount is not None else None
+            _log.info(
+                "db_mutation_ok",
+                extra={"operation": operation, "rowcount": rc},
+            )
             return cursor
     except sqlite3.Error as exc:
         _log.warning("%s failed: %s", operation, exc)

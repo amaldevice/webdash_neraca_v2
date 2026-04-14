@@ -2,6 +2,7 @@
 """Unit tests for services.upload_flow (orchestration without full HTTP stack)."""
 from __future__ import annotations
 
+import logging
 import os
 from unittest.mock import patch
 
@@ -101,6 +102,17 @@ def test_process_upload_confirm_missing_session(tmp_path):
     )
     assert r.kind == "redirect"
     assert r.flashes[0][1] == "error"
+
+
+def test_process_upload_confirm_missing_session_logs_audit(caplog, tmp_path):
+    caplog.set_level(logging.INFO, logger="audit")
+    process_upload_confirm(
+        str(tmp_path),
+        "missing-token",
+        {"uploader": "x", "version": "v1", "data_type": "flow", "time_period": "monthly", "layout_override": "auto"},
+        [],
+    )
+    assert any("upload_confirm_rejected" in r.message for r in caplog.records)
 
 
 def test_process_upload_confirm_inserts_without_duplicates(db_path, tmp_path):

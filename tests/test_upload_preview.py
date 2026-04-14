@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from flask import session
@@ -80,6 +81,19 @@ def test_cache_upload_preview_and_load_session(app_module, tmp_path):
         assert payload["metadata"] == _entry_payload()
         assert payload["layout_override"] == "auto"
         assert payload["skip_duplicate_indexes"] == []
+
+
+def test_save_preview_session_emits_audit_log(caplog, app_module, tmp_path):
+    caplog.set_level(logging.INFO, logger="audit")
+    upload_dir = tmp_path / "preview"
+    upload_dir.mkdir()
+    with app_module.app.test_request_context():
+        save_preview_session(
+            str(upload_dir),
+            "abcd1234ef",
+            {"file_path": "/tmp/x", "metadata": {}},
+        )
+    assert any("preview_session_saved" in r.message for r in caplog.records)
 
 
 def test_build_upload_preview_returns_payload_and_token(app_module, tmp_path):
