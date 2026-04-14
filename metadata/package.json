@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "build:css": "tailwindcss -i ./assets/tailwind.css -o ./static/css/tailwind.css --minify",
-    "watch:css": "tailwindcss -i ./assets/tailwind.css -o ./static/css/tailwind.css --watch"
+    "build:css": "tailwindcss -i ../assets/tailwind.css -o ../static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ../assets/tailwind.css -o ../static/css/tailwind.css --watch"
   },
   "devDependencies": {
     "daisyui": "^4.12.14",
