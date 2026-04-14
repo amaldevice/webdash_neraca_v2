@@ -15,9 +15,9 @@ def _period_text(entry: dict) -> str:
     quarter = entry.get("quarter")
     if year is None:
         return "-"
-    if month:
+    if month is not None:
         return f"{int(year)}-{int(month):02d}"
-    if quarter:
+    if quarter is not None:
         return f"{int(year)}-Q{int(quarter)}"
     return str(year)
 
@@ -36,7 +36,7 @@ def _normalize_record(
     parsed_value = _to_float(value)
     if parsed_value is None or not indicator:
         return None
-    parsed_period = _parse_period(period_value)
+    parsed_period = _parse_period(period_value, time_period)
     return {
         "uploader_name": uploader,
         "version": version,

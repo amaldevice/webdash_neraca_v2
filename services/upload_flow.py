@@ -38,6 +38,46 @@ UPLOAD_ROUTE_MODE = "upload"
 MANUAL_ROUTE_MODE = "manual"
 
 
+def _duplicate_conflict_message() -> str:
+    return (
+        "Terdeteksi data duplikasi: kombinasi unik pengunggah, versi, indikator, dan periode "
+        "sudah ada di basis data.\n"
+        "Gunakan versi yang berbeda untuk menambahkan data baru, "
+        "atau lanjutkan di pratinjau lalu tandai baris yang ingin dikecualikan agar tidak ditimpa."
+    )
+
+
+def _collect_internal_duplicate_counts(entries: list[dict[str, Any]]) -> dict[tuple[str, int, int | None, int | None], int]:
+    """Hitung berapa kali setiap kombinasi indikator+periode muncul di dalam file upload."""
+    if not entries:
+        return {}
+    counts: dict[tuple[str, int, int | None, int | None], int] = {}
+    for entry in entries:
+        indicator = (entry.get("indicator_name") or "").strip()
+        year = entry.get("year")
+        month = entry.get("month")
+        quarter = entry.get("quarter")
+        if not indicator or year is None:
+            continue
+        counts[(indicator, int(year), month, quarter)] = counts.get((indicator, int(year), month, quarter), 0) + 1
+    return {key: count for key, count in counts.items() if count > 1}
+
+
+def _build_internal_duplicate_warning_message(
+    duplicate_counts: dict[tuple[str, int, int | None, int | None], int]
+) -> str | None:
+    if not duplicate_counts:
+        return None
+    duplicate_groups = len(duplicate_counts)
+    duplicate_rows = sum(count - 1 for count in duplicate_counts.values())
+    return (
+        f"Ditemukan {duplicate_rows} baris duplikasi ekstra dalam satu file untuk "
+        f"{duplicate_groups} kombinasi indikator + periode.\n"
+        "Bersihkan baris duplikat pada file sebelum menyimpan, "
+        "atau bagi ke file versi yang berbeda."
+    )
+
+
 def upload_folder_from_config(config: dict) -> str:
     """Resolve configured upload directory (shared disk for multi-worker preview sessions)."""
     return config["UPLOAD_FOLDER"]
@@ -146,7 +186,14 @@ def parse_and_validate_upload_payload(
         layout_override=layout_override,
         preview_limit=preview_limit,
     )
-    return payload, payload.get("entries", []), payload.get("warnings", [])
+    entries = payload.get("entries", [])
+    warnings = list(payload.get("warnings", []))
+    internal_duplicate_warning = _build_internal_duplicate_warning_message(
+        _collect_internal_duplicate_counts(entries)
+    )
+    if internal_duplicate_warning:
+        warnings.append(internal_duplicate_warning)
+    return payload, entries, warnings
 
 
 def _hydrate_duplicate_records_with_values(
@@ -349,9 +396,9 @@ def handle_upload_confirm_with_duplicates(
         flashes: list[tuple[str, str]] = []
         if overwrite_count > 0:
             overwrite_warning = (
-                f"PERINGATAN: {overwrite_count} baris duplikasi ditimpa sesuai pilihan saat ini."
+                f"PERINGATAN: {overwrite_count} baris duplikasi (kunci unik sama) ditimpa sesuai pilihan saat ini."
                 if len(duplicates) == 1
-                else f"PERINGATAN: {overwrite_count} baris duplikasi akan ditimpa sesuai pilihan saat ini."
+                else f"PERINGATAN: {overwrite_count} baris duplikasi (kunci unik sama) akan ditimpa sesuai pilihan saat ini."
             )
             flashes.append((overwrite_warning, "warning"))
             if skipped_count > 0:
@@ -367,10 +414,7 @@ def handle_upload_confirm_with_duplicates(
     except sqlite3.IntegrityError as e:
         error_msg = str(e)
         if "UNIQUE constraint failed" in error_msg:
-            flash_msg = (
-                "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
-                "Centang kandidat duplikasi yang ingin dikecualikan, lalu klik Konfirmasi & Simpan lagi."
-            )
+            flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
         return build_upload_response("redirect", [(flash_msg, "error")])
@@ -400,10 +444,7 @@ def handle_upload_confirm_without_duplicates(
     except sqlite3.IntegrityError as e:
         error_msg = str(e)
         if "UNIQUE constraint failed" in error_msg:
-            flash_msg = (
-                "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
-                "Silakan gunakan versi yang berbeda atau tandai semua kandidat duplikasi yang akan dikecualikan."
-            )
+            flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
         return build_upload_response("redirect", [(flash_msg, "error")])
@@ -466,8 +507,9 @@ def handle_upload_post_file_save_with_duplicates(
         "render",
         [
             (
-                f"Ditemukan {len(duplicates)} konflik duplikasi. "
-                "Gunakan Konfirmasi pada pratinjau; kandidat yang tidak dikecualikan akan diproses kembali sesuai kebijakan conflict handling.",
+                f"Ditemukan {len(duplicates)} baris duplikasi dengan data yang sudah ada. "
+                "Pada pratinjau, tandai baris yang ingin dikecualikan sebelum simpan; "
+                "baris lain dapat menimpa data lama.",
                 "warning",
             )
         ],
@@ -490,10 +532,7 @@ def handle_upload_post_file_save_without_duplicates(
     except sqlite3.IntegrityError as e:
         error_msg = str(e)
         if "UNIQUE constraint failed" in error_msg:
-            flash_msg = (
-                "Kombinasi pengunggah, versi, dan indikator ini sudah ada di basis data.\n"
-                "Silakan gunakan versi yang berbeda atau tandai semua kandidat duplikasi yang akan dikecualikan."
-            )
+            flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
         return build_upload_response(
@@ -551,8 +590,8 @@ def handle_upload_post_file_preview(
     )
     if duplicates:
         info_flash = (
-            f"Ditemukan {len(duplicates)} konflik duplikasi dengan data yang sudah ada. "
-            "Jika dilanjutkan, kandidat duplikasi akan diproses dan dapat menimpa data lama pada kombinasi unik yang sama.",
+            f"Ditemukan {len(duplicates)} baris yang sudah ada di basis data. "
+            "Jika dilanjutkan, baris duplikasi akan ditimpa sesuai kebijakan penyimpanan.",
             "warning",
         )
     else:
@@ -614,6 +653,11 @@ def process_upload_confirm(
             "redirect",
             [(f"Gagal memproses berkas pratinjau: {str(e)}", "error")],
         )
+    internal_duplicate_warning = _build_internal_duplicate_warning_message(
+        _collect_internal_duplicate_counts(entries)
+    )
+    if internal_duplicate_warning:
+        return build_upload_response("redirect", [(internal_duplicate_warning, "error")])
     if not entries:
         return build_upload_response("redirect", [("Sesi pratinjau tidak memuat data valid.", "error")])
 
@@ -695,6 +739,21 @@ def process_upload_post_file(
 
     if not entries:
         return handle_upload_post_file_no_entries(destination, form_values, warnings)
+    internal_duplicate_warning = _build_internal_duplicate_warning_message(
+        _collect_internal_duplicate_counts(entries)
+    )
+    if internal_duplicate_warning:
+        extra_flashes = [(internal_duplicate_warning, "error")]
+        extra_flashes.extend(
+            (warning, "warning") for warning in warnings if warning != internal_duplicate_warning
+        )
+        return build_upload_response(
+            "render",
+            extra_flashes,
+            preview=None,
+            upload_preview_token=None,
+            form_values=form_values,
+        )
 
     duplicates = _hydrate_duplicate_records_with_values(
         find_duplicate_entries_in_db(uploader, version, entries),

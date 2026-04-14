@@ -218,10 +218,16 @@
                                     <td class="max-w-[22rem] truncate" title="{{ dup.indicator_name }}">{{ dup.indicator_name }}</td>
                                     <td class="font-semibold">{{ "{:,.2f}".format(dup.value) if dup.value is not none else "-" }}</td>
                                     <td>
+                                        {% if dup.year %}
                                         {% if dup.month %}
                                         {{ dup.year }}-{{ "%02d"|format(dup.month|int) }}
-                                        {% else %}
+                                        {% elif dup.quarter %}
                                         {{ dup.year }}-Q{{ dup.quarter }}
+                                        {% else %}
+                                        {{ dup.year }}
+                                        {% endif %}
+                                        {% else %}
+                                        -
                                         {% endif %}
                                     </td>
                                 </tr>
