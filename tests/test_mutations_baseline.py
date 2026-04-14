@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import models
 
 
@@ -37,6 +39,32 @@ def test_insert_entries_increases_row_count(db_path):
         ]
     )
     assert models.get_total_entries_count() == 2
+
+
+def test_insert_entries_logs_db_mutation_ok(caplog, db_path):
+    caplog.set_level(logging.INFO, logger="models.mutations")
+    models.insert_entries(
+        [
+            {
+                "uploader_name": "u1",
+                "version": "v1",
+                "template_type": "manual",
+                "data_type": "flow",
+                "time_period": "monthly",
+                "indicator_name": "GDP",
+                "value": 100.0,
+                "unit": None,
+                "region_code": None,
+                "year": 2024,
+                "month": 1,
+                "quarter": None,
+            },
+        ]
+    )
+    assert any(
+        getattr(r, "message", "") == "db_mutation_ok" or "db_mutation_ok" in (r.message or "")
+        for r in caplog.records
+    )
 
 
 def test_delete_data_entry_reduces_row_count_by_one(db_path):

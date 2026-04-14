@@ -2,6 +2,7 @@
 """Unit tests for CRUD POST handler (no HTTP)."""
 from __future__ import annotations
 
+import logging
 from contextlib import closing
 
 from werkzeug.datastructures import ImmutableMultiDict
@@ -47,6 +48,45 @@ def test_apply_delete_single_returns_success_message(db_path, monkeypatch):
     )
     assert msgs == [("Data berhasil dihapus.", "success")]
     assert models.get_total_entries_count() == 0
+
+
+def test_apply_delete_single_logs_audit(caplog, db_path, monkeypatch):
+    monkeypatch.setattr(models, "DB_PATH", str(db_path))
+    models.init_db()
+    models.insert_entries(
+        [
+            {
+                "uploader_name": "u1",
+                "version": "v1",
+                "template_type": "manual",
+                "data_type": "flow",
+                "time_period": "monthly",
+                "indicator_name": "GDP",
+                "value": 1.0,
+                "year": 2024,
+                "month": 1,
+                "quarter": None,
+            }
+        ]
+    )
+    with closing(models.get_conn()) as conn:
+        row = conn.execute("SELECT id FROM data_entries LIMIT 1").fetchone()
+        eid = str(row[0])
+
+    caplog.set_level(logging.INFO, logger="audit")
+    form = ImmutableMultiDict([("action", "delete_single"), ("entry_id", eid)])
+    apply_data_management_post(
+        form,
+        data_type="",
+        time_period="",
+        uploader="",
+        indicator="",
+        period_start=None,
+        period_end=None,
+        value_min=None,
+        value_max=None,
+    )
+    assert any("data_management_action" in r.message for r in caplog.records)
 
 
 def test_apply_bulk_update_invalid_value_returns_error(db_path, monkeypatch):

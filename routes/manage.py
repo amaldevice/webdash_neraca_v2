@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Flask, flash, redirect, render_template, request, url_for
 
 from models import get_filter_options, get_total_entries_count, query_data_entries
+from services.audit_log import log_audit
 from services.data_management_actions import apply_data_management_post
 from services.list_view import (
     build_entries_filters_ui_dict,
@@ -91,6 +92,16 @@ def export_period_analysis_excel():
     if err:
         flash(err, "error")
         return redirect(url_for("aggregated_summary"))
+    try:
+        body_len = len(response.get_data()) if response is not None else 0
+    except Exception:
+        body_len = None
+    log_audit(
+        "period_analysis_export",
+        indicator=(request.form.get("indicator") or "").strip() or None,
+        year=(request.form.get("year") or "").strip() or None,
+        response_bytes=body_len,
+    )
     return response
 
 

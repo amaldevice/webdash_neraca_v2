@@ -13,6 +13,7 @@ from models import (
     update_data_entry_full,
 )
 from services.aggregation import refresh_aggregated_summary
+from services.audit_log import log_audit
 
 FlashTuple = Tuple[str, str]
 
@@ -38,6 +39,13 @@ def apply_data_management_post(
         if entry_id:
             delete_data_entry(entry_id)
             messages.append(("Data berhasil dihapus.", "success"))
+            log_audit(
+                "data_management_action",
+                action="delete_single",
+                entry_id=str(entry_id),
+                data_type=data_type or None,
+                time_period=time_period or None,
+            )
 
     elif action == "delete_by_filter":
         deleted_count = delete_data_by_filter(
@@ -51,6 +59,17 @@ def apply_data_management_post(
             value_max=value_max,
         )
         messages.append((f"{deleted_count} data berhasil dihapus berdasarkan filter.", "success"))
+        log_audit(
+            "data_management_action",
+            action="delete_by_filter",
+            affected_count=deleted_count,
+            data_type=data_type or None,
+            time_period=time_period or None,
+            has_uploader_filter=bool((uploader or "").strip()),
+            has_indicator_filter=bool((indicator or "").strip()),
+            has_period_range=bool(period_start or period_end),
+            has_value_range=value_min is not None or value_max is not None,
+        )
 
     elif action == "update":
         entry_id = form.get("entry_id")
@@ -76,6 +95,13 @@ def apply_data_management_post(
                 )
                 messages.append(("Data berhasil diperbarui.", "success"))
                 refresh_aggregated_summary()
+                log_audit(
+                    "data_management_action",
+                    action="update",
+                    entry_id=str(entry_id),
+                    data_type=update_data_type or None,
+                    time_period=update_time_period or None,
+                )
             except ValueError:
                 messages.append(("Nilai harus berupa angka.", "error"))
             except Exception as e:
@@ -87,6 +113,12 @@ def apply_data_management_post(
             deleted_count = bulk_delete_entries(selected_ids)
             messages.append((f"{deleted_count} data berhasil dihapus.", "success"))
             refresh_aggregated_summary()
+            log_audit(
+                "data_management_action",
+                action="bulk_delete",
+                affected_count=deleted_count,
+                selected_count=len(selected_ids),
+            )
         else:
             messages.append(("Tidak ada data yang dipilih untuk dihapus.", "error"))
 
@@ -121,6 +153,13 @@ def apply_data_management_post(
                 updated_count = bulk_update_entries(selected_ids, updates)
                 messages.append((f"{updated_count} data berhasil diperbarui.", "success"))
                 refresh_aggregated_summary()
+                log_audit(
+                    "data_management_action",
+                    action="bulk_update",
+                    affected_count=updated_count,
+                    selected_count=len(selected_ids),
+                    fields_updated=sorted(updates.keys()),
+                )
             else:
                 messages.append(("Tidak ada kolom yang diisi untuk diperbarui.", "error"))
 
@@ -146,6 +185,12 @@ def apply_data_management_post(
                 )
                 messages.append(("Data baru berhasil ditambahkan.", "success"))
                 refresh_aggregated_summary()
+                log_audit(
+                    "data_management_action",
+                    action="insert",
+                    data_type=insert_data_type or None,
+                    time_period=insert_time_period or None,
+                )
             except ValueError:
                 messages.append(("Nilai harus berupa angka.", "error"))
         else:

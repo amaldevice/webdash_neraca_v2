@@ -2,6 +2,7 @@
 """Application configuration: paths, upload limits, and validation sets."""
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -11,6 +12,42 @@ if TYPE_CHECKING:
     from flask import Flask
 
 logger = logging.getLogger(__name__)
+
+
+class _JsonLogFormatter(logging.Formatter):
+    """One JSON object per line (use LOG_FORMAT=json)."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "time": self.formatTime(record, self.datefmt),
+        }
+        if record.exc_info and record.exc_text:
+            payload["exc_info"] = record.exc_text
+        return json.dumps(payload, default=str, ensure_ascii=False)
+
+
+def configure_logging(app: "Flask", *, testing: bool = False) -> None:
+    """Root + app logger level/format from env (idempotent if handlers already exist)."""
+    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    fmt_env = os.environ.get(
+        "LOG_FORMAT",
+        "%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    if not logging.root.handlers:
+        if fmt_env.strip().lower() == "json":
+            handler = logging.StreamHandler(sys.stderr)
+            handler.setFormatter(_JsonLogFormatter())
+            logging.root.addHandler(handler)
+        else:
+            logging.basicConfig(level=level, format=fmt_env, stream=sys.stderr)
+    logging.root.setLevel(level)
+    app.logger.setLevel(level)
+    if testing:
+        app.logger.debug("Logging configured (testing=True)")
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -42,6 +79,7 @@ def default_secret_risk_in_production(*, testing: bool, secret_key: str) -> bool
 
 def configure_flask_app(app: Flask, *, testing: bool = False) -> None:
     """Apply standard Flask config (upload folder, body limit, secret key)."""
+    configure_logging(app, testing=testing)
     app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "uploads")
     app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
     key = resolve_secret_key()

@@ -19,6 +19,7 @@ from services.list_view import (
     entries_query_kwargs,
     parse_entries_pagination,
 )
+from services.audit_log import log_audit
 from services.raw_export import build_raw_data_export_response
 from services.request_params import get_period_range_params, get_value_range_params
 
@@ -94,6 +95,17 @@ def export_data():
         value_max,
     )
     entries = query_data_entries(**qkw, limit=1000)
+    log_audit(
+        "raw_export",
+        format=fmt,
+        row_count=len(entries),
+        data_type=data_type or None,
+        time_period=time_period or None,
+        has_uploader_filter=bool((uploader or "").strip()) if uploader is not None else False,
+        has_indicator_filter=bool((indicator or "").strip()) if indicator is not None else False,
+        has_period_range=bool(period_start or period_end),
+        has_value_range=value_min is not None or value_max is not None,
+    )
     return build_raw_data_export_response(entries, fmt)
 
 

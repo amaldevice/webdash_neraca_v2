@@ -12,10 +12,17 @@ from flask import session
 
 from config import UPLOAD_PREVIEW_TTL_SECONDS
 from models import get_conn
+from services.audit_log import log_audit
 from services.timeutil import utc_now_timestamp
 
 # Back-compat: in-memory cache removed; kept as empty mapping for any legacy monkeypatches.
 UPLOAD_PREVIEW_CACHE: dict[str, dict] = {}
+
+
+def _preview_token_prefix(token: str | None) -> str | None:
+    if not token or not isinstance(token, str):
+        return None
+    return token[:8] if len(token) >= 8 else token
 
 
 def _sessions_root(upload_folder: str) -> str:
@@ -61,6 +68,11 @@ def _write_preview_session(upload_folder: str, token: str, payload: dict) -> Non
     path = os.path.join(tdir, "session.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, default=str)
+    log_audit(
+        "preview_session_saved",
+        preview_token_prefix=_preview_token_prefix(token),
+        ttl_seconds=UPLOAD_PREVIEW_TTL_SECONDS,
+    )
 
 
 def _invalidate_preview_session(upload_folder: str, token: str) -> None:
@@ -75,7 +87,12 @@ def _invalidate_preview_session(upload_folder: str, token: str) -> None:
     shutil.rmtree(tdir, ignore_errors=True)
 
 
-def delete_preview_session(upload_folder: str, token: str) -> None:
+def delete_preview_session(upload_folder: str, token: str, *, reason: str = "explicit_delete") -> None:
+    log_audit(
+        "preview_session_deleted",
+        preview_token_prefix=_preview_token_prefix(token),
+        reason=reason,
+    )
     _invalidate_preview_session(upload_folder, token)
 
 
@@ -86,10 +103,10 @@ def load_preview_session(upload_folder: str, token: str) -> dict | None:
     try:
         created = float(data.get("created_at", 0))
     except (TypeError, ValueError):
-        delete_preview_session(upload_folder, token)
+        delete_preview_session(upload_folder, token, reason="invalid_created_at")
         return None
     if utc_now_timestamp() - created > UPLOAD_PREVIEW_TTL_SECONDS:
-        delete_preview_session(upload_folder, token)
+        delete_preview_session(upload_folder, token, reason="expired_on_load")
         return None
     return data
 
@@ -111,16 +128,37 @@ def cleanup_upload_preview_cache(upload_folder: str, flask_session=None) -> None
         sess_path = os.path.join(tokendir, "session.json")
         if not os.path.isfile(sess_path):
             shutil.rmtree(tokendir, ignore_errors=True)
+            log_audit(
+                "preview_session_evicted",
+                preview_token_prefix=_preview_token_prefix(name),
+                reason="missing_session_json",
+            )
             continue
         session_data = _read_preview_session(upload_folder, name)
         if not isinstance(session_data, dict):
+            log_audit(
+                "preview_session_evicted",
+                preview_token_prefix=_preview_token_prefix(name),
+                reason="invalid_session_payload",
+            )
             _invalidate_preview_session(upload_folder, name)
             continue
         try:
             created = float(session_data.get("created_at", 0))
             if now - created > UPLOAD_PREVIEW_TTL_SECONDS:
+                log_audit(
+                    "preview_session_evicted",
+                    preview_token_prefix=_preview_token_prefix(name),
+                    reason="ttl_expired",
+                    ttl_seconds=UPLOAD_PREVIEW_TTL_SECONDS,
+                )
                 _invalidate_preview_session(upload_folder, name)
         except ValueError:
+            log_audit(
+                "preview_session_evicted",
+                preview_token_prefix=_preview_token_prefix(name),
+                reason="invalid_created_at",
+            )
             _invalidate_preview_session(upload_folder, name)
     if flask_session is not None:
         _drop_stale_session_token(flask_session, upload_folder)
@@ -298,7 +336,7 @@ def cache_upload_preview(
     upload_token = uuid.uuid4().hex
     old_token = session.get("upload_preview_token")
     if isinstance(old_token, str) and old_token != upload_token:
-        _invalidate_preview_session(upload_folder, old_token)
+        delete_preview_session(upload_folder, old_token, reason="replaced_by_new_preview")
     session_payload = _build_preview_session_payload(
         destination=destination,
         file_name=file_name,
