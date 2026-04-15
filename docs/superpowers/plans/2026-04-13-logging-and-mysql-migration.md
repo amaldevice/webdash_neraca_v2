@@ -1,12 +1,12 @@
-# Logging & Migrasi SQLite → MySQL — Implementation Plan
+# Logging & Migrasi SQLite → SQLAlchemy + MySQL — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Menambahkan logging terstruktur/audit pada alur CRUD, upload Excel, input manual, dan ekspor hasil analisis periode; serta merencanakan migrasi persistence dari SQLite ke MySQL dengan risiko SQL dialect dan koneksi yang terkendali.
+**Goal:** Menambahkan logging terstruktur/audit pada alur CRUD, upload Excel, input manual, dan ekspor hasil analisis periode; serta **refactor persistence menyeluruh ke SQLAlchemy 2.x** dengan backend **MySQL 8** (prod / integrasi), sambil menjaga **SQLite** sebagai default dev/CI cepat sampai cutover.
 
-**Architecture:** Tetap mempertahankan pola Flask saat ini (`routes` → `services` → `models`). Logging dikonfigurasi sekali di bootstrap aplikasi (`create_app` / `configure_flask_app`), correlation id per request via `g`, pesan audit di boundary layanan (`services/*`) dan opsional wrap terpusat di `models/mutations.py`. Migrasi MySQL memfokuskan perubahan pada `models/connection.py`, semua SQL di `models/*.py`, serta penyesuaian exception handling (`sqlite3.IntegrityError` → driver MySQL) di `services/upload_flow.py` dan modul terkait.
+**Architecture:** Tetap pola Flask (`routes` → `services` → `models`). Logging seperti sebelumnya. **Lapisan DB:** `Engine` + `sessionmaker` (atau `scoped_session`) terpusat; mapped classes / `Table` objects menggantikan string SQL + `sqlite3.Connection`. Query di `services/upload_preview.py` dan `services/period_comparisons.py` saat ini mem-bypass `models/queries.py` — naikkan ke **repository** atau fungsi `models` berbasis session agar satu dialect path. **Skema:** Alembic (disarankan) atau setara; upsert lewat dialect MySQL (`INSERT ... ON DUPLICATE KEY UPDATE`) atau `sqlalchemy.dialects.mysql.insert`.
 
-**Tech stack:** Python 3.11–3.13 (CI), Flask 3.1, `sqlite3` + DDL di `models/connection.py`, pandas/openpyxl/plotly, pytest + Playwright.
+**Tech stack:** Python 3.11–3.13 (CI), Flask 3.1, **SQLAlchemy ≥2.0**, driver **`mysqlclient` atau `pymysql`** (URL `mysql+mysqldb://` / `mysql+pymysql://`), opsional **Alembic**, pandas/openpyxl/plotly, pytest + Playwright. Dev default: SQLite via `create_engine("sqlite:///…")` + sama-sama SQLAlchemy (bukan `sqlite3` mentah) setelah refactor selesai.
 
 ---
 
@@ -20,7 +20,8 @@
 | Upload & manual | `services/upload_flow.py`, `services/upload_preview.py`, `services/manual_entries.py`, `routes/upload_routes.py` |
 | Ekspor | `routes/pages.py` (`/export`), `services/raw_export.py`, `routes/manage.py` (`/export-period-analysis`), `services/period_analysis_export.py`, `services/period_analysis_workbook.py` |
 | Agregasi cache | `services/aggregation.py`, `models/summary_store.py` |
-| SQL khusus SQLite | `ON CONFLICT ... DO UPDATE` + `excluded.*` di `models/mutations.py`; `datetime(created_at)` di query/browse/summary |
+| SQL langsung di luar `models/*` | `services/upload_preview.py` (duplicate lookup batch), `services/period_comparisons.py` — target: panggil API `models` / repository |
+| Pola SQLite-only (hilangkan saat SQLAlchemy) | `ON CONFLICT … DO UPDATE` + `excluded.*` di `models/mutations.py`; `ORDER BY datetime(created_at)` di `models/queries.py`, `models/browse.py`, `models/summary_store.py` |
 
 ---
 
@@ -28,13 +29,16 @@
 
 | File | Peran setelah pekerjaan |
 |------|-------------------------|
-| `config.py` | Env untuk `LOG_LEVEL`, `LOG_FORMAT` (text/json), opsional `DATABASE_URL` / `MYSQL_*` |
-| `app.py` | `before_request` / `after_request` atau `teardown_request` untuk `g.request_id`, durasi, status |
+| `config.py` | Env: logging + **`DATABASE_URL`** (sqlite / mysql), atau `USE_MYSQL` + `MYSQL_*` |
+| `app.py` | Request context logging + **registrasi/teardown `Session`** (pattern: buat session per request, `remove()` di teardown) |
 | `services/audit_log.py` (baru, opsional) | Helper `log_audit(event, **fields)` — satu tempat untuk field konsisten |
-| `models/connection.py` | Factory koneksi DB (tetap API `get_conn()` atau pengganti bertipe protocol) |
-| `models/mutations.py` | SQL portabel / cabang dialect; logging operasi sukses + rowcount |
-| `services/upload_flow.py`, `services/data_management_actions.py` | Audit outcome upload/manual/CRUD |
-| `tests/` | Fixture DB MySQL opsional; tes logging dengan `caplog` |
+| `models/connection.py` | **`create_engine`**, `sessionmaker`, helper `get_session()` / inject dari app; `init_db()` → `Base.metadata.create_all` (dev) atau hanya Alembic (prod) |
+| `models/db.py` atau `models/tables.py` (baru) | `DeclarativeBase`, mapped class `DataEntry`, `AggregatedSummary` (mirror kolom `init_db` sekarang) |
+| `models/mutations.py`, `models/queries.py`, … | Implementasi atas **Session** + ORM / `select()`; tanpa string SQL raw kecuali fragmen terisolasi (upsert MySQL) |
+| `alembic/` (baru, disarankan) | Revisi skema; versi MySQL vs SQLite bisa satu cabang env atau `env.py` baca URL |
+| `services/upload_preview.py`, `services/period_comparisons.py` | Hapus `get_conn()` inline; delegasi ke `models` |
+| `services/upload_flow.py`, `services/data_management_actions.py` | Audit + **`IntegrityError` dari SQLAlchemy / DBAPI** |
+| `tests/` | Fixture engine SQLite in-memory + **job opsional MySQL** (service container) |
 
 ---
 
@@ -271,150 +275,147 @@ _log.info("db_mutation_ok", extra={"operation": operation, "rowcount": cursor.ro
 
 ---
 
-## Bagian B: Migrasi SQLite → MySQL
+## Bagian B: Refactor SQLAlchemy + cutover MySQL
 
-### Task 8: Inventarisasi SQL & tipe — dokumen internal
+Urutan disarankan: **inventory → engine/session + deps → mapped schema + migrasi skema → port `models/*` → tarik query dari `services/*` → error helper + upload → skrip data + CI MySQL → pool/health.**
+
+### Task 8: Inventarisasi titik sentuh DB — dokumen internal
 
 **Files:**
-- Create: `docs/superpowers/notes/mysql-migration-sql-inventory.md` (atau seksi di rencana ini saja)
+- Create: `docs/superpowers/notes/sqlalchemy-mysql-migration-inventory.md` (disarankan; bisa menggabungkan catatan MySQL lama)
 - Modify: None
 
-- [ ] **Step 1: Grep semua `sqlite3`, `ON CONFLICT`, `datetime(`, `?` placeholder, `INSERT OR`**
+- [ ] **Step 1: Grep jejak persistence**
 
 Run:
 
 ```bash
-rtk rg "sqlite3|ON CONFLICT|datetime\\(|IntegrityError" models services routes
+rtk rg "sqlite3|get_conn\\(|ON CONFLICT|datetime\\(|IntegrityError|\\.execute\\(" models services routes tests
 ```
 
-- [ ] **Step 2: Tabel hasil untuk setiap file `models/*.py` — statement yang perlu rewrite**
+Pastikan entri untuk: `models/{connection,mutations,queries,browse,summary_store,data_filters}.py`, `services/upload_flow.py`, `services/upload_preview.py`, `services/period_comparisons.py`, pemanggilan `get_conn` di `tests/`.
 
-Output harus mencakup minimal: `models/mutations.py` (upsert), `models/queries.py`, `models/browse.py`, `models/summary_store.py`.
+- [ ] **Step 2: Tabel per-file — “input saat ini” vs “target SQLAlchemy”**
+
+Contoh baris wajib:
+
+| File | Saat ini | Target |
+|------|----------|--------|
+| `models/connection.py` | `sqlite3.connect` + `init_db()` DDL string | `create_engine` + `sessionmaker`, `init_db` → `metadata.create_all` (dev) |
+| `models/mutations.py` | `ON CONFLICT … DO UPDATE`, `?` binds | `session.add_all` / `merge` / `mysql.insert().on_duplicate_key_update` |
+| `models/queries.py` | `sqlite3.Row`, `datetime(created_at)` | `select()` + `order_by(DataEntry.created_at.desc())`; tipe kolom datetime konsisten |
+| `models/browse.py`, `summary_store.py` | `datetime(...)` di ORDER BY | sama; hasil mapping ke `dict` seperti sekarang |
+| `services/upload_preview.py` | SQL batch OR | fungsi di `models` + `or_` / `tuple_in` batched |
+| `services/period_comparisons.py` | SELECT manual | `models` query function + session |
 
 - [ ] **Step 3: Commit dokumen**
 
 ---
 
-### Task 9: Konfigurasi & koneksi MySQL (tanpa mengubah perilaku default dev)
+### Task 9: Dependensi + `Engine` / `Session` (default SQLite tidak regresi)
 
 **Files:**
-- Modify: `config.py`
-- Modify: `models/connection.py`
-- Modify: `requirements.txt`
-- Test: `tests/conftest.py` (tetap pakai SQLite default)
+- Modify: `requirements.txt` — `SQLAlchemy>=2.0`, driver MySQL (`pymysql` atau `mysqlclient`), opsional `alembic`
+- Modify: `config.py` — baca `DATABASE_URL`; fallback `sqlite:///${BASE_DIR}/data.db` (URL, bukan path mentah) atau env eksplisit
+- Modify: `models/connection.py` — `engine`, `SessionLocal`, `get_session()` context manager; **deprecate** `get_conn()` setelah port (atau shim tipis sementara hanya untuk tes transisional)
+- Modify: `app.py` — `scoped_session` atau session per-request + `teardown_appcontext` → `session.remove()`
+- Test: `tests/conftest.py` — fixture `db_session` / override `DATABASE_URL` ke SQLite `:memory:`
 
-- [ ] **Step 1: Tambahkan dependensi driver**
+- [ ] **Step 1: Pin versi & instal lokal**
 
-Contoh (pilih satu strategi resmi tim):
+- [ ] **Step 2: Satu tes smoke: `init_db` + insert satu baris lewat ORM** (file baru ringkas atau perluas `tests/test_models.py`)
 
-```
-mysqlclient>=2.2.0
-```
-
-atau
-
-```
-pymysql>=1.1.0
-```
-
-- [ ] **Step 2: Variabel lingkungan**
-
-`DATABASE_URL=mysql+pymysql://user:pass@host:3306/dbname` atau `USE_MYSQL=1` + `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
-
-- [ ] **Step 3: Implementasi `get_conn()` bertingkat**
-
-Pola aman: jika `USE_MYSQL` falsy, pertahankan perilaku SQLite sekarang; jika true, return koneksi MySQL dengan API yang kompatibel (`cursor()`, `commit()`, `rowcount`). **Catatan:** `sqlite3.Row` tidak ada di DB-API MySQL mentah — pertimbangkan wrapper kecil `dict_row(cursor)` atau gunakan SQLAlchemy core untuk hasil konsisten (tambah scope jika dipilih).
-
-- [ ] **Step 4: Tes CI**
-
-Tambahkan job opsional GitHub Actions dengan service `mysql:8` hanya untuk integrasi terbatas (lihat Task 12).
-
-- [ ] **Step 5: Commit**
-
----
-
-### Task 10: Skema MySQL & skrip migrasi data
-
-**Files:**
-- Create: `scripts/migrate_sqlite_to_mysql.py` (one-off)
-- Create: `scripts/schema_mysql.sql` (DDL setara)
-
-- [ ] **Step 1: DDL MySQL setara dengan `init_db()`**
-
-Mapping contoh:
-
-- `INTEGER PRIMARY KEY AUTOINCREMENT` → `BIGINT PRIMARY KEY AUTO_INCREMENT`
-- `TEXT` → `VARCHAR(255)` atau `TEXT` tergantung kolom; `created_at`/`updated_at` idealnya `DATETIME(6)` + migrasi data dari ISO string.
-- Unique index `ux_data_entry_variant` tetap sama.
-
-- [ ] **Step 2: Skrip salin data**
-
-Baca dari SQLite `data_entries` dan `aggregated_summary`, tulis ke MySQL dalam batch (gunakan `pandas.read_sql` + `to_sql` hanya jika tim setuju; sebaliknya `INSERT` berparameter dalam chunk).
-
-- [ ] **Step 3: Dokumentasikan urutan cutover** (maintenance window, backup `data.db`, verifikasi counts).
+- [ ] **Step 3: `rtk pytest tests/test_models.py tests/test_app_factory.py -q`**
 
 - [ ] **Step 4: Commit**
 
 ---
 
-### Task 11: Rewrite upsert & fungsi datetime di query
+### Task 10: Mapped tables + Alembic (skema MySQL = sumber kebenaran prod)
 
 **Files:**
-- Modify: `models/mutations.py`
-- Modify: `models/queries.py`
-- Modify: `models/browse.py`
-- Modify: `models/summary_store.py`
+- Create: `models/tables.py` atau `models/orm.py` — `DeclarativeBase`, `DataEntry`, `AggregatedSummary` (kolom selaras `init_db` + index unik `ux_data_entry_variant`)
+- Create: `alembic.ini`, `alembic/env.py`, revisi awal `001_initial.py`
+- Modify: `models/connection.py` — impor metadata dari ORM
 
-- [ ] **Step 1: Ganti `ON CONFLICT ... DO UPDATE` dengan `INSERT ... ON DUPLICATE KEY UPDATE`**
+- [ ] **Step 1: Revisi awal menghasilkan DDL MySQL 8** (`BIGINT` PK, `DATETIME(6)` untuk `created_at` / `updated_at`, `TEXT`/`VARCHAR` selebihnya selaras kebutuhan query)
 
-Pastikan daftar kolom update mencerminkan kolom yang sekarang di-update dari `excluded.*`.
+- [ ] **Step 2: SQLite dev** — `create_all` dari metadata yang sama (hindari fitur MySQL-only di mapped column kecuali pakai `TypeDecorator` / cabang)
 
-- [ ] **Step 2: Ganti `ORDER BY datetime(created_at)` dengan `ORDER BY created_at` setelah kolom bertipe datetime**
-
-Jika skema masih TEXT sementara: gunakan `STR_TO_DATE(created_at, '%Y-%m-%dT%H:%i:%s')` atau setara untuk ISO yang dipakai aplikasi (`utc_now_iso`).
-
-- [ ] **Step 3: Tes pytest penuh pada SQLite** memastikan tidak ada regresi sebelum flip env.
-
-Run: `rtk pytest tests -q`
-
-- [ ] **Step 4: Tes pada MySQL** (lihat Task 12).
-
-- [ ] **Step 5: Commit**
-
----
-
-### Task 12: Exception mapping & layanan yang menyentuh DB langsung
-
-**Files:**
-- Modify: `services/upload_flow.py` (tangkap integrity error generik / pymysql `IntegrityError`)
-- Modify: `services/upload_preview.py` (batch size / limit bind)
-- Modify: `services/period_comparisons.py` jika query spesifik SQLite
-
-- [ ] **Step 1: Modul `models/db_errors.py` (baru) dengan `is_unique_violation(exc: BaseException) -> bool`**
-
-Implementasi cabang untuk `sqlite3.IntegrityError` dan driver MySQL.
-
-- [ ] **Step 2: Ganti pengecekan `sqlite3.IntegrityError` tersebar dengan helper**
-
-- [ ] **Step 3: Integrasi tes**
-
-Gunakan container MySQL lokal atau job CI: `pytest tests/test_upload_flow.py tests/test_models.py -q` dengan env `USE_MYSQL=1`.
+- [ ] **Step 3: Dokumentasikan `alembic upgrade head` untuk deploy**
 
 - [ ] **Step 4: Commit**
 
 ---
 
-### Task 13: Pooling, healthcheck, operasi
+### Task 11: Port lapisan `models/*` dari raw SQL → Session/ORM
 
 **Files:**
-- Modify: `models/connection.py` atau modul pool baru
-- Modify: `README.md` (deployment)
+- Modify: `models/mutations.py`, `models/queries.py`, `models/browse.py`, `models/summary_store.py`, `models/data_filters.py` (bantu `filter` dengan `column.op` / `func.lower`)
 
-- [ ] **Step 1: Dokumentasikan ukuran pool, `connect_timeout`, `read_timeout`**
+- [ ] **Step 1: Mutations** — insert bulk, upsert (MySQL: `on_duplicate_key_update`; SQLite dev: `session.merge` per baris atau `insert().on_conflict_do_update` dialect SQLite), delete/update/bulk sama perilaku + `rowcount`
 
-- [ ] **Step 2: Endpoint health opsional `/healthz` yang menjalankan `SELECT 1`**
+- [ ] **Step 2: Queries/browse/summary** — ganti `sqlite3.Row` dengan objek ORM atau `Row` SQLAlchemy; hilangkan `datetime()` SQL — gunakan kolom bertipe `DateTime` atau `func` portabel
+
+- [ ] **Step 3: `rtk pytest tests -q` pada SQLite**
+
+- [ ] **Step 4: Commit**
+
+---
+
+### Task 12: Konsolidasi SQL di `services/*` ke `models`
+
+**Files:**
+- Modify: `services/upload_preview.py` — panggil `models` (mis. `find_entries_by_indicator_period_batch(keys)`)
+- Modify: `services/period_comparisons.py` — panggil `models` (mis. `load_indicator_series_for_comparisons(...)`)
+- Create (opsional): `models/repositories/data_entries.py` jika `mutations.py` membengkak
+
+- [ ] **Step 1: Pastikan tidak ada `from models import get_conn` di `services/` kecuali sementara shim**
+
+- [ ] **Step 2: Tes terkait upload preview & period comparison**
 
 - [ ] **Step 3: Commit**
+
+---
+
+### Task 13: `db_errors` + `upload_flow` (Integrity / rollback)
+
+**Files:**
+- Create: `models/db_errors.py` — `is_unique_violation(exc)`, opsional `is_operational(exc)` menggantikan `sqlite3.OperationalError`
+- Modify: `services/upload_flow.py` — tangkap `sqlalchemy.exc.IntegrityError` (bungkus DBAPI lama)
+
+- [ ] **Step 1: Unit test helper dengan raise palsu dari SQLite & MySQL driver**
+
+- [ ] **Step 2: `rtk pytest tests/test_upload_flow.py tests/test_bugs.py -q`**
+
+- [ ] **Step 3: Commit**
+
+---
+
+### Task 14: Migrasi data SQLite (`data.db`) → MySQL
+
+**Files:**
+- Create: `scripts/migrate_sqlite_to_mysql.py` — baca URL sqlite lama, tulis via SQLAlchemy ke engine MySQL (chunked `session.add_all` / bulk insert)
+- Modify: `README.md` — env `DATABASE_URL`, urutan cutover, backup
+
+- [ ] **Step 1: Verifikasi count baris + checksum sample per tabel**
+
+- [ ] **Step 2: Opsional:** pertahankan `scripts/schema_mysql.sql` sebagai artefak review DBA (bukan sumber utama jika Alembic dipakai)
+
+- [ ] **Step 3: Commit**
+
+---
+
+### Task 15: CI MySQL + pool + health
+
+**Files:**
+- Modify: workflow CI (jika ada) — service `mysql:8`, env `DATABASE_URL=mysql+pymysql://…`, subset tes integrasi
+- Modify: `models/connection.py` — `pool_pre_ping=True`, `pool_size` / `max_overflow`, timeout dokumentasi
+- Modify: `routes/` atau `app.py` — `/healthz` dengan `select(1)` via session
+
+- [ ] **Step 1: Job opsional tidak memblokir default PR bila MySQL tidak tersedia**
+
+- [ ] **Step 2: Commit**
 
 ---
 
@@ -427,7 +428,7 @@ Gunakan container MySQL lokal atau job CI: `pytest tests/test_upload_flow.py tes
 | Logging manual | Task 3 |
 | Logging export periode & raw | Task 5 |
 | Best practices (correlation, no secrets, levels) | Task 1, catatan di Task 2–5 |
-| Migrasi SQLite → MySQL | Task 8–13 |
+| Refactor SQLAlchemy + cutover MySQL | Task 8–15 |
 | Lokasi ubahan terperinci | Tabel konteks + per-task file lists |
 
 **Placeholder scan:** Tidak menggunakan TBD pada langkah wajib; langkah `pass` pada Task 1 harus diganti implementasi konkret sesuai pola tes proyek.
