@@ -1,19 +1,33 @@
 # -*- coding: utf-8 -*-
-"""Parity: ``query_data_entries`` / ``get_total_entries_count`` via SQLAlchemy vs legacy sqlite3."""
+"""SQLAlchemy read/write parity on a shared SQLite file."""
 from __future__ import annotations
+
+import os
+from pathlib import Path
 
 import models
 from infrastructure.db import dispose_engine, init_engine
 
 
-def test_sa_reads_match_legacy_same_sqlite_file(tmp_path, monkeypatch) -> None:
+def _restore_default_pytest_engine() -> None:
+    p = Path(__file__).resolve().parents[1] / ".pytest_runtime_default.sqlite3"
+    url = f"sqlite:///{p.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(p)
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
+
+
+def test_sa_reads_same_sqlite_file(tmp_path, monkeypatch) -> None:
     db_file = tmp_path / "shared.db"
     path_str = str(db_file)
     url = f"sqlite:///{db_file.resolve().as_posix()}"
     monkeypatch.setattr(models, "DB_PATH", path_str)
     monkeypatch.setenv("DATABASE_URL", url)
-    models.init_db()
+    dispose_engine()
     init_engine(url)
+    models.init_db()
     try:
         assert models.insert_single_entry(
             uploader="Tester",
@@ -50,43 +64,15 @@ def test_sa_reads_match_legacy_same_sqlite_file(tmp_path, monkeypatch) -> None:
         assert len(sa_min) == 1
         assert sa_min[0]["value"] == 100.0
 
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
-
-        leg_rows = models.query_data_entries(limit=10)
-        leg_count = models.get_total_entries_count()
-        assert leg_count == 2
-        assert len(leg_rows) == 2
-
-        rows_min = models.query_data_entries(limit=10, value_min=50.0)
-        assert len(rows_min) == 1
-        assert rows_min[0]["value"] == 100.0
-
         sa_by_id = {r["id"]: r for r in sa_rows}
-        leg_by_id = {r["id"]: r for r in leg_rows}
-        assert sa_by_id.keys() == leg_by_id.keys()
         for eid, srow in sa_by_id.items():
-            lrow = leg_by_id[eid]
-            for k in (
-                "uploader_name",
-                "version",
-                "indicator_name",
-                "value",
-                "data_type",
-                "time_period",
-                "year",
-                "month",
-                "quarter",
-                "tanggal_data",
-            ):
-                assert srow[k] == lrow[k], (k, eid)
+            assert srow["indicator_name"] in ("Inflasi", "GDP")
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
+        _restore_default_pytest_engine()
 
 
-def test_preview_duplicates_batches_sa_then_legacy_same_file(tmp_path, monkeypatch) -> None:
-    """Upload duplicate preview must read the same rows via SA or legacy sqlite3."""
+def test_preview_duplicates_batches_on_sa(tmp_path, monkeypatch) -> None:
     from models.queries import preview_duplicates_batches
 
     db_file = tmp_path / "dup.db"
@@ -94,8 +80,9 @@ def test_preview_duplicates_batches_sa_then_legacy_same_file(tmp_path, monkeypat
     url = f"sqlite:///{db_file.resolve().as_posix()}"
     monkeypatch.setattr(models, "DB_PATH", path_str)
     monkeypatch.setenv("DATABASE_URL", url)
-    models.init_db()
+    dispose_engine()
     init_engine(url)
+    models.init_db()
     entry = {
         "uploader_name": "u1",
         "version": "v1",
@@ -113,19 +100,16 @@ def test_preview_duplicates_batches_sa_then_legacy_same_file(tmp_path, monkeypat
     try:
         models.insert_entries([entry])
         keys = [("GDP", 2024, 5, None)]
-        sa_dups = preview_duplicates_batches(keys)
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
-        leg_dups = preview_duplicates_batches(keys)
-        assert len(sa_dups) == len(leg_dups) == 1
-        assert sa_dups[0]["value"] == leg_dups[0]["value"] == 42.0
-        assert sa_dups[0]["indicator_name"] == "GDP"
+        dups = preview_duplicates_batches(keys)
+        assert len(dups) == 1
+        assert dups[0]["value"] == 42.0
+        assert dups[0]["indicator_name"] == "GDP"
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
+        _restore_default_pytest_engine()
 
 
-def test_fetch_series_for_comparison_sa_then_legacy_same_file(tmp_path, monkeypatch) -> None:
+def test_fetch_series_for_comparison_on_sa(tmp_path, monkeypatch) -> None:
     from models.queries import fetch_series_for_comparison
 
     db_file = tmp_path / "series.db"
@@ -133,8 +117,9 @@ def test_fetch_series_for_comparison_sa_then_legacy_same_file(tmp_path, monkeypa
     url = f"sqlite:///{db_file.resolve().as_posix()}"
     monkeypatch.setattr(models, "DB_PATH", path_str)
     monkeypatch.setenv("DATABASE_URL", url)
-    models.init_db()
+    dispose_engine()
     init_engine(url)
+    models.init_db()
     rows_payload = [
         {
             "uploader_name": "u1",
@@ -181,17 +166,12 @@ def test_fetch_series_for_comparison_sa_then_legacy_same_file(tmp_path, monkeypa
     ]
     try:
         models.insert_entries(rows_payload)
-        sa_series = fetch_series_for_comparison(
+        series = fetch_series_for_comparison(
             "GDP", "2024", period_start="2024-02", period_end="2024-06"
         )
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
-        leg_series = fetch_series_for_comparison(
-            "GDP", "2024", period_start="2024-02", period_end="2024-06"
-        )
-        assert len(sa_series) == len(leg_series) == 1
-        assert sa_series[0]["value"] == leg_series[0]["value"] == 2.0
-        assert sa_series[0]["month"] == 6
+        assert len(series) == 1
+        assert series[0]["value"] == 2.0
+        assert series[0]["month"] == 6
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
+        _restore_default_pytest_engine()

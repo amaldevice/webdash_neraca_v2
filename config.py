@@ -15,14 +15,49 @@ logger = logging.getLogger(__name__)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def database_url() -> str | None:
-    """SQLAlchemy DSN when migrating off raw sqlite3; unset keeps legacy sqlite path."""
+def _load_dotenv_into_os_environ() -> None:
+    """Load ``.env`` from project root (and optional ``DOTENV_PATH``) without overriding existing env.
+
+    Production: prefer systemd / service manager ``Environment=`` — those win over file values.
+    """
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(os.path.join(BASE_DIR, ".env"), override=False)
+    extra = os.environ.get("DOTENV_PATH", "").strip()
+    if extra:
+        load_dotenv(extra, override=False)
+
+
+_load_dotenv_into_os_environ()
+
+
+def database_url_explicit() -> str | None:
+    """``DATABASE_URL`` from environment only (empty → ``None``). Used for production guard."""
     raw = os.environ.get("DATABASE_URL", "").strip()
     return raw or None
 
 
+def database_url() -> str:
+    """Effective SQLAlchemy DSN: ``DATABASE_URL`` or default ``sqlite:///`` file at ``models.DB_PATH``."""
+    raw = os.environ.get("DATABASE_URL", "").strip()
+    if raw:
+        return raw
+    from pathlib import Path
+
+    try:
+        import models as _m
+
+        p = Path(str(_m.DB_PATH)).resolve()
+    except Exception:
+        p = (Path(BASE_DIR) / "data.db").resolve()
+    return f"sqlite:///{p.as_posix()}"
+
+
 def use_sqlalchemy() -> bool:
-    return bool(database_url())
+    """Always true: persistence goes through SQLAlchemy (including default SQLite file)."""
+    return True
 
 
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}

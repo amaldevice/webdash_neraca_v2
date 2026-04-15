@@ -9,7 +9,7 @@ from .browse import (
     get_latest_metadata,
     get_unique_indicators,
 )
-from .connection import DB_PATH, get_conn, init_db
+from .connection import DB_PATH, init_db
 from .data_filters import _build_data_entry_filter_clauses
 from .mutations import (
     _to_float,
@@ -35,7 +35,6 @@ __all__ = [
     "delete_data_by_filter",
     "delete_data_entry",
     "get_aggregated_cards",
-    "get_conn",
     "get_distinct_years",
     "get_filter_options",
     "get_latest_metadata",

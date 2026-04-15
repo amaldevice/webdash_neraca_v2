@@ -10,6 +10,8 @@
 
 **Hubungan dengan rencana lain:** Rencana `2026-04-13-logging-and-mysql-migration.md` tetap relevan untuk logging/audit dan cutover data ke MySQL kantor; **jalur teknis disarankan SQLAlchemy portabel** (bukan menambah cabang `get_conn()` DB-API per dialek). Cross-link balik dari file itu ke dokumen ini.
 
+**Konfigurasi lokal / server (2026-04-15):** `python-dotenv` memuat `.env` di root repo (dan opsional `DOTENV_PATH`) dari `config.py` saat impor pertama — `override=False` agar variabel yang sudah di-set proses (systemd, CI) tidak ditimpa. Template: `.env.example`; lihat README tabel env.
+
 **GitHub:** [Issue #9 — RFC SQLAlchemy portable + CRUD](https://github.com/amaldevice/webdash_neraca_v2/issues/9) (tracking eksekusi).
 
 ### Eksekusi berkelompok (issue #9) — urutan merge
@@ -20,8 +22,8 @@
 | **P2** | `infrastructure/db.py` + hook `create_app` / teardown session | — | **Selesai** (`infrastructure/db.py`, `dispose_engine` bila tanpa `DATABASE_URL`, `tests/test_app_factory.py::test_create_app_sqlalchemy_engine_when_database_url_set`) |
 | **P3** | ORM models + Alembic initial | — | **Selesai** (`infrastructure/orm_models.py`, `alembic.ini`, `alembic/env.py`, `alembic/versions/001_initial_schema.py`, `tests/test_alembic_initial.py`, README Alembic) |
 | **P4–P7** | Read path, upsert portable, browse/summary, `db_errors` + `upload_flow` | Setelah P3: **boleh paralel** per domain (A/B/C) | **P4** read-path ✓. **P5** write-path ✓ (`dialect_upsert`, `mutations`, `scoped_transaction` di `db.py`, `app` pytest-safe). **P6** browse + `summary_store` ✓ (cabang SA, urut `created_at`/`updated_at` tanpa `datetime()` di path SA; kolom tetap `Text` ISO — migrasi `DateTime` ditunda). **P7** ✓ (`services/db_errors.py`, `upload_flow` + `engine_dialect_name`, `tests/test_db_errors.py`). |
-| **P8–P9** | SQL keluar dari service + dekopling `models/__init__` | P8a preview vs P8b period_comparisons paralel | **P8** Task 8 langkah 1–2 ✓. **P9** Task 9 langkah 1–3 ✓ (tanpa re-export period comparisons; pytest `tests/`). Commit Task 8–9 Step 4 belum |
-| **P10–P13** | CI matrix, ETL, hapus legacy, CRUD repository | P10 CI terpisah dari P11 skrip | **P10–P13** eksekusi parsial: P10–P11 + commit; **P12** guard prod + skip `init_db` DDL bila SA; penghapusan `get_conn` penuh ditunda; **P13** `EntryListParams` + `models/repositories/entry_list` |
+| **P8–P9** | SQL keluar dari service + dekopling `models/__init__` | P8a preview vs P8b period_comparisons paralel | **Selesai** — Task 8 (termasuk `fetch_series_for_comparison` SA) + Task 9; langkah commit di rencana tercentang. |
+| **P10–P13** | CI matrix, ETL, hapus legacy, CRUD repository | P10 CI terpisah dari P11 skrip | **Selesai** — P10 CI multi-dialect, P11 skrip ETL, P12 cutover SA-only + tes (`temp_db_path` per-tes di simple_tests), P13 repository + `EntryListParams`. |
 
 **Delegasi subagent (setelah P3):** pakai pola *dispatching-parallel-agents* — **Agent A** `queries`+`browse`, **Agent B** `dialect_upsert`+`mutations`, **Agent C** `upload_preview`+`period_comparisons` SQL removal; **jangan** dua agent satu file yang sama tanpa lock.
 
@@ -303,10 +305,12 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 ### Task 12: Hapus jalur legacy (hanya setelah cutover)
 
 - [x] **Prod guard:** `create_app` memaksa `DATABASE_URL` bila `FLASK_ENV=production` dan `testing=False` (`app.py`).
-- [x] **`init_db`:** lewati DDL SQLite bila `use_sqlalchemy()` dan `is_engine_initialized()` — skema dari Alembic (`models/connection.py`).
-- [ ] **Penghapusan penuh** `get_conn` / `sqlite3` di semua cabang + tes — **ditunda** sampai cutover 100% (browse/summary/mutasi legacy masih dipakai tanpa `DATABASE_URL`).
+- [x] **`init_db`:** hanya `Base.metadata.create_all` pada engine SQLAlchemy (`models/connection.py`); tanpa `get_conn` / `sqlite3` di layer persistence `models/`.
+- [x] **Penghapusan penuh** `get_conn` dan cabang raw SQLite di `models/` + penyesuaian tes (`test_bugs`, `test_database_config`, simple_tests patch `get_session`, dll.). **`sqlite3`** masih diimpor di `services/upload_flow.py` hanya untuk union pengecualian dengan `sqlalchemy.exc.IntegrityError` (bukan koneksi DB).
 
-- [ ] Final: `python -m pytest tests -q` + Playwright (sesuai CI) setelah cutover.
+- [x] Final (setelah cutover di runner ini): `python -m pytest tests --ignore=tests/integration -q` hijau; Playwright CI tidak diubah di langkah ini.
+
+**Catatan tes (2026-04-15):** fixture `temp_db_path` ber-scope **session** membuat semua `test_client` simple_tests berbagi satu file SQLite sehingga baris sampel `populated_db` (mis. Alice + GDP 2024-01) memicu false positive duplikasi di `test_manual_entry_*`. Perbaikan: `temp_db_path` → scope **function** di `tests/simple_tests/functional_tests/conftest.py` dan `tests/simple_tests/bug_tests/conftest.py`.
 
 ---
 

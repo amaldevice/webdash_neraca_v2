@@ -14,9 +14,39 @@ if str(ROOT) not in sys.path:
 import models
 
 
+def pytest_configure(config) -> None:  # noqa: ANN001
+    """Default in-process SQLite DSN before any test module imports ``app`` (needs engine for ``init_db``)."""
+    if os.environ.get("DATABASE_URL", "").strip():
+        return
+    p = ROOT / ".pytest_runtime_default.sqlite3"
+    url = f"sqlite:///{p.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(p)
+    from infrastructure.db import dispose_engine, init_engine
+
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
+
+
+def pytest_runtest_teardown(item, nextitem) -> None:  # noqa: ANN001, ARG001
+    """If a test left SQLAlchemy disposed, re-bind default SQLite (avoids order-dependent failures)."""
+    from infrastructure.db import dispose_engine, init_engine, is_engine_initialized
+
+    if is_engine_initialized():
+        return
+    p = ROOT / ".pytest_runtime_default.sqlite3"
+    url = f"sqlite:///{p.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(p)
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
+
+
 @pytest.fixture
 def database_url() -> str | None:
-    """SQLAlchemy DSN from ``DATABASE_URL`` (unset → ``None``, legacy sqlite ``models.DB_PATH`` in tests)."""
+    """Explicit ``DATABASE_URL`` from env (empty → ``None``)."""
     raw = os.environ.get("DATABASE_URL", "").strip()
     return raw or None
 
@@ -24,7 +54,14 @@ def database_url() -> str | None:
 @pytest.fixture
 def db_path(tmp_path, monkeypatch):
     db_file = tmp_path / "test.db"
-    monkeypatch.setattr(models, "DB_PATH", str(db_file))
+    path_str = str(db_file)
+    monkeypatch.setattr(models, "DB_PATH", path_str)
+    url = f"sqlite:///{db_file.resolve().as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    from infrastructure.db import dispose_engine, init_engine
+
+    dispose_engine()
+    init_engine(url)
     models.init_db()
     return db_file
 

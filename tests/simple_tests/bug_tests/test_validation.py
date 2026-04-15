@@ -124,7 +124,8 @@ class TestInputValidation:
 
     def test_invalid_time_period_values(self, test_client):
         """Test dengan nilai time_period yang tidak valid"""
-        invalid_periods = ["invalid", "MONTHLY", "YEARLY", "123", "", " ", "monthly yearly"]
+        # Uppercase monthly/yearly are normalized via ``.lower()`` in validation — not invalid.
+        invalid_periods = ["invalid", "123", "", " ", "monthly yearly"]
 
         for invalid_period in invalid_periods:
             with test_client as client:

@@ -20,9 +20,13 @@ def _engine_kwargs(url: str) -> dict:
         if ":memory:" in url:
             return {
                 "poolclass": StaticPool,
-                "connect_args": {"check_same_thread": False},
+                "connect_args": {"check_same_thread": False, "timeout": 30},
             }
-        return {"poolclass": NullPool}
+        return {
+            "poolclass": NullPool,
+            # ``check_same_thread=False`` allows Flask test threads to share the file DB.
+            "connect_args": {"timeout": 30, "check_same_thread": False},
+        }
     return {
         "pool_pre_ping": True,
         "pool_size": 5,
@@ -44,6 +48,11 @@ def init_engine(url: str) -> None:
 def is_engine_initialized() -> bool:
     """True after ``init_engine``; used to pick SQLAlchemy read path in ``models.queries``."""
     return _engine is not None
+
+
+def get_engine() -> Engine | None:
+    """Global engine after ``init_engine`` (read-only for schema helpers)."""
+    return _engine
 
 
 def engine_dialect_name() -> str | None:

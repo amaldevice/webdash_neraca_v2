@@ -31,9 +31,11 @@ class TestDashboard:
         page_text = soup.get_text().lower()
         empty_indicators = ['tidak ada data', 'no data', 'empty', 'kosong']
         has_empty_message = any(indicator in page_text for indicator in empty_indicators)
+        def _table_has_data_rows(table) -> bool:
+            return any(tr.find("td") is not None for tr in table.find_all("tr"))
+
         has_table_data = any(
-            tag.name == "table" and len(tag.find_all("tr")) > 1
-            for tag in soup.find_all("table")
+            tag.name == "table" and _table_has_data_rows(tag) for tag in soup.find_all("table")
         )
         assert has_empty_message or not has_table_data, "Dashboard harus menampilkan pesan ketika tidak ada data"
 

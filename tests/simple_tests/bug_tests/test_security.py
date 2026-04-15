@@ -408,7 +408,7 @@ class TestSecurityVulnerabilities:
 
     def test_information_disclosure_in_errors(self, test_client):
         """Test information disclosure dalam error messages"""
-        with patch('models.get_conn') as mock_conn:
+        with patch("infrastructure.db.get_session") as mock_conn:
             mock_conn.side_effect = Exception("Database error: connection to localhost:5432 failed")
 
             with test_client as client:

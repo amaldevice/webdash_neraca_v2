@@ -7,7 +7,7 @@ import sys
 
 from flask import Flask
 
-from config import configure_flask_app, database_url
+from config import configure_flask_app, database_url, database_url_explicit
 from infrastructure.db import dispose_engine, init_engine, register_flask_teardown
 from models import init_db
 from periods import parse_period_date
@@ -17,26 +17,25 @@ from services.validation import allowed_file, validate_metadata
 
 
 def create_app(*, testing: bool = False, init_sqlalchemy: bool | None = None) -> Flask:
-    """``init_sqlalchemy``: default False under pytest so ``models.DB_PATH`` + ``get_conn()`` stay aligned
-    unless a test passes ``init_sqlalchemy=True`` (see ``tests/test_app_factory.py``).
-    """
+    """``init_sqlalchemy``: default ``True`` (SQLAlchemy + ``database_url()``). Pass ``False`` only in tests that assert startup without an engine."""
     application = Flask(__name__)
     configure_flask_app(application, testing=bool(testing))
     application.config["TESTING"] = bool(testing)
     register_routes(application)
-    url = database_url()
+    explicit = database_url_explicit()
     if (
         not testing
         and os.environ.get("FLASK_ENV", "").strip().lower() == "production"
-        and not url
+        and not explicit
     ):
         raise RuntimeError(
             "Production requires DATABASE_URL (SQLAlchemy). "
             "Apply schema with `alembic upgrade head` on the target database before start."
         )
     if init_sqlalchemy is None:
-        init_sqlalchemy = "pytest" not in sys.modules
-    if url and init_sqlalchemy:
+        init_sqlalchemy = True
+    url = database_url()
+    if init_sqlalchemy:
         init_engine(url)
         register_flask_teardown(application)
     else:

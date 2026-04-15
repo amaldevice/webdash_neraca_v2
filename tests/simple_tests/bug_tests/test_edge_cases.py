@@ -264,11 +264,12 @@ class TestEdgeCases:
 
     def test_database_connection_timeout(self, test_client):
         """Test simulasi database connection timeout"""
-        with patch('models.get_conn') as mock_get_conn:
+        with patch("infrastructure.db.get_session") as mock_get_session:
             def timeout_conn():
                 time.sleep(1)  # Simulate connection delay
                 raise Exception("Connection timeout")
-            mock_get_conn.side_effect = timeout_conn
+
+            mock_get_session.side_effect = timeout_conn
 
             with test_client as client:
                 df = pd.DataFrame({'Indicator': ['GDP'], '2024-01': [100]})

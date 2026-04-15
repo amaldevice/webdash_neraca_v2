@@ -15,7 +15,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from config import BASE_DIR, database_url  # noqa: E402
+from config import database_url  # noqa: E402
 from infrastructure.orm_models import Base  # noqa: E402
 
 config = context.config
@@ -29,10 +29,7 @@ def get_url() -> str:
     override = (os.environ.get("ALEMBIC_DATABASE_URL") or "").strip()
     if override:
         return override
-    dbu = database_url()
-    if dbu:
-        return dbu
-    return f"sqlite:///{os.path.join(BASE_DIR, 'data.db')}"
+    return database_url()
 
 
 def run_migrations_offline() -> None:

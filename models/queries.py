@@ -1,24 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import sqlite3
-from contextlib import closing
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from config import use_sqlalchemy
 from infrastructure.db import get_session, is_engine_initialized
 
-from .connection import get_conn
-from services.period_filters import apply_period_range_filter
-
-from .data_filters import (
-    _build_data_entry_filter_clauses,
-    build_data_entry_filter_sqlalchemy,
-    period_analysis_range_sqlalchemy,
-)
+from .data_filters import build_data_entry_filter_sqlalchemy, period_analysis_range_sqlalchemy
 
 
 def _format_period_text_from_parts(year: Any, month: Any, quarter: Any) -> str:
@@ -58,10 +48,6 @@ def _row_to_public_dict(row: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _use_sqlalchemy_reads() -> bool:
-    return use_sqlalchemy() and is_engine_initialized()
-
-
 def _sa_get_total_entries_count(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
@@ -95,32 +81,6 @@ def _sa_get_total_entries_count(
         return 0
 
 
-def _legacy_get_total_entries_count(
-    data_type: Optional[str] = None,
-    time_period: Optional[str] = None,
-    uploader: Optional[str] = None,
-    indicator: Optional[str] = None,
-    period_start: Optional[str] = None,
-    period_end: Optional[str] = None,
-    value_min: Optional[float] = None,
-    value_max: Optional[float] = None,
-) -> int:
-    clauses, params = _build_data_entry_filter_clauses(
-        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
-    )
-
-    base_query = "SELECT COUNT(*) FROM data_entries"
-    if clauses:
-        base_query += " WHERE " + " AND ".join(clauses)
-
-    try:
-        with closing(get_conn()) as conn:
-            row = conn.execute(base_query, tuple(params)).fetchone()
-            return row[0] if row else 0
-    except sqlite3.OperationalError:
-        return 0
-
-
 def get_total_entries_count(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
@@ -131,18 +91,9 @@ def get_total_entries_count(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
 ) -> int:
-    if _use_sqlalchemy_reads():
-        return _sa_get_total_entries_count(
-            data_type,
-            time_period,
-            uploader,
-            indicator,
-            period_start,
-            period_end,
-            value_min,
-            value_max,
-        )
-    return _legacy_get_total_entries_count(
+    if not is_engine_initialized():
+        return 0
+    return _sa_get_total_entries_count(
         data_type,
         time_period,
         uploader,
@@ -208,42 +159,6 @@ def _sa_query_data_entries(
     return out
 
 
-def _legacy_query_data_entries(
-    data_type: Optional[str] = None,
-    time_period: Optional[str] = None,
-    uploader: Optional[str] = None,
-    indicator: Optional[str] = None,
-    limit: int = 100,
-    offset: Optional[int] = 0,
-    period_start: Optional[str] = None,
-    period_end: Optional[str] = None,
-    value_min: Optional[float] = None,
-    value_max: Optional[float] = None,
-) -> List[Dict]:
-    clauses, params = _build_data_entry_filter_clauses(
-        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
-    )
-
-    base_query = """
-        SELECT id, uploader_name, version, indicator_name, value, data_type, time_period, created_at,
-               year, month, quarter
-        FROM data_entries
-    """
-    if clauses:
-        base_query += " WHERE " + " AND ".join(clauses)
-    base_query += " ORDER BY datetime(created_at) DESC LIMIT ? OFFSET ?"
-    safe_offset = offset if offset is not None and offset >= 0 else 0
-    params.extend([limit, safe_offset])
-
-    try:
-        with closing(get_conn()) as conn:
-            rows = conn.execute(base_query, tuple(params)).fetchall()
-    except sqlite3.OperationalError:
-        return []
-
-    return [_row_to_public_dict(row) for row in rows]
-
-
 def query_data_entries(
     data_type: Optional[str] = None,
     time_period: Optional[str] = None,
@@ -256,20 +171,9 @@ def query_data_entries(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
 ) -> List[Dict]:
-    if _use_sqlalchemy_reads():
-        return _sa_query_data_entries(
-            data_type,
-            time_period,
-            uploader,
-            indicator,
-            limit,
-            offset,
-            period_start,
-            period_end,
-            value_min,
-            value_max,
-        )
-    return _legacy_query_data_entries(
+    if not is_engine_initialized():
+        return []
+    return _sa_query_data_entries(
         data_type,
         time_period,
         uploader,
@@ -283,12 +187,15 @@ def query_data_entries(
     )
 
 
-def _sa_fetch_series_for_comparison(
+def fetch_series_for_comparison(
     indicator: str,
-    analysis_year: Optional[str],
-    period_start: Optional[str],
-    period_end: Optional[str],
+    analysis_year: Optional[str] = None,
+    period_start: Optional[str] = None,
+    period_end: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
+    """Rows for period-analysis calculators (indicator + optional year + period range)."""
+    if not is_engine_initialized():
+        return []
     from infrastructure.orm_models import DataEntry
 
     t = DataEntry
@@ -322,63 +229,13 @@ def _sa_fetch_series_for_comparison(
     return out
 
 
-def fetch_series_for_comparison(
-    indicator: str,
-    analysis_year: Optional[str] = None,
-    period_start: Optional[str] = None,
-    period_end: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Rows for period-analysis calculators (indicator + optional year + period range)."""
-    if _use_sqlalchemy_reads():
-        return _sa_fetch_series_for_comparison(
-            indicator, analysis_year, period_start, period_end
-        )
-
-    period_clauses: List[str] = []
-    period_params: List[Any] = []
-    apply_period_range_filter(
-        period_clauses,
-        period_params,
-        None,
-        period_start,
-        period_end,
-    )
-
-    base_query = """
-        SELECT year, month, quarter, value, time_period, data_type
-        FROM data_entries
-        WHERE indicator_name = ? AND year IS NOT NULL
-    """
-    params: List[Any] = [indicator]
-    if analysis_year:
-        base_query += " AND year = ?"
-        params.append(int(analysis_year))
-    if period_clauses:
-        base_query += " AND " + " AND ".join(period_clauses)
-        params.extend(period_params)
-    base_query += " ORDER BY year, month, quarter"
-
-    with closing(get_conn()) as conn:
-        rows = conn.execute(base_query, params).fetchall()
-
-    out: List[Dict[str, Any]] = []
-    for row in rows:
-        out.append(
-            {
-                "year": row["year"],
-                "month": row["month"],
-                "quarter": row["quarter"],
-                "value": row["value"],
-                "time_period": row["time_period"],
-                "data_type": row["data_type"],
-            }
-        )
-    return out
-
-
-def _sa_preview_duplicates_batches(
+def preview_duplicates_batches(
     unique_keys: Sequence[Tuple[Any, Any, Any, Any]],
 ) -> List[Dict[str, Any]]:
+    """Load existing rows matching (indicator_name, year, month, quarter) keys in batches."""
+    if not unique_keys or not is_engine_initialized():
+        return []
+
     from infrastructure.orm_models import DataEntry
 
     def one_key(indicator: Any, year: Any, month: Any, quarter: Any):
@@ -417,72 +274,3 @@ def _sa_preview_duplicates_batches(
     except SQLAlchemyError:
         return []
     return out
-
-
-def _preview_dup_match_clause(
-    params: List[Any],
-    indicator: Any,
-    year: Any,
-    month: Any,
-    quarter: Any,
-) -> str:
-    clauses = ["indicator_name = ?", "year = ?"]
-    params.extend([indicator, year])
-    if month is None:
-        clauses.append("month IS NULL")
-    else:
-        clauses.append("month = ?")
-        params.append(month)
-    if quarter is None:
-        clauses.append("quarter IS NULL")
-    else:
-        clauses.append("quarter = ?")
-        params.append(quarter)
-    return "(" + " AND ".join(clauses) + ")"
-
-
-def preview_duplicates_batches(
-    unique_keys: Sequence[Tuple[Any, Any, Any, Any]],
-) -> List[Dict[str, Any]]:
-    """
-    Load existing rows matching (indicator_name, year, month, quarter) keys in batches (bind limit ~999).
-
-    Uses SQLAlchemy when ``DATABASE_URL`` + engine active; otherwise legacy ``sqlite3`` connection.
-    """
-    if not unique_keys:
-        return []
-
-    if _use_sqlalchemy_reads():
-        return _sa_preview_duplicates_batches(unique_keys)
-
-    max_batch_size = max(1, 999 // 4)
-    all_rows: List[Any] = []
-    for offset in range(0, len(unique_keys), max_batch_size):
-        batch = unique_keys[offset : offset + max_batch_size]
-        params: List[Any] = []
-        where_parts: List[str] = []
-        for indicator, year, month, quarter in batch:
-            where_parts.append(
-                _preview_dup_match_clause(params, indicator, year, month, quarter)
-            )
-        sql = f"""
-            SELECT id, uploader_name, version, indicator_name, year, month, quarter, value
-            FROM data_entries
-            WHERE {" OR ".join(where_parts)}
-        """
-        with closing(get_conn()) as conn:
-            all_rows.extend(conn.execute(sql, params).fetchall())
-
-    return [
-        {
-            "id": row["id"],
-            "uploader_name": row["uploader_name"],
-            "version": row["version"],
-            "indicator_name": row["indicator_name"],
-            "year": row["year"],
-            "month": row["month"],
-            "quarter": row["quarter"],
-            "value": row["value"],
-        }
-        for row in all_rows
-    ]

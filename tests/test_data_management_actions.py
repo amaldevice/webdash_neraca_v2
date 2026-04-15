@@ -2,8 +2,6 @@
 """Unit tests for CRUD POST handler (no HTTP)."""
 from __future__ import annotations
 
-from contextlib import closing
-
 from werkzeug.datastructures import ImmutableMultiDict
 
 import models
@@ -29,9 +27,8 @@ def test_apply_delete_single_returns_success_message(db_path, monkeypatch):
             }
         ]
     )
-    with closing(models.get_conn()) as conn:
-        row = conn.execute("SELECT id FROM data_entries LIMIT 1").fetchone()
-        eid = str(row[0])
+    row = models.query_data_entries(limit=1)[0]
+    eid = str(row["id"])
 
     form = ImmutableMultiDict([("action", "delete_single"), ("entry_id", eid)])
     msgs = apply_data_management_post(
@@ -68,9 +65,8 @@ def test_apply_bulk_update_invalid_value_returns_error(db_path, monkeypatch):
             }
         ]
     )
-    with closing(models.get_conn()) as conn:
-        row = conn.execute("SELECT id FROM data_entries LIMIT 1").fetchone()
-        eid = str(row[0])
+    row = models.query_data_entries(limit=1, indicator="GDPX")[0]
+    eid = str(row["id"])
 
     form = ImmutableMultiDict(
         [
@@ -124,9 +120,8 @@ def test_apply_bulk_delete_action_removes_multiple_rows(db_path, monkeypatch):
             },
         ]
     )
-    with closing(models.get_conn()) as conn:
-        rows = conn.execute("SELECT id FROM data_entries ORDER BY month").fetchall()
-        ids = [str(row[0]) for row in rows]
+    rows = sorted(models.query_data_entries(limit=10), key=lambda r: r["month"] or 0)
+    ids = [str(r["id"]) for r in rows]
 
     form = ImmutableMultiDict(
         [

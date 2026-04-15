@@ -1,20 +1,34 @@
 # -*- coding: utf-8 -*-
-"""Parity: browse + summary_store via SQLAlchemy vs legacy (same SQLite file)."""
+"""browse + summary_store via SQLAlchemy on SQLite file."""
 from __future__ import annotations
+
+import os
+from pathlib import Path
 
 import models
 from infrastructure.db import dispose_engine, init_engine
+
+
+def _restore_default_pytest_engine() -> None:
+    p = Path(__file__).resolve().parents[1] / ".pytest_runtime_default.sqlite3"
+    url = f"sqlite:///{p.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(p)
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
 from models import browse, summary_store
 
 
-def test_browse_and_summary_sa_match_legacy(tmp_path, monkeypatch) -> None:
+def test_browse_and_summary_on_sa(tmp_path, monkeypatch) -> None:
     db_file = tmp_path / "bs.db"
     path_str = str(db_file)
     url = f"sqlite:///{db_file.resolve().as_posix()}"
     monkeypatch.setattr(models, "DB_PATH", path_str)
     monkeypatch.setenv("DATABASE_URL", url)
-    models.init_db()
+    dispose_engine()
     init_engine(url)
+    models.init_db()
     try:
         models.insert_entries(
             [
@@ -33,32 +47,22 @@ def test_browse_and_summary_sa_match_legacy(tmp_path, monkeypatch) -> None:
             ]
         )
 
-        meta_sa = browse.get_latest_metadata()
-        years_sa = browse.get_distinct_years()
-        cards_sa = browse.get_aggregated_cards(limit=5)
-        filt_sa = browse.get_filter_options()
-        ind_sa = browse.get_unique_indicators()
+        meta = browse.get_latest_metadata()
+        years = browse.get_distinct_years()
+        cards = browse.get_aggregated_cards(limit=5)
+        filt = browse.get_filter_options()
+        ind = browse.get_unique_indicators()
 
         summary_store.save_aggregated_summary({"k": "v"})
-        loaded_sa = summary_store.load_cached_summary()
+        loaded = summary_store.load_cached_summary()
 
-        monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
-
-        meta_leg = browse.get_latest_metadata()
-        years_leg = browse.get_distinct_years()
-        cards_leg = browse.get_aggregated_cards(limit=5)
-        filt_leg = browse.get_filter_options()
-        ind_leg = browse.get_unique_indicators()
-        loaded_leg = summary_store.load_cached_summary()
-
-        assert meta_sa["uploader"] == meta_leg["uploader"]
-        assert meta_sa["version"] == meta_leg["version"]
-        assert years_sa == years_leg == [2024]
-        assert len(cards_sa) == len(cards_leg)
-        assert filt_sa == filt_leg
-        assert ind_sa == ind_leg == ["GDP"]
-        assert loaded_sa == loaded_leg == {"k": "v"}
+        assert meta["uploader"] == "A"
+        assert meta["version"] == "v1"
+        assert years == [2024]
+        assert len(cards) >= 1
+        assert "GDP" in filt["indicators"]
+        assert ind == ["GDP"]
+        assert loaded == {"k": "v"}
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        dispose_engine()
+        _restore_default_pytest_engine()

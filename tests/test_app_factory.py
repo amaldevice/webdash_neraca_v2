@@ -61,22 +61,33 @@ def test_create_app_requires_database_url_in_production(monkeypatch):
 def test_create_app_sqlalchemy_engine_when_database_url_set(db_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     monkeypatch.setattr(models, "DB_PATH", str(db_path))
-    models.init_db()
-    import infrastructure.db as dbmod
+    from infrastructure.db import dispose_engine, init_engine
 
-    importlib.reload(dbmod)
+    dispose_engine()
+    init_engine("sqlite:///:memory:")
+    models.init_db()
     import app as app_module
 
     importlib.reload(app_module)
-    application = app_module.create_app(testing=True, init_sqlalchemy=True)
-    from infrastructure.db import dispose_engine, get_session
+    application = app_module.create_app(testing=True)
+    from infrastructure.db import dispose_engine as dispose2, get_session
 
     try:
         with application.app_context():
             session = get_session()
             assert session.bind is not None
     finally:
-        dispose_engine()
+        dispose2()
         monkeypatch.delenv("DATABASE_URL", raising=False)
-        importlib.reload(dbmod)
+        from pathlib import Path
+
+        from infrastructure.db import dispose_engine, init_engine
+
+        p = Path(__file__).resolve().parents[1] / ".pytest_runtime_default.sqlite3"
+        url = f"sqlite:///{p.resolve().as_posix()}"
+        monkeypatch.setenv("DATABASE_URL", url)
+        models.DB_PATH = str(p)
+        dispose_engine()
+        init_engine(url)
+        models.init_db()
         importlib.reload(app_module)
