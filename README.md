@@ -57,7 +57,7 @@ Instalasi legacy tanpa `DATABASE_URL` tetap boleh memakai `python -c "from model
 | **MySQL 8** | `mysql+pymysql://user:password@host:3306/dbname?charset=utf8mb4` — butuh paket **PyMySQL** (sudah di `requirements.txt`). |
 | **PostgreSQL** | `postgresql+psycopg://user:password@host:5432/dbname` — butuh **psycopg** (mis. `pip install "psycopg[binary]"` dari `requirements-dev.txt`). |
 
-Setelah DSN di-set, jalankan migrasi: `python -m alembic upgrade head`. CI menjalankan job terpisah **integration-mysql** / **integration-postgres** (lihat `.github/workflows/ci.yml`) dengan smoke di `tests/integration/`.
+Setelah DSN di-set, jalankan migrasi: `python -m alembic upgrade head`. Smoke integrasi MySQL/PostgreSQL: jalankan `pytest tests/integration/` di mesin yang punya `DATABASE_URL` non-sqlite dan skema sudah `alembic upgrade head` (lihat `tests/integration/test_remote_dialect_smoke.py`).
 
 ### Migrasi data SQLite → server SQL (sekali jalan)
 

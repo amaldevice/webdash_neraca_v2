@@ -29,7 +29,7 @@ def _remote_database_url() -> str | None:
 
 pytestmark = pytest.mark.skipif(
     _remote_database_url() is None,
-    reason="Set DATABASE_URL to mysql+ or postgresql+ (see README / .github/workflows/ci.yml)",
+    reason="Set DATABASE_URL to mysql+ or postgresql+ (see README integration section)",
 )
 
 

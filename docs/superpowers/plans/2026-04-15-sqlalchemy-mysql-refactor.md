@@ -271,10 +271,10 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 ### Task 10: CI + fixture multi-dialect
 
 **Files:**
-- Add: `.github/workflows/ci.yml` — job `test-sqlite` (matrix 3.11–3.13, `pytest tests --ignore=tests/integration`), `integration-mysql`, `integration-postgres`
+- ~~Add: `.github/workflows/ci.yml`~~ **(2026-04-15):** folder `.github/` dihapus dari repo; job matrix / integrasi bisa dijalankan ulang di pipeline kantor atau salin runbook dari riwayat git.
 - Add: `tests/integration/test_remote_dialect_smoke.py` — smoke insert/query/upsert setelah `alembic upgrade head`
 - Modify: `tests/conftest.py` — fixture `database_url` (baca env `DATABASE_URL`)
-- Modify: `README.md` — tabel contoh DSN tiga dialek + pointer CI
+- Modify: `README.md` — tabel contoh DSN tiga dialek + cara integrasi manual
 
 - [x] **Step 1: Job utama** SQLite — `pytest tests --ignore=tests/integration` (tanpa `DATABASE_URL` di job).
 
