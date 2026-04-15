@@ -1,12 +1,37 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_
 
 from infrastructure.orm_models import DataEntry
 from services.period_filters import apply_period_range_filter, parse_period_filter_value, period_index
+
+
+def period_analysis_range_sqlalchemy(
+    period_start: Optional[str], period_end: Optional[str]
+) -> Optional[Any]:
+    """Period range when listing filter is not monthly/quarterly/yearly (analysis / mixed).
+
+    Matches ``apply_period_range_filter`` with ``time_period_filter`` falsy.
+    """
+    t = DataEntry
+    start_year, start_month, start_quarter = parse_period_filter_value(period_start)
+    end_year, end_month, end_quarter = parse_period_filter_value(period_end)
+    start_index = period_index(start_year, start_month, start_quarter, is_start=True)
+    end_index = period_index(end_year, end_month, end_quarter, is_start=False)
+    if start_index is None and end_index is None:
+        return None
+    period_expr = t.year * 100 + func.coalesce(t.month, func.coalesce(t.quarter * 3, 1))
+    subparts: List[Any] = []
+    if start_index is not None:
+        subparts.append(period_expr >= start_index)
+    if end_index is not None:
+        subparts.append(period_expr <= end_index)
+    if not subparts:
+        return None
+    return and_(*subparts) if len(subparts) > 1 else subparts[0]
 
 
 def _build_data_entry_filter_clauses(
@@ -118,13 +143,9 @@ def build_data_entry_filter_sqlalchemy(
         if end_year is not None:
             parts.append(t.year <= end_year)
     else:
-        start_index = period_index(start_year, start_month, start_quarter, is_start=True)
-        end_index = period_index(end_year, end_month, end_quarter, is_start=False)
-        period_expr = t.year * 100 + func.coalesce(t.month, func.coalesce(t.quarter * 3, 1))
-        if start_index is not None:
-            parts.append(period_expr >= start_index)
-        if end_index is not None:
-            parts.append(period_expr <= end_index)
+        pr = period_analysis_range_sqlalchemy(period_start, period_end)
+        if pr is not None:
+            parts.append(pr)
 
     if value_min is not None:
         parts.append(t.value >= value_min)

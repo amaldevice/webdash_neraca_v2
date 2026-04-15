@@ -123,3 +123,75 @@ def test_preview_duplicates_batches_sa_then_legacy_same_file(tmp_path, monkeypat
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
         dispose_engine()
+
+
+def test_fetch_series_for_comparison_sa_then_legacy_same_file(tmp_path, monkeypatch) -> None:
+    from models.queries import fetch_series_for_comparison
+
+    db_file = tmp_path / "series.db"
+    path_str = str(db_file)
+    url = f"sqlite:///{db_file.resolve().as_posix()}"
+    monkeypatch.setattr(models, "DB_PATH", path_str)
+    monkeypatch.setenv("DATABASE_URL", url)
+    models.init_db()
+    init_engine(url)
+    rows_payload = [
+        {
+            "uploader_name": "u1",
+            "version": "v1",
+            "template_type": "manual",
+            "data_type": "flow",
+            "time_period": "monthly",
+            "indicator_name": "GDP",
+            "value": 1.0,
+            "unit": None,
+            "region_code": None,
+            "year": 2024,
+            "month": 1,
+            "quarter": None,
+        },
+        {
+            "uploader_name": "u1",
+            "version": "v1",
+            "template_type": "manual",
+            "data_type": "flow",
+            "time_period": "monthly",
+            "indicator_name": "GDP",
+            "value": 2.0,
+            "unit": None,
+            "region_code": None,
+            "year": 2024,
+            "month": 6,
+            "quarter": None,
+        },
+        {
+            "uploader_name": "u1",
+            "version": "v1",
+            "template_type": "manual",
+            "data_type": "flow",
+            "time_period": "monthly",
+            "indicator_name": "GDP",
+            "value": 99.0,
+            "unit": None,
+            "region_code": None,
+            "year": 2023,
+            "month": 12,
+            "quarter": None,
+        },
+    ]
+    try:
+        models.insert_entries(rows_payload)
+        sa_series = fetch_series_for_comparison(
+            "GDP", "2024", period_start="2024-02", period_end="2024-06"
+        )
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        dispose_engine()
+        leg_series = fetch_series_for_comparison(
+            "GDP", "2024", period_start="2024-02", period_end="2024-06"
+        )
+        assert len(sa_series) == len(leg_series) == 1
+        assert sa_series[0]["value"] == leg_series[0]["value"] == 2.0
+        assert sa_series[0]["month"] == 6
+    finally:
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        dispose_engine()

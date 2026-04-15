@@ -12,7 +12,13 @@ from config import use_sqlalchemy
 from infrastructure.db import get_session, is_engine_initialized
 
 from .connection import get_conn
-from .data_filters import _build_data_entry_filter_clauses, build_data_entry_filter_sqlalchemy
+from services.period_filters import apply_period_range_filter
+
+from .data_filters import (
+    _build_data_entry_filter_clauses,
+    build_data_entry_filter_sqlalchemy,
+    period_analysis_range_sqlalchemy,
+)
 
 
 def _format_period_text_from_parts(year: Any, month: Any, quarter: Any) -> str:
@@ -277,17 +283,67 @@ def query_data_entries(
     )
 
 
-def fetch_series_for_comparison(
+def _sa_fetch_series_for_comparison(
     indicator: str,
     analysis_year: Optional[str],
-    period_clauses: Sequence[str],
-    period_params: Sequence[Any],
+    period_start: Optional[str],
+    period_end: Optional[str],
 ) -> List[Dict[str, Any]]:
-    """
-    Rows for period-analysis calculators (indicator slice + optional year + period range clauses).
+    from infrastructure.orm_models import DataEntry
 
-    ``period_clauses`` / ``period_params`` come from ``services.period_filters.apply_period_range_filter``.
-    """
+    t = DataEntry
+    w: List[Any] = [t.indicator_name == indicator, t.year.isnot(None)]
+    if analysis_year:
+        w.append(t.year == int(analysis_year))
+    pr = period_analysis_range_sqlalchemy(period_start, period_end)
+    if pr is not None:
+        w.append(pr)
+    stmt = (
+        select(t.year, t.month, t.quarter, t.value, t.time_period, t.data_type)
+        .where(and_(*w))
+        .order_by(t.year, t.month, t.quarter)
+    )
+    out: List[Dict[str, Any]] = []
+    try:
+        session = get_session()
+        for y, m, q, val, tp, dt in session.execute(stmt):
+            out.append(
+                {
+                    "year": y,
+                    "month": m,
+                    "quarter": q,
+                    "value": val,
+                    "time_period": tp,
+                    "data_type": dt,
+                }
+            )
+    except SQLAlchemyError:
+        return []
+    return out
+
+
+def fetch_series_for_comparison(
+    indicator: str,
+    analysis_year: Optional[str] = None,
+    period_start: Optional[str] = None,
+    period_end: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Rows for period-analysis calculators (indicator + optional year + period range)."""
+    if _use_sqlalchemy_reads():
+        return _sa_fetch_series_for_comparison(
+            indicator, analysis_year, period_start, period_end
+        )
+
+    period_clauses: List[str] = []
+    period_params: List[Any] = []
+    apply_period_range_filter(
+        period_clauses,
+        period_params,
+        None,
+        period_start,
+        period_end,
+    )
+
     base_query = """
         SELECT year, month, quarter, value, time_period, data_type
         FROM data_entries

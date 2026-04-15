@@ -111,7 +111,7 @@ Pilih kandidat untuk drill-down desain interface terpisah (issue RFC) bila diper
 Jalankan: `python -m pytest tests/test_database_config.py -v`  
 Expected: PASS (setelah P1).
 
-- [ ] **Step 4: Commit** — pesan contoh: `chore: add sqlalchemy stack and DATABASE_URL config`
+- [x] **Step 4: Commit** — pesan contoh: `chore: add sqlalchemy stack and DATABASE_URL config` (historis; sudah di repo)
 
 ---
 
@@ -129,7 +129,7 @@ Expected: PASS (setelah P1).
 
 Jalankan: `python -m pytest tests/test_app_factory.py tests/test_database_config.py -v`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit** (historis; sudah di repo)
 
 ---
 
@@ -154,7 +154,7 @@ rtk python -m alembic upgrade head
 
 Pada DB kosong: tabel ada (`SHOW TABLES` / sqlite_file jika uji lokal dengan `mysql+pymysql` ke container). Tes otomatis: `python -m pytest tests/test_alembic_initial.py -v`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** (historis; sudah di repo)
 
 ---
 
@@ -176,7 +176,7 @@ rtk python -m pytest tests/test_models.py tests/test_mutations_baseline.py -q --
 
 Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py -q`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** (historis; sudah di repo)
 
 ---
 
@@ -195,7 +195,7 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 
 - [x] **Step 4: pytest** — `tests/test_mutations_baseline.py`, `tests/test_upload_flow.py`, `tests/test_mutations_sqlalchemy.py`, `tests/test_bugs.py`; CI multi-dialect tetap Task 10.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** (historis; sudah di repo)
 
 ---
 
@@ -211,7 +211,7 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 
 - [x] **Tes:** `tests/test_browse_summary_sqlalchemy.py` (+ regresi `tests/test_models.py`).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit** (historis; sudah di repo)
 
 ---
 
@@ -243,6 +243,8 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 - [x] **Step 1: Tulis fungsi models yang membungkus query yang ada** (salin SQL, parameter sama).
 
 - [x] **Step 2: Tes** `tests/test_upload_preview.py`, `tests/test_bugs.py::TestPeriodAnalysis`, `tests/simple_tests/functional_tests/test_export.py`.
+
+- [x] **Step 2b (lanjutan 2026-04-15):** `fetch_series_for_comparison` — cabang SQLAlchemy (`_sa_fetch_series_for_comparison` + `period_analysis_range_sqlalchemy` di `models/data_filters.py`); signature disederhanakan ke `(indicator, analysis_year=…, period_start=…, period_end=…)`; `services/period_comparisons.py` tidak lagi membangun `period_clauses` manual; tes `tests/test_queries_sqlalchemy.py::test_fetch_series_for_comparison_sa_then_legacy_same_file`.
 
 - [x] **Step 3: Commit**
 
