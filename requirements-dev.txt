@@ -2,3 +2,4 @@
 -r requirements.txt
 pytest==9.0.2
 beautifulsoup4==4.13.3
+psycopg[binary]==3.2.4

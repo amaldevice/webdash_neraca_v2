@@ -29,6 +29,34 @@ def _load_test_config():
 
 _TEST_CONFIG = _load_test_config()
 
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_PYTEST_DB = _PROJECT_ROOT / ".pytest_runtime_default.sqlite3"
+
+
+def _bind_sqlite_engine(db_path: str) -> None:
+    import models
+    from infrastructure.db import dispose_engine, init_engine
+
+    url = f"sqlite:///{Path(db_path).resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = db_path
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
+
+
+def _restore_pytest_default_engine() -> None:
+    import models
+    from infrastructure.db import dispose_engine, init_engine
+
+    url = f"sqlite:///{_DEFAULT_PYTEST_DB.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(_DEFAULT_PYTEST_DB)
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
+
+
 APP_CONFIG = _TEST_CONFIG.APP_CONFIG
 TEST_DATA = _TEST_CONFIG.TEST_DATA
 PATHS = _TEST_CONFIG.PATHS
@@ -80,31 +108,22 @@ def test_data():
     return TEST_DATA
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def temp_db_path():
-    """Path untuk database temporary testing"""
-    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+    """Satu file SQLite per tes — hindari state DB bersama antar tes."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         temp_path = f.name
-
     yield temp_path
-
-    # Cleanup setelah test selesai
     try:
         os.unlink(temp_path)
-    except:
+    except OSError:
         pass
 
 
 @pytest.fixture(scope="function")
 def test_client(temp_db_path):
     """Test client untuk Flask app dengan database temporary"""
-    # Set database path untuk testing
-    import models
-    original_db_path = models.DB_PATH
-    models.DB_PATH = temp_db_path
-
-    # Reinitialize database
-    models.init_db()
+    _bind_sqlite_engine(temp_db_path)
 
     # Import app setelah database path diubah
     import app
@@ -116,8 +135,7 @@ def test_client(temp_db_path):
     yield client
     app.app.test_client_class = original_client_class
 
-    # Restore original database path
-    models.DB_PATH = original_db_path
+    _restore_pytest_default_engine()
 
 
 @pytest.fixture(scope="function")

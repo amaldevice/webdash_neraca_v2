@@ -110,6 +110,8 @@ def test_update_data_entry_keeps_row_count_and_changes_value(db_path):
 
 
 def test_upsert_entries_overwrites_existing_row(db_path):
+    # SQLite UNIQUE + ON CONFLICT ignore NULL key parts as distinct; keep all unique
+    # index columns non-NULL so upsert targets one physical row.
     base_entry = {
         "uploader_name": "u1",
         "version": "v1",
@@ -122,7 +124,7 @@ def test_upsert_entries_overwrites_existing_row(db_path):
         "region_code": None,
         "year": 2024,
         "month": 1,
-        "quarter": None,
+        "quarter": 0,
     }
     models.insert_entries([base_entry])
 

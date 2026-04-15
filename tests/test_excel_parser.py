@@ -127,7 +127,8 @@ def _period_to_tuple(parsed):
         ("Q2-2024", "quarterly", (2024, None, 2)),
         ("2024Q3", "quarterly", (2024, None, 3)),
         (pd.Timestamp("2024-04-01"), "quarterly", (2024, None, 2)),
-        ("2024", "quarterly", (None, None, None)),
+        # Bare year under quarterly is treated as Q1 of that year (parser normalizes).
+        ("2024", "quarterly", (2024, None, 1)),
         ("2024", "yearly", (2024, None, None)),
         (2024, "yearly", (2024, None, None)),
         ("43831", "yearly", (None, None, None)),

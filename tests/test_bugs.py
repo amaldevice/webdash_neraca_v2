@@ -12,30 +12,47 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
-import sqlite3
+from sqlalchemy.exc import IntegrityError
 
 _TESTS_ROOT = Path(__file__).resolve().parents[1]
+_PYTEST_DEFAULT_DB = _TESTS_ROOT / ".pytest_runtime_default.sqlite3"
 
 
 def _temp_db_attach(case: unittest.TestCase) -> None:
-    """Point models.DB_PATH at a fresh file DB (shared across connections in tests)."""
+    """Bind engine + ``models.DB_PATH`` to a fresh SQLite file."""
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
     tmp.close()
     case._temp_db_path = tmp.name
-    import models
+    import os
 
+    import models
+    from infrastructure.db import dispose_engine, init_engine
+
+    url = f"sqlite:///{Path(case._temp_db_path).resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
     models.DB_PATH = case._temp_db_path
+    dispose_engine()
+    init_engine(url)
     models.init_db()
 
 
 def _temp_db_detach(case: unittest.TestCase) -> None:
-    import models
+    import os
 
-    models.DB_PATH = str(_TESTS_ROOT / "data.db")
+    import models
+    from infrastructure.db import dispose_engine, init_engine
+
     try:
         os.unlink(case._temp_db_path)
     except OSError:
         pass
+
+    url = f"sqlite:///{_PYTEST_DEFAULT_DB.resolve().as_posix()}"
+    os.environ["DATABASE_URL"] = url
+    models.DB_PATH = str(_PYTEST_DEFAULT_DB)
+    dispose_engine()
+    init_engine(url)
+    models.init_db()
 
 
 # Import the application modules
@@ -43,8 +60,9 @@ from app import _build_manual_entry, _parse_period_date, allowed_file, app, vali
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
-    calculate_period_comparisons, _to_float
+    _to_float,
 )
+from services.period_comparisons import calculate_period_comparisons
 from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
 from services.timeutil import utc_now_iso
 
@@ -196,36 +214,10 @@ class TestDatabaseOperations(unittest.TestCase):
     """Test database operations"""
 
     def setUp(self):
-        """Use a temp file DB so every connection shares one SQLite database."""
-        import sys
-        from pathlib import Path
-
-        ROOT = Path(__file__).resolve().parents[1]
-        if str(ROOT) not in sys.path:
-            sys.path.insert(0, str(ROOT))
-
-        import models
-
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
-        self.temp_db.close()
-        models.DB_PATH = self.temp_db.name
-        models.init_db()
+        _temp_db_attach(self)
 
     def tearDown(self):
-        import sys
-        from pathlib import Path
-
-        ROOT = Path(__file__).resolve().parents[1]
-        if str(ROOT) not in sys.path:
-            sys.path.insert(0, str(ROOT))
-
-        import models
-
-        models.DB_PATH = os.path.join(ROOT, "data.db")
-        try:
-            os.unlink(self.temp_db.name)
-        except OSError:
-            pass
+        _temp_db_detach(self)
 
     def test_insert_entries_success(self):
         """Test successful entry insertion"""
@@ -267,7 +259,7 @@ class TestDatabaseOperations(unittest.TestCase):
         insert_entries(entries)
 
         # Second insertion with same constraint should raise IntegrityError
-        with self.assertRaises(sqlite3.IntegrityError):
+        with self.assertRaises(IntegrityError):
             insert_entries(entries)
 
     def test_bulk_delete_entries(self):
@@ -450,19 +442,14 @@ class TestErrorHandling(unittest.TestCase):
         _temp_db_detach(self)
 
     def test_database_connection_failure(self):
-        """Test graceful handling of database connection failures"""
-        import models
-        original_path = models.DB_PATH
-        try:
-            # Set invalid database path
-            models.DB_PATH = "/invalid/path/database.db"
+        """Test graceful handling of database query failures."""
+        from unittest.mock import patch
 
-            # This should handle the error gracefully
+        from sqlalchemy.exc import OperationalError
+
+        with patch("models.queries.get_session", side_effect=OperationalError("stmt", {}, None)):
             result = get_total_entries_count()
-            self.assertIsInstance(result, int)  # Should return 0 or handle error
-
-        finally:
-            models.DB_PATH = original_path
+            self.assertIsInstance(result, int)
 
     def test_invalid_pagination_parameters(self):
         """Test handling of invalid pagination parameters"""

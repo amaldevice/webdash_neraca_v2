@@ -37,6 +37,38 @@ npm run build:css
 python app.py
 ```
 
+## Skema basis data (Alembic)
+
+Untuk lingkungan yang memakai **SQLAlchemy** (`DATABASE_URL` di-set), terapkan migrasi:
+
+```bash
+rtk python -m alembic upgrade head
+```
+
+Urutan pemilihan DSN migrasi: `ALEMBIC_DATABASE_URL` (opsional) → `DATABASE_URL` → bawaan `sqlite:///<folder proyek>/data.db`.
+
+Instalasi legacy tanpa `DATABASE_URL` tetap boleh memakai `python -c "from models import init_db; init_db()"` sampai strangler menggantikan penuh.
+
+### Contoh `DATABASE_URL` (SQLAlchemy)
+
+| Dialek | Contoh nilai |
+|--------|----------------|
+| **SQLite** (berkas) | `sqlite:////var/lib/app/data.db` atau `sqlite:///C:/app/data.db` |
+| **MySQL 8** | `mysql+pymysql://user:password@host:3306/dbname?charset=utf8mb4` — butuh paket **PyMySQL** (sudah di `requirements.txt`). |
+| **PostgreSQL** | `postgresql+psycopg://user:password@host:5432/dbname` — butuh **psycopg** (mis. `pip install "psycopg[binary]"` dari `requirements-dev.txt`). |
+
+Setelah DSN di-set, jalankan migrasi: `python -m alembic upgrade head`. CI menjalankan job terpisah **integration-mysql** / **integration-postgres** (lihat `.github/workflows/ci.yml`) dengan smoke di `tests/integration/`.
+
+### Migrasi data SQLite → server SQL (sekali jalan)
+
+Skrip: `scripts/migrate_sqlite_to_mysql.py` (target URL boleh MySQL/MariaDB atau PostgreSQL lewat SQLAlchemy).
+
+1. Terapkan skema di target: `alembic upgrade head` dengan `DATABASE_URL` / `MIGRATE_TARGET_URL` mengarah ke server tujuan.
+2. Uji baca saja: `python scripts/migrate_sqlite_to_mysql.py --dry-run` (opsional set `MIGRATE_TARGET_URL`).
+3. Muat penuh (biasanya kosongkan dulu): `python scripts/migrate_sqlite_to_mysql.py --truncate-target --target-url "mysql+pymysql://..."` atau set env `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL` dan `SQLITE_SOURCE_PATH` ke file `.db` sumber.
+
+Skrip memverifikasi jumlah baris dan `SUM(value)` pada `data_entries` serta jumlah baris `aggregated_summary` setelah selesai.
+
 ## Fitur
 
 ### Fitur Inti
@@ -90,6 +122,7 @@ python app.py
 - `excel_parser.py` (legacy): Modul parser lama (masih tetap dipertahankan untuk kompatibilitas).
 - `models.py` (legacy): Entrypoint kompatibilitas untuk paket `models/`.
 - `models/`: Paket model utama (`connection`, `queries`, `mutations`, `browse`, `summary_store`, `data_filters`).
+- `infrastructure/orm_models.py`: Model SQLAlchemy 2.0 (mirror skema); `alembic/` + `alembic.ini` untuk migrasi.
 - `services/aggregation.py`: Perhitungan ringkas agregat dan helper refresh cache.
 - `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
 - `services/period_analysis_workbook.py`: Generator workbook analisis periode ke Excel.
@@ -173,6 +206,32 @@ data_entries (N) → aggregated_summary (1 snapshot cache per proses refresh)
 - **Pengujian sintaks**: `python -m py_compile`
 
 ### Variabel Lingkungan
+
+File **`.env`** di root proyek (buat dari **`.env.example`**) di-load otomatis saat modul `config` pertama kali diimpor — **tidak menimpa** variabel yang sudah ada di proses (cocok untuk produksi: systemd/Docker mengisi env, file hanya untuk dev).
+
+```bash
+copy .env.example .env   # Windows
+# cp .env.example .env   # Unix
+```
+
+Variabel yang dipakai aplikasi / tooling:
+
+| Variabel | Keterangan |
+|----------|------------|
+| `DATABASE_URL` | DSN SQLAlchemy (wajib di produksi saat `FLASK_ENV=production`); jika kosong, fallback file SQLite `data.db` (dev). |
+| `FLASK_SECRET_KEY` | Secret Flask untuk sesi; jangan pakai default di produksi. |
+| `FLASK_ENV` | `production` mengaktifkan guard DSN + peringatan secret. |
+| `FLASK_RUN_PORT` | Port `python app.py` (default 5000). |
+| `SESSION_COOKIE_SECURE` | `1` / `true` → cookie sesi flag Secure (HTTPS). |
+| `REQUIRE_FLASK_SECRET` | `1` → gagal start bila secret masih default. |
+| `UPLOAD_RATE_LIMIT_MAX_REQUESTS` | Batas request upload per jendela (default 120). |
+| `UPLOAD_RATE_LIMIT_WINDOW_SECONDS` | Lebar jendela detik (default 60). |
+| `ALEMBIC_DATABASE_URL` | Override DSN khusus Alembic (opsional). |
+| `DOTENV_PATH` | Path file env tambahan (opsional), dimuat setelah `.env`. |
+| `SQLITE_SOURCE_PATH` / `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL` | Default opsional untuk skrip `scripts/migrate_sqlite_to_mysql.py`. |
+
+Contoh isi minimal lokal (bukan untuk commit):
+
 ```env
 FLASK_SECRET_KEY=change-me-for-production
 FLASK_RUN_PORT=5000
@@ -269,7 +328,7 @@ git push origin feature/<nama-fitur>
 ### Langkah Deployment
 1. Siapkan server beserta seluruh dependensi Python.
 2. Pindahkan data `.db` dan folder `uploads/` (atau gunakan strategi migrasi yang disetujui tim).
-3. Tetapkan variabel lingkungan yang dibutuhkan (`FLASK_SECRET_KEY`, `FLASK_RUN_PORT`).
+3. Tetapkan variabel lingkungan (`DATABASE_URL`, `FLASK_SECRET_KEY`, dll.) lewat systemd/Docker atau salin `.env.example` → `.env` pada server bila kebijakan tim mengizinkan file env terlindungi (bukan di repo).
 4. Jalankan `python app.py` melalui reverse proxy (contoh: Gunicorn + Nginx).
 
 ## Roadmap Pengembangan

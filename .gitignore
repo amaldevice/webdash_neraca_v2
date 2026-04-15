@@ -67,6 +67,10 @@ Thumbs.db
 *~
 tmp/
 
+# Local env (secrets / machine-specific); use .env.example as template
+.env
+.env.local
+
 # Local data / temporary project files
 Dummy1*.xlsx
 BPS_Analysis_NTP_20260409_083729.xlsx

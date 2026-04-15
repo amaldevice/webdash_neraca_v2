@@ -1,37 +1,40 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import json
-from contextlib import closing
 from typing import Dict, Optional
 
-from services.timeutil import utc_now_iso
+from sqlalchemy import delete, desc, insert, select
+from sqlalchemy.exc import SQLAlchemyError
 
-from .connection import get_conn
+from infrastructure.db import get_session, is_engine_initialized, scoped_transaction
+from infrastructure.orm_models import AggregatedSummary
+from services.timeutil import utc_now_iso
 
 
 def save_aggregated_summary(summary: Dict) -> None:
+    if not is_engine_initialized():
+        raise RuntimeError("save_aggregated_summary requires SQLAlchemy engine.")
     payload = json.dumps(summary, ensure_ascii=False)
     now = utc_now_iso()
-    with closing(get_conn()) as conn:
-        conn.execute("DELETE FROM aggregated_summary")
-        conn.execute(
-            """
-            INSERT INTO aggregated_summary (summary_json, updated_at)
-            VALUES (?, ?)
-            """,
-            (payload, now),
-        )
-        conn.commit()
+    with scoped_transaction() as session:
+        session.execute(delete(AggregatedSummary))
+        session.execute(insert(AggregatedSummary).values(summary_json=payload, updated_at=now))
 
 
 def load_cached_summary() -> Optional[Dict]:
-    with closing(get_conn()) as conn:
-        row = conn.execute(
-            """
-            SELECT summary_json FROM aggregated_summary
-            ORDER BY datetime(updated_at) DESC
-            LIMIT 1
-            """
-        ).fetchone()
-        if not row:
+    if not is_engine_initialized():
+        return None
+    try:
+        session = get_session()
+        stmt = (
+            select(AggregatedSummary.summary_json)
+            .order_by(desc(AggregatedSummary.updated_at))
+            .limit(1)
+        )
+        row = session.execute(stmt).scalar_one_or_none()
+        if row is None:
             return None
-        return json.loads(row["summary_json"])
+        return json.loads(row)
+    except (SQLAlchemyError, json.JSONDecodeError, TypeError):
+        return None
