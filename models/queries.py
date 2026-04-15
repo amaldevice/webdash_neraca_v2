@@ -5,7 +5,7 @@ import sqlite3
 from contextlib import closing
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import use_sqlalchemy
@@ -320,6 +320,49 @@ def fetch_series_for_comparison(
     return out
 
 
+def _sa_preview_duplicates_batches(
+    unique_keys: Sequence[Tuple[Any, Any, Any, Any]],
+) -> List[Dict[str, Any]]:
+    from infrastructure.orm_models import DataEntry
+
+    def one_key(indicator: Any, year: Any, month: Any, quarter: Any):
+        parts = [DataEntry.indicator_name == indicator, DataEntry.year == year]
+        if month is None:
+            parts.append(DataEntry.month.is_(None))
+        else:
+            parts.append(DataEntry.month == month)
+        if quarter is None:
+            parts.append(DataEntry.quarter.is_(None))
+        else:
+            parts.append(DataEntry.quarter == quarter)
+        return and_(*parts)
+
+    max_batch_size = max(1, 999 // 4)
+    out: List[Dict[str, Any]] = []
+    try:
+        session = get_session()
+        for offset in range(0, len(unique_keys), max_batch_size):
+            batch = unique_keys[offset : offset + max_batch_size]
+            ors = [one_key(i, y, m, q) for i, y, m, q in batch]
+            stmt = select(DataEntry).where(or_(*ors))
+            for row in session.scalars(stmt).all():
+                out.append(
+                    {
+                        "id": row.id,
+                        "uploader_name": row.uploader_name,
+                        "version": row.version,
+                        "indicator_name": row.indicator_name,
+                        "year": row.year,
+                        "month": row.month,
+                        "quarter": row.quarter,
+                        "value": row.value,
+                    }
+                )
+    except SQLAlchemyError:
+        return []
+    return out
+
+
 def _preview_dup_match_clause(
     params: List[Any],
     indicator: Any,
@@ -346,10 +389,15 @@ def preview_duplicates_batches(
     unique_keys: Sequence[Tuple[Any, Any, Any, Any]],
 ) -> List[Dict[str, Any]]:
     """
-    Load existing rows matching (indicator_name, year, month, quarter) keys in batches (SQLite bind limit).
+    Load existing rows matching (indicator_name, year, month, quarter) keys in batches (bind limit ~999).
+
+    Uses SQLAlchemy when ``DATABASE_URL`` + engine active; otherwise legacy ``sqlite3`` connection.
     """
     if not unique_keys:
         return []
+
+    if _use_sqlalchemy_reads():
+        return _sa_preview_duplicates_batches(unique_keys)
 
     max_batch_size = max(1, 999 // 4)
     all_rows: List[Any] = []

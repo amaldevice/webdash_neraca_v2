@@ -83,3 +83,43 @@ def test_sa_reads_match_legacy_same_sqlite_file(tmp_path, monkeypatch) -> None:
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
         dispose_engine()
+
+
+def test_preview_duplicates_batches_sa_then_legacy_same_file(tmp_path, monkeypatch) -> None:
+    """Upload duplicate preview must read the same rows via SA or legacy sqlite3."""
+    from models.queries import preview_duplicates_batches
+
+    db_file = tmp_path / "dup.db"
+    path_str = str(db_file)
+    url = f"sqlite:///{db_file.resolve().as_posix()}"
+    monkeypatch.setattr(models, "DB_PATH", path_str)
+    monkeypatch.setenv("DATABASE_URL", url)
+    models.init_db()
+    init_engine(url)
+    entry = {
+        "uploader_name": "u1",
+        "version": "v1",
+        "template_type": "manual",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "indicator_name": "GDP",
+        "value": 42.0,
+        "unit": None,
+        "region_code": None,
+        "year": 2024,
+        "month": 5,
+        "quarter": None,
+    }
+    try:
+        models.insert_entries([entry])
+        keys = [("GDP", 2024, 5, None)]
+        sa_dups = preview_duplicates_batches(keys)
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        dispose_engine()
+        leg_dups = preview_duplicates_batches(keys)
+        assert len(sa_dups) == len(leg_dups) == 1
+        assert sa_dups[0]["value"] == leg_dups[0]["value"] == 42.0
+        assert sa_dups[0]["indicator_name"] == "GDP"
+    finally:
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        dispose_engine()

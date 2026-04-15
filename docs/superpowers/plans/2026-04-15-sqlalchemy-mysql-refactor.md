@@ -235,7 +235,7 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 ### Task 8: Pindahkan SQL dari service ke lapisan persistence
 
 **Files:**
-- Modify: `models/queries.py` — `fetch_series_for_comparison`, `preview_duplicates_batches`
+- Modify: `models/queries.py` — `fetch_series_for_comparison`, `preview_duplicates_batches` (cabang SA untuk preview duplikat bila engine aktif)
 - Modify: `services/period_comparisons.py` → `fetch_series_for_comparison`
 - Modify: `services/upload_preview.py` → `preview_duplicates_batches`
 - Hapus impor `get_conn` dari kedua service setelah selesai.
