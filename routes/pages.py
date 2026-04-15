@@ -5,7 +5,6 @@ from __future__ import annotations
 from flask import Flask, jsonify, render_template, request
 
 from models import (
-    calculate_period_comparisons,
     get_distinct_years,
     get_filter_options,
     get_total_entries_count,
@@ -13,6 +12,7 @@ from models import (
     query_data_entries,
 )
 from services.aggregation import fetch_aggregated_summary
+from services.period_comparisons import calculate_period_comparisons
 from services.charts import generate_indicator_line_chart
 from services.list_view import (
     build_entries_filters_ui_dict,

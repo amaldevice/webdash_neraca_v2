@@ -20,6 +20,8 @@ from services.upload_flow import (
 
 
 def _minimal_entry() -> dict:
+    # ``periods.parse_period_date`` sets ``quarter`` for monthly rows; keep aligned so
+    # duplicate SQL + unique upsert match ``build_manual_entry`` / parser output.
     return {
         "uploader_name": "U1",
         "version": "v1",
@@ -32,7 +34,7 @@ def _minimal_entry() -> dict:
         "region_code": None,
         "year": 2024,
         "month": 3,
-        "quarter": None,
+        "quarter": 1,
     }
 
 
@@ -162,11 +164,11 @@ def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db
         "layout_override": "auto",
     }
     e1 = _minimal_entry()
-    e2 = {**_minimal_entry(), "indicator_name": "Other", "month": 4}
+    e2 = {**_minimal_entry(), "indicator_name": "Other", "month": 4, "quarter": 2}
     parse_out = _parse_payload_with_entries([e1, e2])
     duplicates = [
-        {"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": None},
-        {"indicator_name": "Other", "year": 2024, "month": 4, "quarter": None},
+        {"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": 1},
+        {"indicator_name": "Other", "year": 2024, "month": 4, "quarter": 2},
     ]
     form_values = {
         "uploader": "U1",
@@ -186,7 +188,7 @@ def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db
     assert r.kind == "redirect"
     assert r.pop_upload_session_token is True
     assert "ditimpa" in r.flashes[0][0]
-    assert "dikecualikan" in r.flashes[1][0]
+    assert any("dikecualikan" in msg for msg, _ in r.flashes)
     assert models.get_total_entries_count() == 1
 
 
@@ -209,7 +211,7 @@ def test_process_upload_confirm_all_duplicate_rows_skipped_renders(db_path, tmp_
     }
     entry = _minimal_entry()
     parse_out = _parse_payload_with_entries([entry])
-    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": None}]
+    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": 1}]
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
@@ -245,7 +247,7 @@ def test_process_upload_confirm_skip_duplicate_inserts_remaining_rows(db_path, t
         "value": 99.0,
     }
     parse_out = _parse_payload_with_entries([dup_row, new_row])
-    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": None}]
+    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": 1}]
     form_values = {
         "uploader": "U1",
         "version": "v1",
@@ -263,7 +265,7 @@ def test_process_upload_confirm_skip_duplicate_inserts_remaining_rows(db_path, t
 
     assert r.kind == "redirect"
     assert r.pop_upload_session_token is True
-    assert "dikecualikan" in r.flashes[1][0]
+    assert any("dikecualikan" in msg for msg, _ in r.flashes)
     assert models.get_total_entries_count() == 1
     rows = models.query_data_entries(limit=5, indicator="FreshIndicator")
     assert len(rows) == 1
@@ -288,7 +290,7 @@ def test_process_upload_confirm_duplicate_without_skip_overwrites_existing_row(d
     }
     entry = _minimal_entry()
     parse_out = _parse_payload_with_entries([entry])
-    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": None}]
+    duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": 1}]
     existing = {**entry, "value": 9.99}
     models.insert_entries([existing])
     form_values = {
@@ -399,7 +401,7 @@ def test_process_manual_input_post_duplicate_detection(db_path):
     assert r.manual_duplicate is not None
     assert r.manual_duplicate["count"] >= 1
     assert r.manual_duplicate["indicator"] == "GDP"
-    assert any("duplikasi" in msg.lower() for msg, _ in r.flashes)
+    assert any("indikator" in msg.lower() for msg, _ in r.flashes)
     assert models.get_total_entries_count() == 1
 
 

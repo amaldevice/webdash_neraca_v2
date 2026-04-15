@@ -44,3 +44,27 @@ def test_module_level_app_is_flask_instance(db_path, monkeypatch):
     importlib.reload(app_module)
     assert isinstance(app_module.app, Flask)
     assert "landing_page" in {r.endpoint for r in app_module.app.url_map.iter_rules() if r.endpoint}
+
+
+def test_create_app_sqlalchemy_engine_when_database_url_set(db_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setattr(models, "DB_PATH", str(db_path))
+    models.init_db()
+    import infrastructure.db as dbmod
+
+    importlib.reload(dbmod)
+    import app as app_module
+
+    importlib.reload(app_module)
+    application = app_module.create_app(testing=True, init_sqlalchemy=True)
+    from infrastructure.db import dispose_engine, get_session
+
+    try:
+        with application.app_context():
+            session = get_session()
+            assert session.bind is not None
+    finally:
+        dispose_engine()
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        importlib.reload(dbmod)
+        importlib.reload(app_module)

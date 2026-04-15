@@ -2,9 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Menambahkan logging terstruktur/audit pada alur CRUD, upload Excel, input manual, dan ekspor hasil analisis periode; serta merencanakan migrasi persistence dari SQLite ke MySQL dengan risiko SQL dialect dan koneksi yang terkendali.
+**Goal:** Menambahkan logging terstruktur/audit pada alur CRUD, upload Excel, input manual, dan ekspor hasil analisis periode; serta merencanakan migrasi persistence dari SQLite ke MySQL dengan risiko SQL dialect dan koneksi yang terkendali. **Selaras portabilitas:** implementasi jangka panjang mengikuti **`2026-04-15-sqlalchemy-mysql-refactor.md`** — backend bisa **SQLite / MySQL / PostgreSQL** lewat `DATABASE_URL` (kantor tetap MySQL); **CRUD** diarahkan ke permukaan repository Pythonic (kurang kompleks, mudah diuji).
 
-**Architecture:** Tetap mempertahankan pola Flask saat ini (`routes` → `services` → `models`). Logging dikonfigurasi sekali di bootstrap aplikasi (`create_app` / `configure_flask_app`), correlation id per request via `g`, pesan audit di boundary layanan (`services/*`) dan opsional wrap terpusat di `models/mutations.py`. Migrasi MySQL memfokuskan perubahan pada `models/connection.py`, semua SQL di `models/*.py`, serta penyesuaian exception handling (`sqlite3.IntegrityError` → driver MySQL) di `services/upload_flow.py` dan modul terkait.
+**Architecture:** Tetap mempertahankan pola Flask saat ini (`routes` → `services` → `models`). Logging dikonfigurasi sekali di bootstrap aplikasi (`create_app` / `configure_flask_app`), correlation id per request via `g`, pesan audit di boundary layanan (`services/*`) dan opsional wrap terpusat di `models/mutations.py`. Migrasi MySQL memfokuskan perubahan pada `models/connection.py`, semua SQL di `models/*.py`, serta penyesuaian exception handling (`sqlite3.IntegrityError` → driver MySQL) di `services/upload_flow.py` dan modul terkait — **setelah SQLAlchemy:** exception + upsert dibungkus modul portabel (bukan string error per DB tersebar).
+
+**SQLAlchemy (disarankan untuk integrasi penuh):** Rencana langkah demi langkah untuk ORM/session, Alembic, strangler read/write, **dialek multi-DB** (quarantine upsert/integrity/batch), CI matrix, dan **Task 13 refactor CRUD** ada di **`docs/superpowers/plans/2026-04-15-sqlalchemy-mysql-refactor.md`**. **Tracking isu:** https://github.com/amaldevice/webdash_neraca_v2/issues/9. Task MySQL mentah (DB-API kompatibel dengan `get_conn`) di dokumen ini tetap berguna sebagai konteks risiko dialect untuk transisi; hindari membangun dua lapisan abstraksi paralel — pilih SQLAlchemy portabel sebagai sumber kebenaran.
 
 **Tech stack:** Python 3.11–3.13 (CI), Flask 3.1, `sqlite3` + DDL di `models/connection.py`, pandas/openpyxl/plotly, pytest + Playwright.
 
@@ -20,7 +22,7 @@
 | Upload & manual | `services/upload_flow.py`, `services/upload_preview.py`, `services/manual_entries.py`, `routes/upload_routes.py` |
 | Ekspor | `routes/pages.py` (`/export`), `services/raw_export.py`, `routes/manage.py` (`/export-period-analysis`), `services/period_analysis_export.py`, `services/period_analysis_workbook.py` |
 | Agregasi cache | `services/aggregation.py`, `models/summary_store.py` |
-| SQL khusus SQLite | `ON CONFLICT ... DO UPDATE` + `excluded.*` di `models/mutations.py`; `datetime(created_at)` di query/browse/summary |
+| SQL khusus SQLite (baseline) | `ON CONFLICT ... DO UPDATE` + `excluded.*` di `models/mutations.py`; `datetime(created_at)` di query/browse/summary — diganti pola portabel di rencana 2026-04-15 |
 
 ---
 
@@ -32,7 +34,7 @@
 | `app.py` | `before_request` / `after_request` atau `teardown_request` untuk `g.request_id`, durasi, status |
 | `services/audit_log.py` (baru, opsional) | Helper `log_audit(event, **fields)` — satu tempat untuk field konsisten |
 | `models/connection.py` | Factory koneksi DB (tetap API `get_conn()` atau pengganti bertipe protocol) |
-| `models/mutations.py` | SQL portabel / cabang dialect; logging operasi sukses + rowcount |
+| `models/mutations.py` | Delegasi ke repository + `dialect_upsert` portabel; logging operasi sukses + rowcount |
 | `services/upload_flow.py`, `services/data_management_actions.py` | Audit outcome upload/manual/CRUD |
 | `tests/` | Fixture DB MySQL opsional; tes logging dengan `caplog` |
 
@@ -437,6 +439,8 @@ Gunakan container MySQL lokal atau job CI: `pytest tests/test_upload_flow.py tes
 ## Execution handoff
 
 **Plan disimpan di:** `docs/superpowers/plans/2026-04-13-logging-and-mysql-migration.md`
+
+**Rencana induk SQLAlchemy + MySQL:** `docs/superpowers/plans/2026-04-15-sqlalchemy-mysql-refactor.md`
 
 **Catatan perintah deprecated:** Gunakan pola **superpowers writing-plans** (dokumen ini) alih-alih perintah `/write-plan` yang akan dihapus.
 

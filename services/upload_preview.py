@@ -11,7 +11,7 @@ from typing import Any
 from flask import session
 
 from config import UPLOAD_PREVIEW_TTL_SECONDS
-from models import get_conn
+from models.queries import preview_duplicates_batches
 from services.timeutil import utc_now_timestamp
 
 # Back-compat: in-memory cache removed; kept as empty mapping for any legacy monkeypatches.
@@ -172,64 +172,8 @@ def find_duplicate_entries_in_db(
     return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
 
 
-def _build_indicator_period_match_clause(
-    params: list[object],
-    indicator: str,
-    year: int,
-    month: int | None,
-    quarter: int | None,
-) -> str:
-    clauses = ["indicator_name = ?", "year = ?"]
-    params.extend([indicator, year])
-    if month is None:
-        clauses.append("month IS NULL")
-    else:
-        clauses.append("month = ?")
-        params.append(month)
-    if quarter is None:
-        clauses.append("quarter IS NULL")
-    else:
-        clauses.append("quarter = ?")
-        params.append(quarter)
-    return "(" + " AND ".join(clauses) + ")"
-
-
 def _lookup_existing_duplicate_records_by_indicator_period(unique_keys: list[tuple]) -> list[dict]:
-    if not unique_keys:
-        return []
-
-    # Keep parameter count within SQLite bind-variable limit (999).
-    max_batch_size = max(1, (999) // 4)  # => 249, same as full-lookup worst case
-    rows = []
-    for offset in range(0, len(unique_keys), max_batch_size):
-        batch = unique_keys[offset : offset + max_batch_size]
-        params: list[object] = []
-        where_parts: list[str] = []
-        for indicator, year, month, quarter in batch:
-            where_parts.append(
-                _build_indicator_period_match_clause(params, indicator, year, month, quarter)
-            )
-        sql = f"""
-            SELECT id, uploader_name, version, indicator_name, year, month, quarter, value
-            FROM data_entries
-            WHERE {" OR ".join(where_parts)}
-        """
-        with get_conn() as conn:
-            rows.extend(conn.execute(sql, params).fetchall())
-
-    return [
-        {
-            "id": row["id"],
-            "uploader_name": row["uploader_name"],
-            "version": row["version"],
-            "indicator_name": row["indicator_name"],
-            "year": row["year"],
-            "month": row["month"],
-            "quarter": row["quarter"],
-            "value": row["value"],
-        }
-        for row in rows
-    ]
+    return preview_duplicates_batches(unique_keys)
 
 
 def find_duplicate_entries_by_indicator_period(entries: list[dict]) -> list[dict]:

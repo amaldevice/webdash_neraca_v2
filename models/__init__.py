@@ -2,15 +2,6 @@
 """SQLite persistence: split into connection, queries, mutations, browse, summary_store."""
 from __future__ import annotations
 
-from services.period_comparisons import (
-    calculate_current_to_current,
-    calculate_monthly_comparison,
-    calculate_period_comparisons,
-    calculate_quarterly_comparison,
-    calculate_ytd_comparison,
-    calculate_yearly_comparison,
-)
-
 from .browse import (
     get_aggregated_cards,
     get_distinct_years,
@@ -40,12 +31,6 @@ __all__ = [
     "DB_PATH",
     "bulk_delete_entries",
     "bulk_update_entries",
-    "calculate_current_to_current",
-    "calculate_monthly_comparison",
-    "calculate_period_comparisons",
-    "calculate_quarterly_comparison",
-    "calculate_ytd_comparison",
-    "calculate_yearly_comparison",
     "clear_all_data",
     "delete_data_by_filter",
     "delete_data_entry",

@@ -14,6 +14,17 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+
+def database_url() -> str | None:
+    """SQLAlchemy DSN when migrating off raw sqlite3; unset keeps legacy sqlite path."""
+    raw = os.environ.get("DATABASE_URL", "").strip()
+    return raw or None
+
+
+def use_sqlalchemy() -> bool:
+    return bool(database_url())
+
+
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}
 ALLOWED_DATA_TYPES = {"flow", "stock"}
 ALLOWED_TIME_PERIODS = {"monthly", "quarterly", "yearly"}

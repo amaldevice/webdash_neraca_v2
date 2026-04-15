@@ -43,8 +43,9 @@ from app import _build_manual_entry, _parse_period_date, allowed_file, app, vali
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
-    calculate_period_comparisons, _to_float
+    _to_float,
 )
+from services.period_comparisons import calculate_period_comparisons
 from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
 from services.timeutil import utc_now_iso
 

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import logging
 import sqlite3
 from contextlib import closing
@@ -6,9 +8,15 @@ from typing import Callable, Dict, Iterable, List, Optional
 
 from periods import parse_period_date
 from services.timeutil import utc_now_iso
+from sqlalchemy import delete, update
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
+from config import use_sqlalchemy
+from infrastructure.db import is_engine_initialized, scoped_transaction
+from infrastructure.orm_models import AggregatedSummary, DataEntry
 
 from .connection import get_conn
-from .data_filters import _build_data_entry_filter_clauses
+from .data_filters import _build_data_entry_filter_clauses, build_data_entry_filter_sqlalchemy
 
 _log = logging.getLogger(__name__)
 
@@ -32,6 +40,10 @@ def _to_valid_float(value) -> Optional[float]:
     except (TypeError, ValueError):
         return None
     return value_float
+
+
+def _use_sqlalchemy_writes() -> bool:
+    return use_sqlalchemy() and is_engine_initialized()
 
 
 def _execute_mutation(
@@ -151,6 +163,19 @@ def insert_entries(entries: Iterable[Dict]) -> None:
     entries_list = list(entries)
     if not entries_list:
         return
+    if _use_sqlalchemy_writes():
+        from infrastructure.dialect_upsert import insert_data_entries
+
+        try:
+            with scoped_transaction() as session:
+                insert_data_entries(session, entries_list, now)
+        except IntegrityError as exc:
+            _log.warning("insert_entries failed: %s", exc)
+            raise sqlite3.IntegrityError(str(exc)) from exc
+        except SQLAlchemyError as exc:
+            _log.warning("insert_entries failed: %s", exc)
+            raise
+        return
     _execute_mutation(
         "insert_entries",
         lambda conn: _insert_entries_payload(conn, entries_list, now),
@@ -163,6 +188,16 @@ def upsert_entries(entries: Iterable[Dict]) -> None:
     entries_list = list(entries)
     if not entries_list:
         return
+    if _use_sqlalchemy_writes():
+        from infrastructure.dialect_upsert import upsert_data_entries
+
+        try:
+            with scoped_transaction() as session:
+                upsert_data_entries(session, entries_list, now)
+        except SQLAlchemyError as exc:
+            _log.warning("upsert_entries failed: %s", exc)
+            raise
+        return
     _execute_mutation(
         "upsert_entries",
         lambda conn: _upsert_entries_payload(conn, entries_list, now),
@@ -172,12 +207,29 @@ def upsert_entries(entries: Iterable[Dict]) -> None:
 
 def delete_data_entry(entry_id: str) -> bool:
     """Delete a single data entry by ID"""
+    if _use_sqlalchemy_writes():
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(delete(DataEntry).where(DataEntry.id == int(entry_id)))
+                return (res.rowcount or 0) > 0
+        except SQLAlchemyError as exc:
+            _log.warning("delete_data_entry failed: %s", exc)
+            return False
     affected_rows = _run_mutation("delete_data_entry", lambda conn: _delete_entry_by_id_payload(conn, entry_id))
     return affected_rows > 0
 
 
 def clear_all_data() -> bool:
     """Clear all data from database tables (for testing)"""
+    if _use_sqlalchemy_writes():
+        try:
+            with scoped_transaction() as session:
+                session.execute(delete(DataEntry))
+                session.execute(delete(AggregatedSummary))
+            return True
+        except SQLAlchemyError as exc:
+            _log.warning("clear_all_data failed: %s", exc)
+            return False
     try:
         with closing(get_conn()) as conn:
             conn.execute("DELETE FROM data_entries")
@@ -200,6 +252,20 @@ def delete_data_by_filter(
     value_max: Optional[float] = None,
 ) -> int:
     """Delete data entries based on filters"""
+    if _use_sqlalchemy_writes():
+        where = build_data_entry_filter_sqlalchemy(
+            data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
+        )
+        if where is None:
+            return 0
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(delete(DataEntry).where(where))
+                return res.rowcount or 0
+        except SQLAlchemyError as exc:
+            _log.warning("delete_data_by_filter failed: %s", exc)
+            return 0
+
     clauses, params = _build_data_entry_filter_clauses(
         data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
     )
@@ -222,6 +288,17 @@ def update_data_entry(entry_id: str, new_value: float) -> bool:
         _log.warning("update_data_entry failed: invalid value %r", new_value)
         return False
 
+    if _use_sqlalchemy_writes():
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(
+                    update(DataEntry).where(DataEntry.id == int(entry_id)).values(value=parsed_value)
+                )
+                return (res.rowcount or 0) > 0
+        except SQLAlchemyError as exc:
+            _log.warning("update_data_entry failed: %s", exc)
+            return False
+
     affected_rows = _run_mutation(
         "update_data_entry",
         lambda conn: _update_data_entry_payload(conn, entry_id, parsed_value),
@@ -231,6 +308,25 @@ def update_data_entry(entry_id: str, new_value: float) -> bool:
 
 def update_data_entry_full(entry_id: str, data: Dict) -> bool:
     """Update all fields of a data entry"""
+    if _use_sqlalchemy_writes():
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(
+                    update(DataEntry)
+                    .where(DataEntry.id == int(entry_id))
+                    .values(
+                        uploader_name=data["uploader_name"],
+                        version=data["version"],
+                        indicator_name=data["indicator_name"],
+                        value=data["value"],
+                        data_type=data["data_type"],
+                        time_period=data["time_period"],
+                    )
+                )
+                return (res.rowcount or 0) > 0
+        except (SQLAlchemyError, KeyError, TypeError) as exc:
+            _log.warning("update_data_entry_full failed: %s", exc)
+            return False
     try:
         with closing(get_conn()) as conn:
             cursor = conn.execute(
@@ -251,8 +347,8 @@ def update_data_entry_full(entry_id: str, data: Dict) -> bool:
                     data["value"],
                     data["data_type"],
                     data["time_period"],
-                    entry_id
-                )
+                    entry_id,
+                ),
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -268,9 +364,36 @@ def insert_single_entry(
     time_period: str,
     period_date: str,
     indicator: str,
-    value: float
+    value: float,
 ) -> bool:
     """Insert a single data entry"""
+    if _use_sqlalchemy_writes():
+        from sqlalchemy import insert
+
+        try:
+            year, month, quarter = parse_period_date(time_period, period_date)
+            with scoped_transaction() as session:
+                session.execute(
+                    insert(DataEntry).values(
+                        uploader_name=uploader,
+                        version=version,
+                        template_type="manual_crud",
+                        data_type=data_type.lower() or "flow",
+                        time_period=time_period.lower() or "monthly",
+                        indicator_name=indicator,
+                        value=value,
+                        unit=None,
+                        region_code=None,
+                        year=year,
+                        month=month,
+                        quarter=quarter,
+                        created_at=utc_now_iso(),
+                    )
+                )
+            return True
+        except (SQLAlchemyError, ValueError, TypeError) as exc:
+            _log.warning("insert_single_entry failed: %s", exc)
+            return False
     try:
         year, month, quarter = parse_period_date(time_period, period_date)
 
@@ -296,7 +419,7 @@ def insert_single_entry(
                     month,
                     quarter,
                     utc_now_iso(),
-                )
+                ),
             )
             conn.commit()
             return cursor.rowcount > 0
@@ -309,6 +432,15 @@ def bulk_delete_entries(entry_ids: List[str]) -> int:
     """Delete multiple data entries by their IDs"""
     if not entry_ids:
         return 0
+    if _use_sqlalchemy_writes():
+        ids = [int(i) for i in entry_ids]
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(delete(DataEntry).where(DataEntry.id.in_(ids)))
+                return res.rowcount or 0
+        except SQLAlchemyError as exc:
+            _log.warning("bulk_delete_entries failed: %s", exc)
+            return 0
     return _run_mutation(
         "bulk_delete_entries",
         lambda conn: _bulk_delete_entries_payload(conn, entry_ids),
@@ -320,16 +452,40 @@ def bulk_update_entries(entry_ids: List[str], updates: Dict) -> int:
     if not entry_ids or not updates:
         return 0
 
+    if _use_sqlalchemy_writes():
+        vals: Dict = {}
+        for field, value in updates.items():
+            if field in ["uploader_name", "version", "indicator_name", "data_type", "time_period"]:
+                vals[field] = value
+            elif field == "value":
+                parsed_value = _to_valid_float(value)
+                if parsed_value is None:
+                    _log.warning("bulk_update_entries failed: invalid value %r", value)
+                    return 0
+                vals["value"] = parsed_value
+
+        if not vals:
+            return 0
+
+        ids = [int(i) for i in entry_ids]
+        try:
+            with scoped_transaction() as session:
+                res = session.execute(update(DataEntry).where(DataEntry.id.in_(ids)).values(**vals))
+                return res.rowcount or 0
+        except (SQLAlchemyError, ValueError, TypeError) as exc:
+            _log.warning("bulk_update_entries failed: %s", exc)
+            return 0
+
     try:
         with closing(get_conn()) as conn:
             set_parts = []
             params = []
 
             for field, value in updates.items():
-                if field in ['uploader_name', 'version', 'indicator_name', 'data_type', 'time_period']:
+                if field in ["uploader_name", "version", "indicator_name", "data_type", "time_period"]:
                     set_parts.append(f"{field} = ?")
                     params.append(value)
-                elif field == 'value':
+                elif field == "value":
                     parsed_value = _to_valid_float(value)
                     if parsed_value is None:
                         _log.warning("bulk_update_entries failed: invalid value %r", value)
@@ -342,7 +498,7 @@ def bulk_update_entries(entry_ids: List[str], updates: Dict) -> int:
 
             set_clause = ", ".join(set_parts)
 
-            placeholders = ','.join('?' * len(entry_ids))
+            placeholders = ",".join("?" * len(entry_ids))
             params.extend(entry_ids)
 
             query = f"UPDATE data_entries SET {set_clause} WHERE id IN ({placeholders})"

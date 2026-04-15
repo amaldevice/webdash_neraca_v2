@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Response
 
-from models import calculate_period_comparisons
+from services.period_comparisons import calculate_period_comparisons
 from services.period_analysis_workbook import build_period_analysis_workbook
 from services.request_params import get_period_range_params
 

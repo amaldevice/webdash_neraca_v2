@@ -12,11 +12,14 @@ import sqlite3
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from excel_parser import parse_excel_payload
 from models import insert_entries, upsert_entries
 from services.aggregation import refresh_aggregated_summary
+from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
 from services.manual_entries import build_manual_entry
 from services.upload_preview import (
     build_upload_preview,
@@ -411,9 +414,9 @@ def handle_upload_confirm_with_duplicates(
             flashes,
             pop_upload_session_token=True,
         )
-    except sqlite3.IntegrityError as e:
+    except (sqlite3.IntegrityError, SAIntegrityError) as e:
         error_msg = str(e)
-        if "UNIQUE constraint failed" in error_msg:
+        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
@@ -441,9 +444,9 @@ def handle_upload_confirm_without_duplicates(
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
             pop_upload_session_token=True,
         )
-    except sqlite3.IntegrityError as e:
+    except (sqlite3.IntegrityError, SAIntegrityError) as e:
         error_msg = str(e)
-        if "UNIQUE constraint failed" in error_msg:
+        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
@@ -529,9 +532,9 @@ def handle_upload_post_file_save_without_duplicates(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
         )
-    except sqlite3.IntegrityError as e:
+    except (sqlite3.IntegrityError, SAIntegrityError) as e:
         error_msg = str(e)
-        if "UNIQUE constraint failed" in error_msg:
+        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
             flash_msg = _duplicate_conflict_message()
         else:
             flash_msg = f"Terjadi kesalahan database: {error_msg}"
@@ -885,10 +888,10 @@ def process_manual_input_post(
             flashes=[("Entri manual berhasil dicatat dan disimpan.", "success")],
             form_values=form_values,
         )
-    except sqlite3.IntegrityError as exc:
+    except (sqlite3.IntegrityError, SAIntegrityError) as exc:
         flash_msg = (
             "Data duplikat: kombinasi pengunggah, versi, indikator, periode, dan waktu sudah ada.\n"
-            if "UNIQUE constraint failed" in str(exc)
+            if is_duplicate_key_error(exc, resolve_duplicate_check_dialect())
             else f"Terjadi kesalahan database: {exc}"
         )
         return ManualFlowResponse(

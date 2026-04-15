@@ -1,4 +1,5 @@
 import importlib
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import models
+
+
+@pytest.fixture
+def database_url() -> str | None:
+    """SQLAlchemy DSN from ``DATABASE_URL`` (unset → ``None``, legacy sqlite ``models.DB_PATH`` in tests)."""
+    raw = os.environ.get("DATABASE_URL", "").strip()
+    return raw or None
 
 
 @pytest.fixture
