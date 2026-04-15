@@ -21,7 +21,7 @@
 | **P3** | ORM models + Alembic initial | — | **Selesai** (`infrastructure/orm_models.py`, `alembic.ini`, `alembic/env.py`, `alembic/versions/001_initial_schema.py`, `tests/test_alembic_initial.py`, README Alembic) |
 | **P4–P7** | Read path, upsert portable, browse/summary, `db_errors` + `upload_flow` | Setelah P3: **boleh paralel** per domain (A/B/C) | **P4** read-path ✓. **P5** write-path ✓ (`dialect_upsert`, `mutations`, `scoped_transaction` di `db.py`, `app` pytest-safe). **P6** browse + `summary_store` ✓ (cabang SA, urut `created_at`/`updated_at` tanpa `datetime()` di path SA; kolom tetap `Text` ISO — migrasi `DateTime` ditunda). **P7** ✓ (`services/db_errors.py`, `upload_flow` + `engine_dialect_name`, `tests/test_db_errors.py`). |
 | **P8–P9** | SQL keluar dari service + dekopling `models/__init__` | P8a preview vs P8b period_comparisons paralel | **P8** Task 8 langkah 1–2 ✓. **P9** Task 9 langkah 1–3 ✓ (tanpa re-export period comparisons; pytest `tests/`). Commit Task 8–9 Step 4 belum |
-| **P10–P13** | CI matrix, ETL, hapus legacy, CRUD repository | P10 CI terpisah dari P11 skrip | **P10–P11** selesai + commit. **P12** legacy removal (pasca-cutover) belum |
+| **P10–P13** | CI matrix, ETL, hapus legacy, CRUD repository | P10 CI terpisah dari P11 skrip | **P10–P13** eksekusi parsial: P10–P11 + commit; **P12** guard prod + skip `init_db` DDL bila SA; penghapusan `get_conn` penuh ditunda; **P13** `EntryListParams` + `models/repositories/entry_list` |
 
 **Delegasi subagent (setelah P3):** pakai pola *dispatching-parallel-agents* — **Agent A** `queries`+`browse`, **Agent B** `dialect_upsert`+`mutations`, **Agent C** `upload_preview`+`period_comparisons` SQL removal; **jangan** dua agent satu file yang sama tanpa lock.
 
@@ -300,25 +300,29 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 
 ### Task 12: Hapus jalur legacy (hanya setelah cutover)
 
-- [ ] Hapus `get_conn` / `init_db` DDL runtime, cabang `USE_SQLITE_LEGACY`, dan dependensi `sqlite3` untuk **prod** (boleh tetap untuk dev tools sekali).
+- [x] **Prod guard:** `create_app` memaksa `DATABASE_URL` bila `FLASK_ENV=production` dan `testing=False` (`app.py`).
+- [x] **`init_db`:** lewati DDL SQLite bila `use_sqlalchemy()` dan `is_engine_initialized()` — skema dari Alembic (`models/connection.py`).
+- [ ] **Penghapusan penuh** `get_conn` / `sqlite3` di semua cabang + tes — **ditunda** sampai cutover 100% (browse/summary/mutasi legacy masih dipakai tanpa `DATABASE_URL`).
 
-- [ ] Final: `rtk python -m pytest tests -q` + `rtk npx playwright test` sesuai CI.
+- [ ] Final: `python -m pytest tests -q` + Playwright (sesuai CI) setelah cutover.
 
 ---
 
 ### Task 13: Refactor CRUD surface (Pythonic, pasca-read/write stabil)
 
 **Files:**
-- Modify: `services/data_management_actions.py`, `routes/manage.py`, `routes/pages.py` (hanya wiring jika perlu)
-- Modify/refactor: `models/repositories/*` atau setara — konsolidasi pemanggilan
+- Add: `models/repositories/entry_list.py`, `models/repositories/__init__.py` — baca daftar + count lewat `models.queries`
+- Modify: `services/list_view.py` — `EntryListParams` (dataclass) + `entries_query_kwargs` mendelegasi ke sana
+- Modify: `routes/manage.py`, `routes/pages.py` — pakai `EntryListParams` + repository helpers
+- Modify: `tests/test_app_utils.py`, `tests/test_app_factory.py`, `tests/test_data_management_actions.py` (perbaiki data uji rentang nilai)
 
-- [ ] **Step 1:** Daftar endpoint CRUD + aksi bulk; untuk masing-masing pasangkan satu fungsi service publik yang memanggil repository (tanpa SQL di service).
+- [x] **Step 1:** Repository tipis `fetch_entries_for_list` / `count_entries_for_list` (tanpa SQL di route).
 
-- [ ] **Step 2:** Kurangi duplikasi filter/pagination — reuse objek `EntryListParams` (dataclass) dari `list_view` / `data_filters`.
+- [x] **Step 2:** `EntryListParams` + `to_query_kwargs` / `to_action_kwargs` / `to_ui_strings`.
 
-- [ ] **Step 3:** `rtk python -m pytest tests/test_data_management_actions.py tests/test_routes.py -q`
+- [x] **Step 3:** `pytest tests/test_data_management_actions.py tests/test_routes.py tests/test_app_factory.py tests/test_app_utils.py -q`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ---
 

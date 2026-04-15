@@ -3,7 +3,7 @@ import os
 import sqlite3
 from contextlib import closing
 
-from config import BASE_DIR
+from config import BASE_DIR, use_sqlalchemy
 
 DB_PATH = os.path.join(BASE_DIR, "data.db")
 
@@ -19,6 +19,15 @@ def get_conn() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    """Create legacy SQLite tables when not using an initialized SQLAlchemy engine (Alembic owns schema then)."""
+    try:
+        from infrastructure.db import is_engine_initialized
+
+        if use_sqlalchemy() and is_engine_initialized():
+            return
+    except Exception:
+        pass
+
     with closing(get_conn()) as conn:
         conn.execute(
             """

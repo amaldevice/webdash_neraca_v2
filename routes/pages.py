@@ -4,19 +4,14 @@ from __future__ import annotations
 
 from flask import Flask, jsonify, render_template, request
 
-from models import (
-    get_distinct_years,
-    get_filter_options,
-    get_total_entries_count,
-    get_unique_indicators,
-    query_data_entries,
-)
+from models import get_distinct_years, get_filter_options, get_unique_indicators
+from models.repositories.entry_list import count_entries_for_list, fetch_entries_for_list
 from services.aggregation import fetch_aggregated_summary
 from services.period_comparisons import calculate_period_comparisons
 from services.charts import generate_indicator_line_chart
 from services.list_view import (
+    EntryListParams,
     build_entries_filters_ui_dict,
-    entries_query_kwargs,
     parse_entries_pagination,
 )
 from services.raw_export import build_raw_data_export_response
@@ -40,21 +35,7 @@ def preview_data():
 
     summary = fetch_aggregated_summary()
 
-    qkw = entries_query_kwargs(
-        data_type,
-        time_period,
-        uploader,
-        indicator,
-        period_start,
-        period_end,
-        value_min,
-        value_max,
-    )
-    entries = query_data_entries(**qkw, limit=limit, offset=offset)
-
-    total_entries = get_total_entries_count(**qkw)
-
-    filters = build_entries_filters_ui_dict(
+    list_params = EntryListParams.from_request_strings(
         data_type=data_type,
         time_period=time_period,
         uploader=uploader,
@@ -63,6 +44,14 @@ def preview_data():
         period_end=period_end,
         value_min=value_min,
         value_max=value_max,
+    )
+    qkw = list_params.to_query_kwargs()
+    entries = fetch_entries_for_list(limit=limit, offset=offset, filters=qkw)
+
+    total_entries = count_entries_for_list(qkw)
+
+    filters = build_entries_filters_ui_dict(
+        **list_params.to_ui_strings(),
         page=page,
         limit=limit,
         total_entries=total_entries,
@@ -83,17 +72,17 @@ def export_data():
     indicator = request.args.get("indicator")
     period_start, period_end = get_period_range_params(request.args)
     value_min, value_max = get_value_range_params(request.args)
-    qkw = entries_query_kwargs(
-        data_type,
-        time_period,
-        uploader,
-        indicator,
-        period_start,
-        period_end,
-        value_min,
-        value_max,
+    list_params = EntryListParams.from_request_strings(
+        data_type=data_type or "",
+        time_period=time_period or "",
+        uploader=uploader or "",
+        indicator=indicator or "",
+        period_start=period_start,
+        period_end=period_end,
+        value_min=value_min,
+        value_max=value_max,
     )
-    entries = query_data_entries(**qkw, limit=1000)
+    entries = fetch_entries_for_list(limit=1000, offset=0, filters=list_params.to_query_kwargs())
     return build_raw_data_export_response(entries, fmt)
 
 

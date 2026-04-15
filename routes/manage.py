@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 
-from models import get_filter_options, get_total_entries_count, query_data_entries
+from models import get_filter_options
+from models.repositories.entry_list import count_entries_for_list, fetch_entries_for_list
 from services.data_management_actions import apply_data_management_post
 from services.list_view import (
+    EntryListParams,
     build_entries_filters_ui_dict,
-    entries_query_kwargs,
     parse_entries_pagination,
 )
 from services.period_analysis_export import build_period_analysis_excel_response
@@ -26,18 +27,19 @@ def data_management():
 
     page, limit, offset = parse_entries_pagination(request)
 
+    list_params = EntryListParams.from_request_strings(
+        data_type=data_type,
+        time_period=time_period,
+        uploader=uploader,
+        indicator=indicator,
+        period_start=period_start,
+        period_end=period_end,
+        value_min=value_min,
+        value_max=value_max,
+    )
+
     if request.method == "POST":
-        for msg, category in apply_data_management_post(
-            request.form,
-            data_type=data_type,
-            time_period=time_period,
-            uploader=uploader,
-            indicator=indicator,
-            period_start=period_start,
-            period_end=period_end,
-            value_min=value_min,
-            value_max=value_max,
-        ):
+        for msg, category in apply_data_management_post(request.form, **list_params.to_action_kwargs()):
             flash(msg, category)
         return redirect(
             url_for(
@@ -53,29 +55,13 @@ def data_management():
             )
         )
 
-    qkw = entries_query_kwargs(
-        data_type,
-        time_period,
-        uploader,
-        indicator,
-        period_start,
-        period_end,
-        value_min,
-        value_max,
-    )
-    entries = query_data_entries(**qkw, limit=limit, offset=offset)
+    qkw = list_params.to_query_kwargs()
+    entries = fetch_entries_for_list(limit=limit, offset=offset, filters=qkw)
 
-    total_entries = get_total_entries_count(**qkw)
+    total_entries = count_entries_for_list(qkw)
 
     filters = build_entries_filters_ui_dict(
-        data_type=data_type,
-        time_period=time_period,
-        uploader=uploader,
-        indicator=indicator,
-        period_start=period_start,
-        period_end=period_end,
-        value_min=value_min,
-        value_max=value_max,
+        **list_params.to_ui_strings(),
         page=page,
         limit=limit,
         total_entries=total_entries,

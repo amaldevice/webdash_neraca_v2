@@ -25,6 +25,15 @@ def create_app(*, testing: bool = False, init_sqlalchemy: bool | None = None) ->
     application.config["TESTING"] = bool(testing)
     register_routes(application)
     url = database_url()
+    if (
+        not testing
+        and os.environ.get("FLASK_ENV", "").strip().lower() == "production"
+        and not url
+    ):
+        raise RuntimeError(
+            "Production requires DATABASE_URL (SQLAlchemy). "
+            "Apply schema with `alembic upgrade head` on the target database before start."
+        )
     if init_sqlalchemy is None:
         init_sqlalchemy = "pytest" not in sys.modules
     if url and init_sqlalchemy:

@@ -268,7 +268,7 @@ def test_apply_delete_by_filter_with_value_range_respects_bounds(db_path, monkey
                 "data_type": "flow",
                 "time_period": "monthly",
                 "indicator_name": "GDP",
-                "value": 10.0,
+                "value": 100.0,
                 "year": 2024,
                 "month": 1,
                 "quarter": None,

@@ -2,9 +2,86 @@
 """Shared pagination and filter wiring for preview-data and data-management list views."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 ALLOWED_ENTRY_PAGE_LIMITS = frozenset({5, 10, 15, 20, 30, 50, 100})
+
+
+@dataclass(frozen=True)
+class EntryListParams:
+    """Normalized filter set for entry list / count queries (P13)."""
+
+    data_type: Optional[str] = None
+    time_period: Optional[str] = None
+    uploader: Optional[str] = None
+    indicator: Optional[str] = None
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    value_min: Optional[float] = None
+    value_max: Optional[float] = None
+
+    @classmethod
+    def from_request_strings(
+        cls,
+        *,
+        data_type: str,
+        time_period: str,
+        uploader: str,
+        indicator: str,
+        period_start: Optional[str],
+        period_end: Optional[str],
+        value_min: Optional[float],
+        value_max: Optional[float],
+    ) -> EntryListParams:
+        return cls(
+            data_type=data_type or None,
+            time_period=time_period or None,
+            uploader=uploader or None,
+            indicator=indicator or None,
+            period_start=period_start,
+            period_end=period_end,
+            value_min=value_min,
+            value_max=value_max,
+        )
+
+    def to_query_kwargs(self) -> dict[str, Any]:
+        return {
+            "data_type": self.data_type,
+            "time_period": self.time_period,
+            "uploader": self.uploader,
+            "indicator": self.indicator,
+            "period_start": self.period_start,
+            "period_end": self.period_end,
+            "value_min": self.value_min,
+            "value_max": self.value_max,
+        }
+
+    def to_action_kwargs(self) -> dict[str, Any]:
+        """Keyword args for ``apply_data_management_post`` (expects empty string fallbacks)."""
+        return {
+            "data_type": self.data_type or "",
+            "time_period": self.time_period or "",
+            "uploader": self.uploader or "",
+            "indicator": self.indicator or "",
+            "period_start": self.period_start,
+            "period_end": self.period_end,
+            "value_min": self.value_min,
+            "value_max": self.value_max,
+        }
+
+    def to_ui_strings(self) -> dict[str, Any]:
+        """String form for ``build_entries_filters_ui_dict`` (empty string for missing text fields)."""
+        return {
+            "data_type": self.data_type or "",
+            "time_period": self.time_period or "",
+            "uploader": self.uploader or "",
+            "indicator": self.indicator or "",
+            "period_start": self.period_start,
+            "period_end": self.period_end,
+            "value_min": self.value_min,
+            "value_max": self.value_max,
+        }
 
 
 def normalize_entries_page_limit(limit_value: Any, default: int = 20) -> int:
@@ -39,16 +116,16 @@ def entries_query_kwargs(
     value_max: Optional[float],
 ) -> dict[str, Any]:
     """Keyword args for query_data_entries / get_total_entries_count."""
-    return {
-        "data_type": data_type or None,
-        "time_period": time_period or None,
-        "uploader": uploader or None,
-        "indicator": indicator or None,
-        "period_start": period_start,
-        "period_end": period_end,
-        "value_min": value_min,
-        "value_max": value_max,
-    }
+    return EntryListParams.from_request_strings(
+        data_type=data_type or "",
+        time_period=time_period or "",
+        uploader=uploader or "",
+        indicator=indicator or "",
+        period_start=period_start,
+        period_end=period_end,
+        value_min=value_min,
+        value_max=value_max,
+    ).to_query_kwargs()
 
 
 def build_entries_filters_ui_dict(
