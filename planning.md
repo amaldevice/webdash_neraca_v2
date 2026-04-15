@@ -1,3 +1,11 @@
+## 2026-04-15 - Deployment Documentation
+
+- Menambahkan `SERVER_DEPLOYMENT.md` (Webmin + Git + migrasi SQLite→MySQL) berisi:
+  - inisiasi DB MySQL dari nol (CREATE DATABASE/USER/GRANT),
+  - upgrade skema dengan Alembic,
+  - migrasi data dari SQLite ke MySQL (`scripts/migrate_sqlite_to_mysql.py`) dengan flow `--dry-run` dan `--truncate-target`,
+  - template operasi runtime `gunicorn + systemd`,
+  - backup/restore.
 
 ## Dokumentasi Ringkas Kode
 - **Repo / CI (2026-04-15):** direktori **`.github/`** dihapus dari lokal dan remote (tidak ada lagi workflow GitHub Actions di tree); verifikasi lewat `pip install -r requirements-dev.txt` + `python -m pytest tests --ignore=tests/integration` (dan integrasi manual bila perlu).
