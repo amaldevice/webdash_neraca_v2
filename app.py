@@ -13,6 +13,7 @@ from models import init_db
 from periods import parse_period_date
 from routes import register_routes
 from services.manual_entries import build_manual_entry
+from services.timeutil import to_wita_iso
 from services.validation import allowed_file, validate_metadata
 
 
@@ -41,6 +42,7 @@ def create_app(*, testing: bool = False, init_sqlalchemy: bool | None = None) ->
     else:
         dispose_engine()
     init_db()
+    application.jinja_env.filters["to_wita"] = to_wita_iso
     return application
 
 

@@ -28,6 +28,7 @@ from services.upload_preview import (
     load_preview_session,
     to_preview_context,
 )
+from services.timeutil import wita_now_iso
 
 
 _UPLOAD_RATE_LIMIT_LOCK = threading.Lock()
@@ -59,6 +60,12 @@ def _upload_client_key() -> str:
     return client_key
 
 
+def _ensure_upload_version(form_values: dict | None) -> dict[str, str]:
+    values = dict(form_values or {})
+    values.setdefault("version", wita_now_iso())
+    return values
+
+
 def _upload_is_rate_limited() -> tuple[bool, int, int]:
     max_requests = int(current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0))
     window_seconds = int(current_app.config.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", 60))
@@ -83,13 +90,14 @@ def _render_upload_template(
     upload_preview_token: str | None,
     form_values: dict | None = None,
 ) -> Response:
+    form_values = _ensure_upload_version(form_values)
     return make_response(
         render_template(
         UPLOAD_TEMPLATE_NAME,
         mode=UPLOAD_ROUTE_MODE,
         preview=preview,
         upload_preview_token=upload_preview_token,
-        form_values=form_values or {},
+        form_values=form_values,
         upload_csrf_token=_upload_csrf_token(),
         )
     )
@@ -116,7 +124,7 @@ def _apply_manual_flow_response(resp):
     return render_template(
         UPLOAD_TEMPLATE_NAME,
         mode=MANUAL_ROUTE_MODE,
-        form_values=resp.form_values or {},
+        form_values=_ensure_upload_version(resp.form_values),
         manual_duplicate=resp.manual_duplicate,
     )
 
@@ -151,7 +159,8 @@ def upload_data():
                 flash("Terlalu banyak unggahan dalam waktu singkat. Coba lagi nanti.", "error")
                 return response
 
-        form_values, action, preview_token, skip_dup = parse_upload_form(request.form)
+        normalized_form = _ensure_upload_version(request.form.to_dict())
+        form_values, action, preview_token, skip_dup = parse_upload_form(normalized_form)
         if not _validate_upload_csrf_token():
             response = _apply_upload_flow_response(
                 build_upload_response(
@@ -220,7 +229,7 @@ def upload_data():
 def manual_input():
     if request.method == "POST":
         uploader = request.form.get("uploader", "").strip()
-        version = request.form.get("version", "").strip()
+        version = _ensure_upload_version({"version": request.form.get("version", "").strip()}).get("version", "")
         data_type = request.form.get("data_type", "flow").strip()
         time_period = request.form.get("time_period", "monthly").strip()
         period_date = request.form.get("period_date", "").strip()
@@ -243,7 +252,7 @@ def manual_input():
     return render_template(
         UPLOAD_TEMPLATE_NAME,
         mode=MANUAL_ROUTE_MODE,
-        form_values={},
+        form_values=_ensure_upload_version({}),
         manual_duplicate=None,
     )
 

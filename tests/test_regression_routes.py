@@ -12,7 +12,6 @@ import pytest
         "/upload",
         "/manual",
         "/preview-data",
-        "/aggregated",
     ],
 )
 def test_main_get_routes_ok(client, path):

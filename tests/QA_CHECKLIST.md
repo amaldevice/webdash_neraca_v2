@@ -16,9 +16,9 @@ Use this checklist for manual verification after changes.
 - [ ] Verify success message and entry appears in preview.
 - [ ] Submit with missing fields and confirm validation error.
 
-## Aggregated Summary
-- [ ] Visit `/aggregated` and confirm cards render.
-- [ ] Filter by indicator and confirm plot filter list is populated.
+## Dashboard Metrics
+- [ ] Visit `/dashboard` and confirm repository metrics and KPI cards render.
+- [ ] Filter by indicator/time period and verify summary values update consistently.
 
 ## Preview & Pagination
 - [ ] Visit `/preview-data` and verify rows render.
@@ -35,7 +35,7 @@ Use this checklist for manual verification after changes.
 - [ ] Delete a single row and confirm removal.
 - [ ] Delete by filter and confirm only filtered rows are removed.
 
-## Plot
-- [ ] On `/aggregated`, select an indicator and generate a plot.
-- [ ] Confirm plot renders with data.
-- [ ] Try with an indicator that has no data and confirm error message.
+## Period Analysis
+- [ ] Pada `/dashboard`/periode, set indikator dan rentang tanggal lalu kirim analisis.
+- [ ] Confirm hasil analisis muncul dan tombol export bekerja.
+- [ ] Try with no matching data and confirm empty-state message.

@@ -12,7 +12,7 @@
             <tr>
                 <th>ID</th>
                 <th>Pengunggah</th>
-                <th>Versi</th>
+                <th>Waktu unggah</th>
                 <th>Indikator</th>
                 <th>Nilai</th>
                 <th>Jenis Data</th>
@@ -25,7 +25,7 @@
             <tr>
                 <td>{{ row.id }}</td>
                 <td>{{ row.uploader_name }}</td>
-                <td>{{ row.version }}</td>
+                <td>{{ row.created_at | to_wita if row.created_at else "-" }}</td>
                 <td>{{ row.indicator_name }}</td>
                 <td>{{ row.value }}</td>
                 <td>{% include "partials/_data_type_badge.html" %}</td>

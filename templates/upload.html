@@ -1,7 +1,7 @@
 {% extends "base_tailwind.html" %}
 {% block page_header %}
 {% set page_header_title = "Unggah Excel" if mode == "upload" else "Input Manual" %}
-{% set page_header_description = "Pastikan Pengunggah dan Versi selalu diisi." %}
+{% set page_header_description = "Pastikan pengunggah terisi. Waktu unggah otomatis berdasarkan waktu server (WITA)." %}
 {% set page_header_actions %}
 <span class="chip">{{ "Unggah" if mode == "upload" else "Manual" }}</span>
 <a href="{{ url_for('preview_data') }}" class="btn-soft">Lihat Pratinjau</a>
@@ -13,7 +13,7 @@
     <div class="section-title">
         <div>
             <h3 class="text-lg font-semibold">{{ "Unggah Berkas Excel" if mode == "upload" else "Input Data Manual" }}</h3>
-            <p class="hint">Lengkapi metadata utama (Pengunggah, Versi, Jenis Data, Periode) sebelum menyimpan data.</p>
+            <p class="hint">Lengkapi metadata utama (Pengunggah, Jenis Data, Periode) sebelum menyimpan data.</p>
         </div>
     </div>
     {% if mode == "upload" %}

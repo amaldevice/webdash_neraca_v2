@@ -21,7 +21,7 @@ class TestSecurityVulnerabilities:
             "admin'--",
             "'; SELECT * FROM data_entries; --",
             "' UNION SELECT sqlite_version(); --",
-            "'; DELETE FROM aggregated_summary; --",
+            "'; DELETE FROM data_entries; --",
             "' OR 1=1; --",
             "test'; UPDATE data_entries SET value=999 WHERE '1'='1"
         ]
@@ -62,7 +62,7 @@ class TestSecurityVulnerabilities:
         sql_payloads = [
             "v1.0'; DROP TABLE data_entries; --",
             "'; SELECT password FROM users; --",
-            "test' UNION SELECT * FROM aggregated_summary; --"
+            "test' UNION SELECT * FROM data_entries; --"
         ]
 
         for payload in sql_payloads:
@@ -92,7 +92,7 @@ class TestSecurityVulnerabilities:
         sql_payloads = [
             "'; DROP TABLE data_entries; --",
             "' OR '1'='1",
-            "GDP' UNION SELECT * FROM aggregated_summary; --",
+            "GDP' UNION SELECT * FROM data_entries; --",
             "test' OR 1=1; --"
         ]
 

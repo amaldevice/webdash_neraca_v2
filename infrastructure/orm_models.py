@@ -39,10 +39,3 @@ class DataEntry(Base):
     quarter: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
 
-
-class AggregatedSummary(Base):
-    __tablename__ = "aggregated_summary"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    summary_json: Mapped[str] = mapped_column(Text, nullable=False)
-    updated_at: Mapped[str] = mapped_column(Text, nullable=False)

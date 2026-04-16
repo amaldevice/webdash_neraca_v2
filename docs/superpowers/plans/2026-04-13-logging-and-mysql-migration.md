@@ -21,7 +21,7 @@
 | CRUD & filter | `models/mutations.py`, `models/queries.py`, `models/browse.py`, `services/data_management_actions.py` |
 | Upload & manual | `services/upload_flow.py`, `services/upload_preview.py`, `services/manual_entries.py`, `routes/upload_routes.py` |
 | Ekspor | `routes/pages.py` (`/export`), `services/raw_export.py`, `routes/manage.py` (`/export-period-analysis`), `services/period_analysis_export.py`, `services/period_analysis_workbook.py` |
-| Agregasi cache | `services/aggregation.py`, `models/summary_store.py` |
+| Repository metrics | `models/browse.py` (agregasi ringan saat query), `routes/pages.py` |
 | SQL khusus SQLite (baseline) | `ON CONFLICT ... DO UPDATE` + `excluded.*` di `models/mutations.py`; `datetime(created_at)` di query/browse/summary — diganti pola portabel di rencana 2026-04-15 |
 
 ---
@@ -259,15 +259,13 @@ _log.info("db_mutation_ok", extra={"operation": operation, "rowcount": cursor.ro
 
 ---
 
-### Task 7: Agregasi / summary store
+### Task 7: Metrik per halaman (tanpa cache agregat)
 
-**Files:**
-- Modify: `services/aggregation.py`
-- Modify: `models/summary_store.py`
+**Catatan:** Layer agregasi cache dihapus; gunakan query agregasi ringan langsung dari `data_entries` saat diperlukan.
 
-- [ ] **Step 1: Log awal/akhir `refresh_aggregated_summary` dengan durasi dan ukuran JSON (bytes atau len keys)**
+- [ ] **Step 1: Pastikan semua endpoint metrik menghitung dari `data_entries` tanpa memanggil cache terpisah**
 
-- [ ] **Step 2: `rtk pytest tests -k aggregation -q`** (sesuaikan pola `-k`)
+- [ ] **Step 2: Validasi hasil metrik dengan seed data representatif (manual + automation)**
 
 - [ ] **Step 3: Commit**
 
@@ -291,7 +289,7 @@ rtk rg "sqlite3|ON CONFLICT|datetime\\(|IntegrityError" models services routes
 
 - [ ] **Step 2: Tabel hasil untuk setiap file `models/*.py` — statement yang perlu rewrite**
 
-Output harus mencakup minimal: `models/mutations.py` (upsert), `models/queries.py`, `models/browse.py`, `models/summary_store.py`.
+Output harus mencakup minimal: `models/mutations.py` (upsert), `models/queries.py`, `models/browse.py`.
 
 - [ ] **Step 3: Commit dokumen**
 
@@ -351,7 +349,7 @@ Mapping contoh:
 
 - [ ] **Step 2: Skrip salin data**
 
-Baca dari SQLite `data_entries` dan `aggregated_summary`, tulis ke MySQL dalam batch (gunakan `pandas.read_sql` + `to_sql` hanya jika tim setuju; sebaliknya `INSERT` berparameter dalam chunk).
+Baca dari SQLite `data_entries` saja, lalu tulis ke MySQL dalam batch (gunakan `pandas.read_sql` + `to_sql` hanya jika tim setuju; sebaliknya `INSERT` berparameter dalam chunk).
 
 - [ ] **Step 3: Dokumentasikan urutan cutover** (maintenance window, backup `data.db`, verifikasi counts).
 
@@ -365,7 +363,7 @@ Baca dari SQLite `data_entries` dan `aggregated_summary`, tulis ke MySQL dalam b
 - Modify: `models/mutations.py`
 - Modify: `models/queries.py`
 - Modify: `models/browse.py`
-- Modify: `models/summary_store.py`
+- Modify: `models/browse.py` (pastikan query tetap portabel)
 
 - [ ] **Step 1: Ganti `ON CONFLICT ... DO UPDATE` dengan `INSERT ... ON DUPLICATE KEY UPDATE`**
 

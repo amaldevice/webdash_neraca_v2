@@ -34,7 +34,7 @@ def test_alembic_upgrade_head_creates_tables(monkeypatch: pytest.MonkeyPatch, sq
         )
         tables = {row[0] for row in cur.fetchall()}
     assert "data_entries" in tables
-    assert "aggregated_summary" in tables
+    assert len(tables) >= 1
     with sqlite3.connect(db_file) as conn:
         cur = conn.execute(
             "SELECT sql FROM sqlite_master WHERE type='index' AND name='ux_data_entry_variant'"
@@ -57,7 +57,7 @@ def test_orm_metadata_matches_migration_tables(sqlite_file_url: str, monkeypatch
         Base.metadata.create_all(engine)
         insp = inspect(engine)
         assert insp.has_table("data_entries")
-        assert insp.has_table("aggregated_summary")
+        assert insp.has_table("data_entries")
         uq_names = {u["name"] for u in insp.get_unique_constraints("data_entries")}
         ix_names = {i["name"] for i in insp.get_indexes("data_entries")}
         assert "ux_data_entry_variant" in (uq_names | ix_names)

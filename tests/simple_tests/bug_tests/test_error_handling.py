@@ -151,42 +151,6 @@ class TestErrorHandling:
                         response_text = response.get_data(as_text=True).lower()
                         assert 'error' in response_text or 'excel' in response_text or 'parsing' in response_text
 
-    def test_aggregated_summary_refresh_failure(self, test_client):
-        """Test ketika refresh aggregated summary gagal"""
-        with patch("services.aggregation.refresh_aggregated_summary") as mock_refresh:
-            mock_refresh.side_effect = Exception("Summary refresh failed")
-
-            with test_client as client:
-                df = pd.DataFrame({'Indicator': ['GDP'], '2024-01': [100]})
-                excel_buffer = BytesIO()
-                df.to_excel(excel_buffer, index=False)
-                excel_buffer.seek(0)
-
-                data = {
-                    'uploader': 'TestUser',
-                    'version': 'v1.0',
-                    'data_type': 'flow',
-                    'time_period': 'monthly'
-                }
-                file_data = (excel_buffer, 'test.xlsx')
-
-                response = client.post('/upload',
-                                     data=data,
-                                     content_type='multipart/form-data',
-                                     data_file=file_data)
-
-                # Should still succeed for the main operation even if summary refresh fails
-                assert response.status_code in [200, 302]
-                with client.session_transaction() as sess:
-                    flashed_messages = sess.get('_flashes', [])
-                    # Should have success message for data insertion
-                    if flashed_messages:
-                        success_found = any("berhasil" in msg[1] for msg in flashed_messages)
-                        assert success_found, f"Expected success message, got: {flashed_messages}"
-                    else:
-                        page_text = response.get_data(as_text=True).lower()
-                        assert "berhasil" in page_text or "sukses" in page_text or "saved" in page_text
-
     def test_manual_entry_invalid_value_conversion(self, test_client):
         """Test ketika konversi nilai manual entry gagal"""
         with test_client as client:

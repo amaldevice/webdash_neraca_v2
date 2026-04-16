@@ -12,7 +12,6 @@ from models import (
     insert_single_entry,
     update_data_entry_full,
 )
-from services.aggregation import refresh_aggregated_summary
 
 FlashTuple = Tuple[str, str]
 
@@ -75,7 +74,6 @@ def apply_data_management_post(
                     },
                 )
                 messages.append(("Data berhasil diperbarui.", "success"))
-                refresh_aggregated_summary()
             except ValueError:
                 messages.append(("Nilai harus berupa angka.", "error"))
             except Exception as e:
@@ -86,7 +84,6 @@ def apply_data_management_post(
         if selected_ids:
             deleted_count = bulk_delete_entries(selected_ids)
             messages.append((f"{deleted_count} data berhasil dihapus.", "success"))
-            refresh_aggregated_summary()
         else:
             messages.append(("Tidak ada data yang dipilih untuk dihapus.", "error"))
 
@@ -120,7 +117,6 @@ def apply_data_management_post(
             if updates:
                 updated_count = bulk_update_entries(selected_ids, updates)
                 messages.append((f"{updated_count} data berhasil diperbarui.", "success"))
-                refresh_aggregated_summary()
             else:
                 messages.append(("Tidak ada kolom yang diisi untuk diperbarui.", "error"))
 
@@ -145,7 +141,6 @@ def apply_data_management_post(
                     value=float(insert_value),
                 )
                 messages.append(("Data baru berhasil ditambahkan.", "success"))
-                refresh_aggregated_summary()
             except ValueError:
                 messages.append(("Nilai harus berupa angka.", "error"))
         else:

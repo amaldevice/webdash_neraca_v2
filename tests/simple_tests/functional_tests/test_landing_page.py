@@ -75,7 +75,7 @@ class TestLandingPage:
         links = soup.find_all('a', href=True)
 
         # Link yang seharusnya ada
-        expected_routes = ['/upload', '/manual', '/preview-data', '/aggregated', '/data-management']
+        expected_routes = ['/upload', '/manual', '/preview-data', '/data-management']
         found_routes = [link['href'] for link in links]
 
         # Minimal harus ada beberapa link navigasi

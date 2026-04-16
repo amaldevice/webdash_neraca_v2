@@ -505,10 +505,6 @@ class TestEdgeCases:
             response = client.get('/export')
             assert response.status_code == 200
 
-            # Aggregated summary
-            response = client.get('/aggregated')
-            assert response.status_code == 200
-
     def test_pagination_edge_cases(self, populated_db):
         """Test pagination dengan edge cases"""
         with populated_db as client:

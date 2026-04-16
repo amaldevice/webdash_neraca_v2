@@ -10,8 +10,7 @@ const pages = [
   { name: 'upload', path: '/upload' },
   { name: 'manual', path: '/manual' },
   { name: 'preview', path: '/preview-data' },
-  { name: 'management', path: '/data-management' },
-  { name: 'aggregated', path: '/aggregated' },
+  { name: 'management', path: '/data-management' }
 ];
 
 const ensureOutputDir = () => {

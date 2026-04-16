@@ -33,12 +33,12 @@ FAILED tests/test_routes.py::test_post_manual_minimal - assert 0 == 1
 **Grade: A- (Excellent)**
 
 **Coverage Testing:**
-- ✅ Landing page dengan aggregated cards
+- ✅ Landing page dengan metrik repository
 - ✅ Upload Excel dengan validation
 - ✅ Manual input dengan error handling
 - ✅ Preview data dengan pagination
 - ✅ Data management dengan CRUD operations
-- ✅ Aggregated summary dengan charts
+- ✅ Dashboard analytics dan tabel filter
 
 **Temuan:**
 - Sistem berjalan dengan baik untuk basic functionality

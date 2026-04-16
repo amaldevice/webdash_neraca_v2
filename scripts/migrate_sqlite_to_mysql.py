@@ -32,7 +32,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from config import BASE_DIR  # noqa: E402
-from infrastructure.orm_models import AggregatedSummary, DataEntry  # noqa: E402
+from infrastructure.orm_models import DataEntry  # noqa: E402
 
 _LOG = logging.getLogger("migrate_sqlite_to_mysql")
 
@@ -52,9 +52,6 @@ _DATA_ENTRY_COLUMNS: tuple[str, ...] = (
     "quarter",
     "created_at",
 )
-_SUMMARY_COLUMNS: tuple[str, ...] = ("id", "summary_json", "updated_at")
-
-
 def _sqlite_url(path: Path) -> str:
     return f"sqlite:///{path.resolve().as_posix()}"
 
@@ -83,16 +80,9 @@ def _stats_data_entries(engine: Engine) -> tuple[int, float]:
     return int(n), float(s or 0.0)
 
 
-def _stats_summary(engine: Engine) -> int:
-    with engine.connect() as conn:
-        return int(conn.execute(text("SELECT COUNT(*) FROM aggregated_summary")).scalar_one())
-
-
 def _verify(source: Engine, target: Engine) -> None:
     src_n, src_sum = _stats_data_entries(source)
     tgt_n, tgt_sum = _stats_data_entries(target)
-    src_s = _stats_summary(source)
-    tgt_s = _stats_summary(target)
     _LOG.info(
         "Verify data_entries: source rows=%d sum(value)=%.6f | target rows=%d sum(value)=%.6f",
         src_n,
@@ -100,18 +90,14 @@ def _verify(source: Engine, target: Engine) -> None:
         tgt_n,
         tgt_sum,
     )
-    _LOG.info("Verify aggregated_summary: source rows=%d | target rows=%d", src_s, tgt_s)
     if src_n != tgt_n or abs(src_sum - tgt_sum) > 1e-6:
         raise SystemExit(f"Mismatch data_entries: rows {src_n}!={tgt_n} or sum {src_sum}!={tgt_sum}")
-    if src_s != tgt_s:
-        raise SystemExit(f"Mismatch aggregated_summary rows: {src_s}!={tgt_s}")
 
 
 def _truncate_target(session: Session) -> None:
     session.execute(delete(DataEntry))
-    session.execute(delete(AggregatedSummary))
     session.commit()
-    _LOG.info("Target tables truncated (data_entries, aggregated_summary).")
+    _LOG.info("Target data_entries table truncated.")
 
 
 def _fetch_data_entries_chunk(source: Engine, offset: int, limit: int) -> Sequence[Mapping[str, Any]]:
@@ -140,19 +126,6 @@ def _migrate_data_entries(source: Engine, SessionTarget: sessionmaker[Session], 
     return inserted
 
 
-def _migrate_aggregated_summary(source: Engine, SessionTarget: sessionmaker[Session]) -> int:
-    cols = ", ".join(_SUMMARY_COLUMNS)
-    stmt = text(f"SELECT {cols} FROM aggregated_summary ORDER BY id")
-    with source.connect() as conn:
-        rows = conn.execute(stmt).mappings().all()
-    if not rows:
-        return 0
-    with SessionTarget() as session:
-        session.execute(insert(AggregatedSummary), [dict(r) for r in rows])
-        session.commit()
-    return len(rows)
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -170,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--truncate-target",
         action="store_true",
-        help="DELETE all rows in target data_entries + aggregated_summary before loading.",
+        help="DELETE all rows in target data_entries before loading.",
     )
     parser.add_argument(
         "--dry-run",
@@ -204,23 +177,19 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         src_n, src_sum = _stats_data_entries(source_engine)
-        src_s = _stats_summary(source_engine)
         _LOG.info(
-            "Source %s - data_entries: %d rows, sum(value)=%.6f; aggregated_summary: %d rows",
+            "Source %s - data_entries: %d rows, sum(value)=%.6f",
             sqlite_path,
             src_n,
             src_sum,
-            src_s,
         )
 
         if args.dry_run:
             tgt_n, tgt_sum = _stats_data_entries(target_engine)
-            tgt_s = _stats_summary(target_engine)
             _LOG.info(
-                "Target (current) - data_entries: %d rows, sum(value)=%.6f; aggregated_summary: %d rows",
+                "Target (current) - data_entries: %d rows, sum(value)=%.6f",
                 tgt_n,
                 tgt_sum,
-                tgt_s,
             )
             return 0
 
@@ -237,8 +206,7 @@ def main(argv: list[str] | None = None) -> int:
                 _truncate_target(session)
 
         n_entries = _migrate_data_entries(source_engine, SessionTarget, max(1, args.chunk_size))
-        n_summary = _migrate_aggregated_summary(source_engine, SessionTarget)
-        _LOG.info("Done. Inserted data_entries rows=%d, aggregated_summary rows=%d", n_entries, n_summary)
+        _LOG.info("Done. Inserted data_entries rows=%d", n_entries)
         _verify(source_engine, target_engine)
     finally:
         source_engine.dispose()

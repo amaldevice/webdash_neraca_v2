@@ -46,7 +46,7 @@ def _ensure_tables_exist(conn):
     # Create tables if they don't exist
     conn.execute("""CREATE TABLE IF NOT EXISTS data_entries (...)""")
     conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ...""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS aggregated_summary (...)""")
+    # (legacy) summary cache table has been removed; repository currently keeps only raw data_entries
 ```
 
 ### 2. Race Conditions in Concurrent Database Operations
@@ -247,10 +247,10 @@ if '..' in filename or '/' in filename or '\\' in filename:
 **Description:** No validation of bulk operation parameters.  
 **Reproduction:** Submit bulk update with invalid IDs - may cause database errors.
 
-### 13. Race Condition in Aggregated Summary Updates
-**Severity:** Medium  
-**Location:** `aggregator.py` - Cache refresh operations  
-**Description:** Multiple users updating summary simultaneously may cause inconsistencies.
+### 13. Legacy cache refresh behavior removed
+**Severity:** Info  
+**Location:** `services`/`models` legacy paths  
+**Description:** Fitur cache ringkas (agregasi terpisah) telah dihapus dari arsitektur aktif. Risiko ketidak-konsistenan refresh cache tidak lagi relevan.
 
 ### 14. No Rate Limiting on API Endpoints
 **Severity:** Medium  

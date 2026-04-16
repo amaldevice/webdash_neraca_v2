@@ -15,8 +15,8 @@ Bagian UI berbasis Jinja2 untuk aplikasi.
   - Pratinjau data terfilter, pagination, dan tombol export.
 - `data_management.html`
   - Area CRUD lengkap: filter, insert, tabel, bulk action, modal edit.
-- `aggregated.html`
-  - Area analisis agregat (plot garis + analisis periodik).
+- `dashboard.html`
+  - Menampilkan metrik repository dan analisis periode (rute terpisah).
 
 ## Subfolder
 

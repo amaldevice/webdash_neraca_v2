@@ -76,7 +76,7 @@ def export_period_analysis_excel():
     response, err = build_period_analysis_excel_response(request.form)
     if err:
         flash(err, "error")
-        return redirect(url_for("aggregated_summary"))
+        return redirect(url_for("data_management"))
     return response
 
 
