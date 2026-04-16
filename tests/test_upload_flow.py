@@ -35,6 +35,7 @@ def _minimal_entry() -> dict:
         "year": 2024,
         "month": 3,
         "quarter": 1,
+        "dataset_code": "",
     }
 
 
@@ -72,6 +73,16 @@ def test_collect_upload_file_errors():
     bad_file.filename = "evil.exe"
     assert collect_upload_file_errors("u", "v1", bad_file, "flow", "monthly")
 
+    errs_req = collect_upload_file_errors(
+        "u", "v1", ok_file, "flow", "monthly", dataset_slug="", require_dataset=True
+    )
+    assert any("dataset" in e.lower() for e in errs_req)
+
+    errs_bad_slug = collect_upload_file_errors(
+        "u", "v1", ok_file, "flow", "monthly", dataset_slug="not-a-real-slug-xyz"
+    )
+    assert any("tidak dikenal" in e.lower() for e in errs_bad_slug)
+
 
 def test_parse_upload_form():
     form = ImmutableMultiDict(
@@ -81,6 +92,7 @@ def test_parse_upload_form():
             ("data_type", "flow"),
             ("time_period", "monthly"),
             ("layout_override", "vertical"),
+            ("dataset_slug", "pinjaman"),
             ("action", "confirm"),
             ("preview_token", "abc"),
             ("skip_duplicate_indexes", "0"),
@@ -89,6 +101,7 @@ def test_parse_upload_form():
     )
     fv, action, tok, skips = parse_upload_form(form)
     assert fv["uploader"] == "A"
+    assert fv["dataset_slug"] == "pinjaman"
     assert action == "confirm"
     assert tok == "abc"
     assert skips == ["0", "2"]
@@ -420,3 +433,34 @@ def test_process_manual_input_post_duplicate_confirmation_inserts_row(db_path):
     )
     assert r.kind == "redirect"
     assert models.get_total_entries_count() == 2
+
+
+def test_process_manual_input_post_require_dataset_empty_slug(db_path):
+    r = process_manual_input_post(
+        "M1",
+        "v9",
+        "flow",
+        "monthly",
+        "2024-03",
+        "GDP",
+        "1",
+        require_dataset=True,
+        dataset_slug="",
+    )
+    assert r.kind == "render"
+    assert any("dataset" in msg.lower() for msg, _ in r.flashes)
+
+
+def test_process_manual_input_post_unknown_dataset_slug(db_path):
+    r = process_manual_input_post(
+        "M1",
+        "v9",
+        "flow",
+        "monthly",
+        "2024-03",
+        "GDP",
+        "1",
+        dataset_slug="not-a-slug",
+    )
+    assert r.kind == "render"
+    assert any("tidak dikenal" in msg.lower() for msg, _ in r.flashes)

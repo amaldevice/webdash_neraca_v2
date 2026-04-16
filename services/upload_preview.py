@@ -133,15 +133,17 @@ def _drop_stale_session_token(flask_session, upload_folder: str) -> None:
 
 
 def _collect_duplicate_lookup_keys(entries: list[dict]) -> list[tuple]:
-    """Collect unique duplicate-check keys from parsed entries."""
+    """Collect unique duplicate-check keys from parsed entries (includes dataset_code)."""
     unique_keys: list[tuple] = []
     seen: set[tuple] = set()
     for entry in entries:
+        ds = (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip()
         key = (
             entry.get("indicator_name"),
             entry.get("year"),
             entry.get("month"),
             entry.get("quarter"),
+            ds,
         )
         if key in seen:
             continue
@@ -194,6 +196,7 @@ def filter_duplicate_entries(
             duplicate.get("year"),
             duplicate.get("month"),
             duplicate.get("quarter"),
+            (duplicate.get("dataset_code") or "").strip(),
         )
         for duplicate in duplicate_records
     ]
@@ -206,6 +209,7 @@ def filter_duplicate_entries(
             entry.get("year"),
             entry.get("month"),
             entry.get("quarter"),
+            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
         )
         if key in skip_keys:
             skipped_count += 1
@@ -296,6 +300,14 @@ def excel_preview_source_from_payload(
     Normalized dict for `to_preview_context` after a parse (confirm flow / fresh preview).
     Keeps upload_flow free of repeated OpenPyXL field wiring.
     """
+    slug = (payload.get("dataset_slug") or "").strip()
+    label = ""
+    if slug:
+        from services.dataset_catalog import get_dataset_or_none
+
+        d = get_dataset_or_none(slug)
+        if d is not None:
+            label = d.label
     return {
         "file_name": file_name,
         "layout": payload["layout"],
@@ -309,6 +321,8 @@ def excel_preview_source_from_payload(
         "invalid_rows": payload.get("invalid_rows", []),
         "total_records": total_records,
         "upload_preview_token": upload_preview_token,
+        "dataset_slug": slug,
+        "dataset_label": label,
     }
 
 
@@ -344,6 +358,8 @@ def _to_template_context(
         "duplicate_records": duplicate_records,
         "skip_duplicate_indexes": skip_duplicate_indexes,
         "upload_preview_token": payload.get("upload_preview_token"),
+        "dataset_slug": payload.get("dataset_slug", ""),
+        "dataset_label": payload.get("dataset_label", ""),
     }
 
 
@@ -360,6 +376,7 @@ def build_upload_preview(
     payload: dict,
     entries: list[dict],
     duplicates: list[dict],
+    dataset_slug: str = "",
 ) -> tuple[str, dict]:
     """Create cached preview state and normalized preview context for templates."""
     effective_layout_override = layout_override or "auto"
@@ -372,6 +389,7 @@ def build_upload_preview(
             "version": version,
             "data_type": data_type,
             "time_period": time_period,
+            "dataset_slug": (dataset_slug or "").strip(),
         },
         effective_layout_override,
         payload,

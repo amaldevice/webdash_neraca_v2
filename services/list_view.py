@@ -20,6 +20,7 @@ class EntryListParams:
     period_end: Optional[str] = None
     value_min: Optional[float] = None
     value_max: Optional[float] = None
+    dataset_code: Optional[str] = None
 
     @classmethod
     def from_request_strings(
@@ -33,7 +34,9 @@ class EntryListParams:
         period_end: Optional[str],
         value_min: Optional[float],
         value_max: Optional[float],
+        dataset_code: str = "",
     ) -> EntryListParams:
+        dc = (dataset_code or "").strip()
         return cls(
             data_type=data_type or None,
             time_period=time_period or None,
@@ -43,6 +46,7 @@ class EntryListParams:
             period_end=period_end,
             value_min=value_min,
             value_max=value_max,
+            dataset_code=None if dc == "" else dc,
         )
 
     def to_query_kwargs(self) -> dict[str, Any]:
@@ -55,6 +59,7 @@ class EntryListParams:
             "period_end": self.period_end,
             "value_min": self.value_min,
             "value_max": self.value_max,
+            "dataset_code": self.dataset_code,
         }
 
     def to_action_kwargs(self) -> dict[str, Any]:
@@ -68,6 +73,7 @@ class EntryListParams:
             "period_end": self.period_end,
             "value_min": self.value_min,
             "value_max": self.value_max,
+            "dataset_code": self.dataset_code or "",
         }
 
     def to_ui_strings(self) -> dict[str, Any]:
@@ -81,6 +87,7 @@ class EntryListParams:
             "period_end": self.period_end,
             "value_min": self.value_min,
             "value_max": self.value_max,
+            "dataset_code": self.dataset_code or "",
         }
 
 
@@ -114,6 +121,7 @@ def entries_query_kwargs(
     period_end: Optional[str],
     value_min: Optional[float],
     value_max: Optional[float],
+    dataset_code: str = "",
 ) -> dict[str, Any]:
     """Keyword args for query_data_entries / get_total_entries_count."""
     return EntryListParams.from_request_strings(
@@ -125,6 +133,7 @@ def entries_query_kwargs(
         period_end=period_end,
         value_min=value_min,
         value_max=value_max,
+        dataset_code=dataset_code or "",
     ).to_query_kwargs()
 
 
@@ -138,6 +147,7 @@ def build_entries_filters_ui_dict(
     period_end: str | None,
     value_min: float | None,
     value_max: float | None,
+    dataset_code: str = "",
     page: int,
     limit: int,
     total_entries: int,
@@ -152,6 +162,7 @@ def build_entries_filters_ui_dict(
         "end_period": period_end,
         "value_min": value_min,
         "value_max": value_max,
+        "dataset_code": dataset_code,
         "page": page,
         "limit": limit,
         "total_pages": total_pages,

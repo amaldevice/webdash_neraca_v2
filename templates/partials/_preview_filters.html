@@ -119,6 +119,20 @@
             </datalist>
         </div>
         <div class="form-control">
+            <label for="dataset_code" class="label">
+                <span class="label-text">Dataset</span>
+            </label>
+            <select id="dataset_code" name="dataset_code" class="control">
+                <option value="" {% if not filters.dataset_code %}selected{% endif %}>Semua</option>
+                <option value="__EMPTY__" {% if filters.dataset_code == "__EMPTY__" %}selected{% endif %}>Legacy (tanpa kode)</option>
+                {% for code in filter_options.dataset_codes %}
+                {% if code %}
+                <option value="{{ code }}" {% if filters.dataset_code == code %}selected{% endif %}>{{ code }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-control">
             <label for="limit" class="label">
                 <span class="label-text">Baris per halaman</span>
             </label>

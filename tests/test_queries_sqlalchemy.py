@@ -96,10 +96,11 @@ def test_preview_duplicates_batches_on_sa(tmp_path, monkeypatch) -> None:
         "year": 2024,
         "month": 5,
         "quarter": None,
+        "dataset_code": "",
     }
     try:
         models.insert_entries([entry])
-        keys = [("GDP", 2024, 5, None)]
+        keys = [("GDP", 2024, 5, None, "")]
         dups = preview_duplicates_batches(keys)
         assert len(dups) == 1
         assert dups[0]["value"] == 42.0

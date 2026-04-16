@@ -11,9 +11,45 @@
             value="{{ form_values.uploader if form_values else '' }}"
             required
         >
+        <input type="hidden" name="version" value="{{ form_values.version if form_values else '' }}">
         <label class="label">
             <span class="field-help">Nama penanggung jawab unggahan.</span>
         </label>
+    </div>
+
+    <div class="form-control md:col-span-2">
+        <label for="dataset_slug" class="label">
+            <span class="label-text">Dataset (sheet sumber BI)</span>
+        </label>
+        <select
+            id="dataset_slug"
+            name="dataset_slug"
+            class="control"
+            {% if require_dataset_upload %}required{% endif %}
+        >
+            {% if legacy_dataset_choice_allowed %}
+            <option value="" {% if not form_values or not form_values.dataset_slug %}selected{% endif %}>Tanpa dataset — format generik / lembar pertama</option>
+            {% endif %}
+            {% for d in datasets %}
+            {% if d.enabled_for_upload %}
+            <option value="{{ d.slug }}" {% if form_values and form_values.dataset_slug == d.slug %}selected{% endif %}>{{ d.label }} — sheet: {{ d.source_sheet }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <label class="label">
+            <span class="field-help">
+                Pilih dataset agar parser membaca sheet yang benar. Mode ketat: set <code>REQUIRE_DATASET_FOR_UPLOAD=1</code> di server.
+            </span>
+        </label>
+        <ul class="text-xs space-y-1 mt-2 list-disc list-inside text-base-content/80">
+            {% for d in datasets %}
+            {% if d.enabled_for_upload %}
+            <li>
+                <a class="link link-primary" href="{{ url_for('upload_dataset_template', dataset_slug=d.slug) }}">Unduh template long — {{ d.label }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
     </div>
 
     <div class="form-control">
@@ -82,16 +118,14 @@
             </a>
             <label class="label">
                 <span class="field-help">
-                    File template kini berisi 2 sheet:
-                    <strong>Template_Horizontal</strong> (indikator di kolom kiri, periode di baris header) dan
-                    <strong>Template_Vertical</strong> (periode di kolom kiri, indikator di baris header).
+                    Template generik (dua format sheet) untuk indikator lebar klasik; untuk dataset REKAP pakai tautan template long per dataset di atas.
                 </span>
             </label>
         </div>
         <div class="label">
             <span class="field-help">
-                Upload parser hanya membaca sheet aktif/pertama, jadi aktifkan sheet yang sesuai format yang ingin dipakai.
-                Untuk format lain, pilih <strong>layout override</strong> <strong>vertical</strong> atau <strong>horizontal</strong>.
+                Tanpa pilihan dataset: parser membaca lembar pertama / aktif. Dengan dataset: sheet mengikuti katalog (nama persis seperti di Excel BI).
+                Layout override tetap dipakai bila format tidak terdeteksi otomatis.
             </span>
         </div>
             </div>

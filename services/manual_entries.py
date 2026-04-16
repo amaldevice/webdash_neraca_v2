@@ -13,6 +13,8 @@ def build_manual_entry(
     period_date: str,
     indicator: str,
     value: str,
+    *,
+    dataset_slug: str = "",
 ) -> dict | None:
     try:
         parsed_value = float(value)
@@ -20,6 +22,7 @@ def build_manual_entry(
         return None
 
     year, month, quarter = parse_period_date(time_period, period_date)
+    ds = (dataset_slug or "").strip()
 
     return {
         "uploader_name": uploader,
@@ -35,4 +38,5 @@ def build_manual_entry(
         "month": month,
         "quarter": quarter,
         "created_at": utc_now_iso(),
+        "dataset_code": ds,
     }

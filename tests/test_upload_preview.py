@@ -94,6 +94,7 @@ def test_build_upload_preview_returns_payload_and_token(app_module, tmp_path):
             "year": 2024,
             "month": 3,
             "quarter": None,
+            "dataset_code": "",
         }
     ]
 
@@ -215,17 +216,21 @@ def test_find_duplicate_entries_in_db_detects_existing_rows(db_path):
         "year": 2024,
         "month": 1,
         "quarter": 1,
+        "dataset_code": "",
     }
     models.insert_entries([row])
     found = find_duplicate_entries_in_db(
         "U1",
         "v1",
-        [{
-            "indicator_name": "GDP",
-            "year": 2024,
-            "month": 1,
-            "quarter": 1,
-        }],
+        [
+            {
+                "indicator_name": "GDP",
+                "year": 2024,
+                "month": 1,
+                "quarter": 1,
+                "dataset_code": "",
+            }
+        ],
     )
     assert len(found) == 1
     first = found[0]

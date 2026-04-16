@@ -13,8 +13,33 @@
             value="{{ values.get('uploader', '') }}"
             required
         >
+        <input type="hidden" name="version" value="{{ values.get('version', '') }}">
         <label class="label">
             <span class="field-help">Nama penanggung jawab unggahan.</span>
+        </label>
+    </div>
+
+    <div class="form-control md:col-span-2">
+        <label for="dataset_slug" class="label">
+            <span class="label-text">Dataset (opsional)</span>
+        </label>
+        <select
+            id="dataset_slug"
+            name="dataset_slug"
+            class="control"
+            {% if require_dataset_manual %}required{% endif %}
+        >
+            {% if legacy_dataset_choice_allowed %}
+            <option value="" {% if not values.get('dataset_slug') %}selected{% endif %}>Tanpa dataset</option>
+            {% endif %}
+            {% for d in datasets %}
+            {% if d.enabled_for_manual %}
+            <option value="{{ d.slug }}" {% if values.get('dataset_slug') == d.slug %}selected{% endif %}>{{ d.label }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <label class="label">
+            <span class="field-help">Samakan dengan dataset bila input manual menyusul alur REKAP per sheet.</span>
         </label>
     </div>
 

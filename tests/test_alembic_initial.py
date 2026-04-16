@@ -34,7 +34,8 @@ def test_alembic_upgrade_head_creates_tables(monkeypatch: pytest.MonkeyPatch, sq
         )
         tables = {row[0] for row in cur.fetchall()}
     assert "data_entries" in tables
-    assert len(tables) >= 1
+    assert "upload_runs" in tables
+    assert len(tables) >= 2
     with sqlite3.connect(db_file) as conn:
         cur = conn.execute(
             "SELECT sql FROM sqlite_master WHERE type='index' AND name='ux_data_entry_variant'"

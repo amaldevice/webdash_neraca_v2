@@ -43,6 +43,7 @@ def _build_data_entry_filter_clauses(
     period_end: Optional[str],
     value_min: Optional[float],
     value_max: Optional[float],
+    dataset_code: Optional[str] = None,
 ) -> Tuple[List[str], List]:
     clauses: List[str] = []
     params: List = []
@@ -58,6 +59,11 @@ def _build_data_entry_filter_clauses(
     if indicator:
         clauses.append("LOWER(indicator_name) LIKE LOWER(?)")
         params.append(f"%{indicator}%")
+    if dataset_code == "__EMPTY__":
+        clauses.append("(dataset_code IS NULL OR dataset_code = '')")
+    elif dataset_code:
+        clauses.append("dataset_code = ?")
+        params.append(dataset_code)
 
     apply_period_range_filter(
         clauses=clauses,
@@ -85,6 +91,7 @@ def build_data_entry_filter_sqlalchemy(
     period_end: Optional[str],
     value_min: Optional[float],
     value_max: Optional[float],
+    dataset_code: Optional[str] = None,
 ):
     """Combined ``WHERE`` fragment for ``DataEntry`` (mirrors ``_build_data_entry_filter_clauses``)."""
     t = DataEntry
@@ -99,6 +106,10 @@ def build_data_entry_filter_sqlalchemy(
     if indicator:
         pat_i = f"%{indicator}%"
         parts.append(func.lower(t.indicator_name).like(func.lower(pat_i)))
+    if dataset_code == "__EMPTY__":
+        parts.append(t.dataset_code == "")
+    elif dataset_code:
+        parts.append(t.dataset_code == dataset_code)
 
     start_year, start_month, start_quarter = parse_period_filter_value(period_start)
     end_year, end_month, end_quarter = parse_period_filter_value(period_end)

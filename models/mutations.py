@@ -108,11 +108,20 @@ def delete_data_by_filter(
     period_end: Optional[str] = None,
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
+    dataset_code: Optional[str] = None,
 ) -> int:
     """Delete data entries based on filters"""
     _require_engine()
     where = build_data_entry_filter_sqlalchemy(
-        data_type, time_period, uploader, indicator, period_start, period_end, value_min, value_max
+        data_type,
+        time_period,
+        uploader,
+        indicator,
+        period_start,
+        period_end,
+        value_min,
+        value_max,
+        dataset_code,
     )
     if where is None:
         return 0
@@ -175,6 +184,8 @@ def insert_single_entry(
     period_date: str,
     indicator: str,
     value: float,
+    *,
+    dataset_code: str = "",
 ) -> bool:
     """Insert a single data entry"""
     _require_engine()
@@ -196,6 +207,7 @@ def insert_single_entry(
                     month=month,
                     quarter=quarter,
                     created_at=utc_now_iso(),
+                    dataset_code=(dataset_code or "").strip(),
                 )
             )
         return True

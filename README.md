@@ -144,6 +144,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `services/period_comparisons.py`: Orkestrasi kalkulasi analisis periodik.
 - `services/period_comparison_calculators.py`: Helper kalkulasi growth (`M/M`, `Q/Q`, `Y/Y`, `YTD`, `C/C`).
 - `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
+- `docs/user_upload_datasets.md`: Panduan wizard dataset + env `REQUIRE_DATASET_FOR_UPLOAD` (produksi).
 - `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
 - `services/manual_entries.py`: Helper normalisasi dan validasi input manual.
 

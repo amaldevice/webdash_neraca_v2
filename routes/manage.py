@@ -22,6 +22,7 @@ def data_management():
     time_period = filter_source.get("time_period", "")
     uploader = filter_source.get("uploader", "")
     indicator = filter_source.get("indicator", "")
+    dataset_code = filter_source.get("dataset_code", "")
     period_start, period_end = get_period_range_params(filter_source)
     value_min, value_max = get_value_range_params(filter_source)
 
@@ -36,6 +37,7 @@ def data_management():
         period_end=period_end,
         value_min=value_min,
         value_max=value_max,
+        dataset_code=dataset_code,
     )
 
     if request.method == "POST":
@@ -48,6 +50,7 @@ def data_management():
                 time_period=time_period,
                 uploader=uploader,
                 indicator=indicator,
+                dataset_code=dataset_code,
                 start_period=period_start or "",
                 end_period=period_end or "",
                 value_min=value_min if value_min is not None else "",

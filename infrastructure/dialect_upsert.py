@@ -21,6 +21,7 @@ def _coerce_float(value: Any) -> float | None:
 
 def entry_to_row_mapping(entry: Dict[str, Any], now: str) -> Dict[str, Any]:
     """Map upload/manual payload dict to ORM column names (same as legacy ``_compose_insert_values``)."""
+    ds = (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip()
     return {
         "uploader_name": entry["uploader_name"],
         "version": entry["version"],
@@ -35,6 +36,7 @@ def entry_to_row_mapping(entry: Dict[str, Any], now: str) -> Dict[str, Any]:
         "month": entry.get("month"),
         "quarter": entry.get("quarter"),
         "created_at": entry.get("created_at", now),
+        "dataset_code": ds,
     }
 
 
@@ -45,7 +47,7 @@ def insert_data_entries(session: Session, entries: Sequence[Dict[str, Any]], now
 
 
 def upsert_data_entries(session: Session, entries: Sequence[Dict[str, Any]], now: str) -> None:
-    """Insert or update on unique (uploader, version, indicator, year, month, quarter)."""
+    """Insert or update on unique (uploader, version, indicator, year, month, quarter, dataset_code)."""
     dialect = session.get_bind().dialect.name
     for entry in entries:
         row = entry_to_row_mapping(entry, now)
@@ -86,6 +88,7 @@ def _upsert_one_sqlite_postgresql(session: Session, row: Dict[str, Any], dialect
             DataEntry.year,
             DataEntry.month,
             DataEntry.quarter,
+            DataEntry.dataset_code,
         ],
         set_={
             "template_type": ins.excluded.template_type,

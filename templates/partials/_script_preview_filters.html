@@ -32,6 +32,8 @@ function resetForm() {
     document.getElementById('value_max').value = '';
     document.getElementById('uploader').value = '';
     document.getElementById('indicator').value = '';
+    const ds = document.getElementById('dataset_code');
+    if (ds) ds.value = '';
     document.getElementById('limit').value = '20';
 
     setPreviewFilterStatus('Filter diatur ulang. Memuat data tanpa filter...', 'info');
