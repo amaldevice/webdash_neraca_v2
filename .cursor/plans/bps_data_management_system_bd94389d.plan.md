@@ -192,7 +192,7 @@ todos:
 isProject: false
 ---
 
-Salinan **disimpan di repo** (`docs/plans/…`) agar ikut GitHub. Cursor kadang memakai salinan lokal: `%USERPROFILE%\.cursor\plans\bps_data_management_system_bd94389d.plan.md` — setelah mengubah YAML todos di sini, **sinkronkan** ke file Cursor tersebut (atau sebaliknya) supaya UI plan Cursor tidak ketinggalan.
+File ini berada di **`.cursor/plans/`** dalam repo (ikut Git + path yang sama dipakai Cursor). Buka proyek dari clone workspace: path relatif `.cursor/plans/bps_data_management_system_bd94389d.plan.md`. Salinan di luar repo (`%USERPROFILE%\.cursor\plans\…`) hanya perlu disamakan bila kamu mengedit plan di luar folder proyek.
 
 # BPS Data Management System Architecture
 
@@ -368,7 +368,7 @@ Ringkasan:
 
 ## Project Rule
 
-- Changes to code/features must be accompanied by updates to `docs/README_DOCS.md` (changelog), `docs/planning.md` (stub checklist if needed), and **`docs/plans/bps_data_management_system_bd94389d.plan.md`** (salinan repo; sinkron ke `.cursor/plans/…` bila dipakai), enforced by `.cursor/rules/planning-&-executing-sync.mdc`.
+- Changes to code/features must be accompanied by updates to `docs/README_DOCS.md` (changelog), `docs/planning.md` (stub checklist if needed), and **`.cursor/plans/bps_data_management_system_bd94389d.plan.md`** (YAML todos), enforced by `.cursor/rules/planning-&-executing-sync.mdc`.
 
 ## Key Challenges & Solutions
 
@@ -413,7 +413,7 @@ bps_data_system/
 - **Docs Update:** OVERVIEW.md expanded with per-folder summaries for assets/static/templates dan ringkasan modul Python inti (app.py, excel_parser.py, models.py).
 - [x] Buat dokumentasi detail per-folder: `assets/README.md`, `static/README.md`, `templates/README.md`, `templates/partials/README.md`.
 - [x] Buat dokumentasi gabungan untuk semua berkas Python di `PY_FILES.md`.
-- [x] Sinkronisasi pembaruan dokumentasi ke `docs/README_DOCS.md`, `docs/planning.md`, dan `docs/plans/bps_data_management_system_bd94389d.plan.md` (+ salin ke `.cursor/plans/` bila perlu).
+- [x] Sinkronisasi pembaruan dokumentasi ke `docs/README_DOCS.md`, `docs/planning.md`, dan `.cursor/plans/bps_data_management_system_bd94389d.plan.md`.
 
 ## Recent Backend & Upload UX Updates
 

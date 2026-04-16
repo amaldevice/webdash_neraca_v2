@@ -1,9 +1,9 @@
-# Plans (Cursor + repo)
+# Plans (indeks `docs/plans`)
 
-| File | Keterangan |
-|------|------------|
-| [bps_data_management_system_bd94389d.plan.md](bps_data_management_system_bd94389d.plan.md) | Plan utama BPS: YAML `todos` + arsitektur. **Kanon di Git** — path ini. |
+Plan utama Cursor (YAML `todos` + narasi arsitektur) **disimpan di repo** di path native Cursor:
 
-Salinan lokal Cursor (opsional): `%USERPROFILE%\.cursor\plans\bps_data_management_system_bd94389d.plan.md` — samakan isi setelah edit di repo atau di Cursor.
+- **[`.cursor/plans/bps_data_management_system_bd94389d.plan.md`](../../.cursor/plans/bps_data_management_system_bd94389d.plan.md)**
+
+Folder `docs/plans/` hanya berisi indeks ini agar navigasi dari `docs/` jelas.
 
 Rencana teknis bertahap lainnya: [../superpowers/plans/](../superpowers/plans/).
