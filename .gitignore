@@ -31,10 +31,13 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
-# IDE — lacak aturan Cursor bersama tim; abaikan sisanya di .cursor/
+# IDE — lacak aturan + plan Cursor bersama tim; abaikan sisanya di .cursor/
 .cursor/**
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/plans/
+.cursor/plans/*
+!.cursor/plans/bps_data_management_system_bd94389d.plan.md
 .vscode/
 .idea/
 *.swp

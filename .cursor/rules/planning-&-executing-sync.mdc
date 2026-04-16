@@ -8,7 +8,7 @@ alwaysApply: true
 - Baca **[README.md](README.md)** (root repo) untuk setup, stack, Alembic, dan skrip operasional.
 - Baca **[docs/README_DOCS.md](docs/README_DOCS.md)** untuk **state proyek**, peta folder `docs/`, panduan unggah/dataset, rehearsal migrasi `dataset_code`, changelog ringkas, dan troubleshooting (taut).
 - **[docs/planning.md](docs/planning.md)** — stub sinkron: saat mengubah perilaku, ikuti checklist di sana.
-- **[docs/plans/bps_data_management_system_bd94389d.plan.md](docs/plans/bps_data_management_system_bd94389d.plan.md)** — plan Cursor (YAML `todos` + arsitektur), **kanon di repo**; salin ke `.cursor/plans/bps_data_management_system_bd94389d.plan.md` bila UI Cursor dipakai.
+- **[`.cursor/plans/bps_data_management_system_bd94389d.plan.md`](.cursor/plans/bps_data_management_system_bd94389d.plan.md)** — plan Cursor (YAML `todos` + arsitektur), **ikut Git** (path yang sama dipakai Cursor saat workspace = root repo).
 
 Path relatif terhadap **akar workspace** (folder repo).
 
@@ -16,7 +16,7 @@ Path relatif terhadap **akar workspace** (folder repo).
 
 - Setiap perubahan yang mempengaruhi fungsionalitas (fitur, refactor, perbaikan bug, docs perilaku, dll.) harus sekaligus memperbarui:
   1. **`docs/README_DOCS.md`** — minimal bagian **Changelog ringkas** (bullet bertanggal; taut ke file kode bila perlu).
-  2. **`docs/plans/bps_data_management_system_bd94389d.plan.md`** — todos / notes YAML; setelah itu salin ke `.cursor/plans/bps_data_management_system_bd94389d.plan.md` bila tim memakai salinan lokal Cursor.
+  2. **`.cursor/plans/bps_data_management_system_bd94389d.plan.md`** — todos / notes YAML (satu sumber di repo).
   3. **`docs/planning.md`** bila checklist stub perlu penyesuaian satu baris.
 - Saat menyesuaikan requirement, alur kerja, atau perilaku sistem, catat maksud baru di dokumen di atas sebelum commit atau menutup pekerjaan.
 - Sebutkan bagian yang terpengaruh (fase, todo, pekerjaan selesai) agar reviewer bisa mengikuti evolusi tanpa menggali git.

@@ -449,7 +449,7 @@ Gunakan container MySQL lokal atau job CI: `pytest tests/test_upload_flow.py tes
 
 **Brainstorming / spesifikasi terpisah:** Jika Anda ingin gate persetujuan formal sebelum kode (skill brainstorming), kita bisa mengekstrak Bagian A & B menjadi `docs/superpowers/specs/2026-04-13-logging-mysql-design.md` dan commit terpisah; rencana ini sudah cukup untuk memulai implementasi bertahap.
 
-**Sinkronisasi docs:** Saat PR menyentuh perilaku, perbarui `docs/README_DOCS.md` (changelog), `docs/planning.md` (stub bila perlu), dan `docs/plans/bps_data_management_system_bd94389d.plan.md` (sinkron ke `.cursor/plans/` bila dipakai) — lihat `.cursor/rules/planning-&-executing-sync.mdc`.
+**Sinkronisasi docs:** Saat PR menyentuh perilaku, perbarui `docs/README_DOCS.md` (changelog), `docs/planning.md` (stub bila perlu), dan `.cursor/plans/bps_data_management_system_bd94389d.plan.md` — lihat `.cursor/rules/planning-&-executing-sync.mdc`.
 
 ---
 

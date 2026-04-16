@@ -278,4 +278,4 @@ Per run sebelum checkpoint:
 - `docs/superpowers/plans/2026-04-16-rekap-sheet-table-type-and-template-mapping.md` (matriks sheet + header long)
 - `static/templates/rekap_dataset_long_templates.xlsx` + `scripts/build_rekap_long_templates.py`
 - `docs/README_DOCS.md` (indeks + changelog + panduan unggah/migrasi); `docs/planning.md` (stub sinkron Cursor)
-- `docs/plans/bps_data_management_system_bd94389d.plan.md` (status task YAML; salin ke `.cursor/plans/` bila perlu)
+- `.cursor/plans/bps_data_management_system_bd94389d.plan.md` (status task YAML, ikut Git)
