@@ -237,11 +237,11 @@ Modifikasi `excel_parser/payload.py`:
 - [x] Tes unit parser long-format untuk semua slug katalog (`tests/test_dataset_long_parse.py` + template `generate_workbook_for_dataset`).
 - [x] Tes e2e Playwright: smoke unggah + pratinjau (`tests/e2e/smoke.spec.ts`, berkas `static/e2e_agent_browser.xlsx`).
 - [x] Tes regresi legacy: wide horizontal tanpa slug (`test_parse_legacy_horizontal_without_dataset_slug`).
-- [x] Migration rehearsal (dokumen): `docs/migration_rehearsal_dataset_code.md` (backup, backfill ilustratif, verifikasi unik).
+- [x] Migration rehearsal (dokumen): `docs/README_DOCS.md` → bagian **Migrasi & rehearsal `dataset_code`** (backup, backfill ilustratif, verifikasi unik).
 
 ### Fase 6 — Rollout
 
-- [x] Dokumentasi UX singkat: `docs/user_upload_datasets.md` (wizard, `REQUIRE_DATASET_FOR_UPLOAD`, rollback).
+- [x] Dokumentasi UX singkat: `docs/README_DOCS.md` → **Panduan: unggah Excel & dataset** (wizard, `REQUIRE_DATASET_FOR_UPLOAD`, rollback).
 - [x] Gate produksi: tetap via env `REQUIRE_DATASET_FOR_UPLOAD=1` (default aplikasi legacy-friendly; panduan mendorong set di kantor).
 - [x] Checklist produksi / smoke browser: `scripts/agent_browser_upload_smoke.ps1` + verifikasi manual `agent-browser` ke `/upload`.
 
@@ -277,5 +277,5 @@ Per run sebelum checkpoint:
 - `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md` (dokumen ini)
 - `docs/superpowers/plans/2026-04-16-rekap-sheet-table-type-and-template-mapping.md` (matriks sheet + header long)
 - `static/templates/rekap_dataset_long_templates.xlsx` + `scripts/build_rekap_long_templates.py`
-- `docs/planning.md` (catatan progres global)
+- `docs/README_DOCS.md` (indeks + changelog + panduan unggah/migrasi); `docs/planning.md` (stub sinkron Cursor)
 - `C:/Users/PENGOLAHAN/.cursor/plans/bps_data_management_system_bd94389d.plan.md` (status task)

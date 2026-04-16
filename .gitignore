@@ -31,8 +31,10 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
-# IDE
-.cursor/
+# IDE — lacak aturan Cursor bersama tim; abaikan sisanya di .cursor/
+.cursor/**
+!.cursor/rules/
+!.cursor/rules/**
 .vscode/
 .idea/
 *.swp
