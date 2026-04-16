@@ -2,6 +2,8 @@
 
 > Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun metrik repository, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
 
+**State proyek, peta `docs/`, unggah/dataset, migrasi, changelog:** baca **[docs/README_DOCS.md](docs/README_DOCS.md)** — gabungan ringkas dokumen operasional; stub sinkron [`docs/planning.md`](docs/planning.md); plan Cursor (YAML todos) di **[docs/plans/bps_data_management_system_bd94389d.plan.md](docs/plans/bps_data_management_system_bd94389d.plan.md)** (ikut Git — salin ke `.cursor/plans/` bila pakai UI plan lokal).
+
 ## Langkah Cepat (1-3 Langkah)
 
 1. Lakukan kloning repositori dan masuk ke direktori proyek.
@@ -46,6 +48,8 @@ rtk python -m alembic upgrade head
 ```
 
 Urutan pemilihan DSN migrasi: `ALEMBIC_DATABASE_URL` (opsional) → `DATABASE_URL` → bawaan `sqlite:///<folder proyek>/data.db`.
+
+Bila MySQL memunculkan **`Unknown column 'dataset_code'`** atau **`Table 'data_entries' already exists`** saat migrasi, ikuti [docs/troubleshooting/mysql-schema-dataset-code-and-alembic.md](docs/troubleshooting/mysql-schema-dataset-code-and-alembic.md) dan skrip `python scripts/apply_dataset_code_migration.py --dry-run` / `--yes`.
 
 Instalasi legacy tanpa `DATABASE_URL` tetap boleh memakai `python -c "from models import init_db; init_db()"` sampai strangler menggantikan penuh.
 
@@ -144,7 +148,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `services/period_comparisons.py`: Orkestrasi kalkulasi analisis periodik.
 - `services/period_comparison_calculators.py`: Helper kalkulasi growth (`M/M`, `Q/Q`, `Y/Y`, `YTD`, `C/C`).
 - `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
-- `docs/user_upload_datasets.md`: Panduan wizard dataset + env `REQUIRE_DATASET_FOR_UPLOAD` (produksi).
+- `docs/README_DOCS.md`: Panduan wizard dataset, migrasi `dataset_code`, changelog, taut troubleshooting.
 - `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
 - `services/manual_entries.py`: Helper normalisasi dan validasi input manual.
 
@@ -372,7 +376,7 @@ git push origin feature/<nama-fitur>
 5. Ajukan PR untuk proses review.
 
 ### Dukungan
-- Dokumentasi referensi: README ini dan `planning.md`.
+- Dokumentasi referensi: README ini, [`docs/README_DOCS.md`](docs/README_DOCS.md), dan [`docs/planning.md`](docs/planning.md) (checklist sinkron).
 - Pertanyaan operasional: buat tiket pada GitHub Issues.
 
 ## Lisensi

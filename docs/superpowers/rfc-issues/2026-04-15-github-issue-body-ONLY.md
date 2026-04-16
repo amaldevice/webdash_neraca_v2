@@ -73,7 +73,7 @@ Meta-issue / RFC to replace ad-hoc `sqlite3` + string SQL with **SQLAlchemy 2.0 
 - [ ] **ETL script** (SQLite → MySQL office): documents row-count or checksum verification step after run.
 - [ ] **Post-cutover:** legacy `get_conn` / runtime DDL / sqlite3-only prod path removed or gated exclusively to dev tooling (per plan Task 12).
 - [ ] **Manual smoke** documented: upload + duplicate confirm, data-management filters, period-analysis export (matches plan “Verifikasi akhir”).
-- [ ] `planning.md` and Cursor plan stay synced when behavior-affecting PRs merge (repo rule).
+- [ ] `docs/README_DOCS.md`, `docs/planning.md`, and Cursor plan stay synced when behavior-affecting PRs merge (repo rule).
 
 ### Suggested parallelization (subagents / Copilot workstreams)
 

@@ -1,0 +1,58 @@
+---
+description: Planning sync, docs entrypoints, and production mindset for office server
+alwaysApply: true
+---
+
+# Dokumentasi — titik masuk
+
+- Baca **[README.md](README.md)** (root repo) untuk setup, stack, Alembic, dan skrip operasional.
+- Baca **[docs/README_DOCS.md](docs/README_DOCS.md)** untuk **state proyek**, peta folder `docs/`, panduan unggah/dataset, rehearsal migrasi `dataset_code`, changelog ringkas, dan troubleshooting (taut).
+- **[docs/planning.md](docs/planning.md)** — stub sinkron: saat mengubah perilaku, ikuti checklist di sana.
+- **[docs/plans/bps_data_management_system_bd94389d.plan.md](docs/plans/bps_data_management_system_bd94389d.plan.md)** — plan Cursor (YAML `todos` + arsitektur), **kanon di repo**; salin ke `.cursor/plans/bps_data_management_system_bd94389d.plan.md` bila UI Cursor dipakai.
+
+Path relatif terhadap **akar workspace** (folder repo).
+
+# Planning Synchronization Rule
+
+- Setiap perubahan yang mempengaruhi fungsionalitas (fitur, refactor, perbaikan bug, docs perilaku, dll.) harus sekaligus memperbarui:
+  1. **`docs/README_DOCS.md`** — minimal bagian **Changelog ringkas** (bullet bertanggal; taut ke file kode bila perlu).
+  2. **`docs/plans/bps_data_management_system_bd94389d.plan.md`** — todos / notes YAML; setelah itu salin ke `.cursor/plans/bps_data_management_system_bd94389d.plan.md` bila tim memakai salinan lokal Cursor.
+  3. **`docs/planning.md`** bila checklist stub perlu penyesuaian satu baris.
+- Saat menyesuaikan requirement, alur kerja, atau perilaku sistem, catat maksud baru di dokumen di atas sebelum commit atau menutup pekerjaan.
+- Sebutkan bagian yang terpengaruh (fase, todo, pekerjaan selesai) agar reviewer bisa mengikuti evolusi tanpa menggali git.
+
+# Production Deployment Rule (Office Server)
+
+- Proyek ini di-deploy di **server kantor** (bukan cloud publik). Setiap perubahan kode mengikuti mindset **production-ready**:
+  - **Security First**:
+    - Jangan hardcode kredensial, password, API key, atau data sensitif di source.
+    - Pakai environment variables (`.env`) atau manajemen konfigurasi aman.
+    - Validasi dan sanitasi input pengguna, query DB, dan data eksternal.
+    - Otentikasi dan otorisasi yang tepat.
+
+  - **Error Handling & Logging**:
+    - Tangani error tanpa crash; logging terpusat dan jelas (jangan bocorkan rahasia ke log/UI).
+    - Level log yang sesuai (INFO, WARN, ERROR, DEBUG).
+
+  - **Performance & Reliability**:
+    - Kode efisien; pooling koneksi DB; transaksi yang benar.
+    - Hindari operasi blocking di thread utama bila async.
+
+  - **Configuration Management**:
+    - Pisahkan dev / test / prod; env-specific config atau prefix mis. `PROD_`.
+    - Optimalkan untuk sumber daya terbatas (RAM/CPU kantor).
+
+  - **Deployment Readiness**:
+    - Dockerfile idempoten atau skrip deploy; dokumentasi deploy di `deployment.md` atau `docs/README_DOCS.md` / README (persyaratan server, backup, rollback).
+    - Health check (`/health`, `/ready`); aplikasi siap jalan sebagai service (systemd / Windows Service).
+
+  - **Office Server**:
+    - Anggap internet terbatas pasca-deploy → minim dependensi runtime eksternal.
+    - Dukung Windows Server atau Linux dengan benar; backup DB dan file berkala.
+    - Hindari API pihak ketiga kecuali disetujui dan reachable dari jaringan kantor.
+
+- Untuk setiap perubahan signifikan: **"Apakah kode ini aman, stabil, dan siap produksi di server kantor?"**
+
+# Executing
+
+- Ingat deploy kantor; jaga bar produksi di setiap perubahan.
