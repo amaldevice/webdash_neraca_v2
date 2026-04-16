@@ -114,7 +114,7 @@ Verifikasi:
 mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SHOW TABLES;"
 ```
 
-Pastikan ada minimal `data_entries` dan `aggregated_summary`.
+Pastikan ada `data_entries`.
 
 ## 7) Migrasi dari SQLite ke MySQL di server
 
@@ -140,7 +140,7 @@ python scripts/migrate_sqlite_to_mysql.py --truncate-target
 4. Validasi pasca-migrasi:
 
 ```bash
-mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SELECT COUNT(*) FROM data_entries; SELECT COUNT(*) FROM aggregated_summary;"
+mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SELECT COUNT(*) FROM data_entries;"
 ```
 
 5. Jaga backup lama (sebelum truncate/migrate):
@@ -213,6 +213,23 @@ mysqldump -uwebdash_user -pganti_password_kuat webdash_neraca > /var/backups/web
 
 ```bash
 tar -czf /var/backups/webdash_neraca/uploads_$(date +%F).tar.gz /var/www/webdash_neraca/uploads
+```
+
+- Backup MySQL ke SQLite (cadangan file, cocok untuk restore cepat):
+
+```bash
+cd /var/www/webdash_neraca
+source .venv/bin/activate
+
+# satu jalur default timestamped di /var/www/webdash_neraca/backups
+python scripts/migrate_mysql_to_sqlite.py
+
+# target file tetap untuk cron backup harian
+export SQLITE_BACKUP_PATH=/var/backups/webdash_neraca/webdash_data_backup.db
+python scripts/migrate_mysql_to_sqlite.py --truncate-target
+
+# preview dulu
+python scripts/migrate_mysql_to_sqlite.py --truncate-target --dry-run
 ```
 
 - Restore:

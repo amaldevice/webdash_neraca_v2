@@ -71,7 +71,7 @@
                     <td>
                         <div class="font-medium truncate max-w-[120px]">{{ entry.indicator_name }}</div>
                         <div class="text-xs text-base-content/60">{{ entry.uploader_name }}</div>
-                        <div class="text-xs text-base-content/60">v{{ entry.version }}</div>
+                        <div class="text-xs text-base-content/60">{{ (entry.created_at or entry.version) | to_wita if (entry.created_at or entry.version) else "-" }}</div>
                     </td>
                     <td class="font-semibold">{{ entry.value }}</td>
                     <td>
@@ -121,7 +121,7 @@
                         </th>
                         <th>ID</th>
                         <th>Pengunggah</th>
-                        <th>Versi</th>
+                        <th>Waktu unggah</th>
                         <th>Indikator</th>
                         <th>Nilai</th>
                         <th>Jenis Data</th>
@@ -136,7 +136,7 @@
                         <td><input type="checkbox" class="row-checkbox checkbox checkbox-sm" value="{{ entry.id }}" data-entry-id="{{ entry.id }}"></td>
                         <td class="font-medium">#{{ entry.id }}</td>
                         <td>{{ entry.uploader_name }}</td>
-                        <td>{{ entry.version }}</td>
+                        <td>{{ (entry.created_at or entry.version) | to_wita if (entry.created_at or entry.version) else "-" }}</td>
                         <td>
                             <div class="font-medium">{{ entry.indicator_name }}</div>
                         </td>

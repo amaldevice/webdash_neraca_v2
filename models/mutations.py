@@ -10,7 +10,7 @@ from sqlalchemy import delete, insert, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from infrastructure.db import is_engine_initialized, scoped_transaction
-from infrastructure.orm_models import AggregatedSummary, DataEntry
+from infrastructure.orm_models import DataEntry
 
 from .data_filters import build_data_entry_filter_sqlalchemy
 
@@ -93,7 +93,6 @@ def clear_all_data() -> bool:
     try:
         with scoped_transaction() as session:
             session.execute(delete(DataEntry))
-            session.execute(delete(AggregatedSummary))
         return True
     except SQLAlchemyError as exc:
         _log.warning("clear_all_data failed: %s", exc)

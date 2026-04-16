@@ -116,9 +116,6 @@ class TestConcurrency:
                     response = client.get('/preview-data')
                     results.append(('read', worker_id, response.status_code))
 
-                    # Also test aggregated summary
-                    response = client.get('/aggregated')
-                    results.append(('aggregated', worker_id, response.status_code))
             except Exception as e:
                 errors.append(('read', worker_id, str(e)))
 
@@ -144,16 +141,16 @@ class TestConcurrency:
         # All operations should complete successfully
         write_results = [r for r in results if r[0] == 'write']
         read_results = [r for r in results if r[0] == 'read']
-        aggregated_results = [r for r in results if r[0] == 'aggregated']
+        
 
         assert len(write_results) == 3, f"Expected 3 write operations, got {len(write_results)}"
         assert len(read_results) == 3, f"Expected 3 read operations, got {len(read_results)}"
-        assert len(aggregated_results) == 3, f"Expected 3 aggregated operations, got {len(aggregated_results)}"
+        
 
         for operation, worker_id, status in write_results:
             assert status == 302, f"Write operation {worker_id} failed with status {status}"
 
-        for operation, worker_id, status in read_results + aggregated_results:
+        for operation, worker_id, status in read_results:
             assert status == 200, f"Read operation {operation} {worker_id} failed with status {status}"
 
         assert len(errors) == 0, f"Errors occurred during concurrent operations: {errors}"
@@ -279,43 +276,6 @@ class TestConcurrency:
         from models import query_data_entries
         uploaded_entries = query_data_entries(limit=1000)
         assert len(uploaded_entries) >= 5, f"Expected at least 5 entries from concurrent uploads, got {len(uploaded_entries)}"
-
-    def test_aggregated_summary_cache_race_condition(self, populated_db):
-        """Test race condition pada aggregated summary cache"""
-        def summary_worker(worker_id):
-            with populated_db.application.test_client() as client:
-                # Trigger summary refresh
-                df = pd.DataFrame({'Indicator': [f'Ind_{worker_id}'], '2024-01': [100]})
-                excel_buffer = BytesIO()
-                df.to_excel(excel_buffer, index=False)
-                excel_buffer.seek(0)
-
-                data = {
-                    'uploader': f'User_{worker_id}',
-                    'version': 'v1.0',
-                    'data_type': 'flow',
-                    'time_period': 'monthly'
-                }
-                file_data = (excel_buffer, f'summary_{worker_id}.xlsx')
-
-                response = client.post('/upload',
-                                     data=data,
-                                     content_type='multipart/form-data',
-                                     data_file=file_data)
-
-                # Check summary page
-                summary_response = client.get('/aggregated')
-                return response.status_code, summary_response.status_code, worker_id
-
-        # Run concurrent operations that trigger summary updates
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(summary_worker, i) for i in range(5)]
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
-
-        # All operations should succeed
-        for upload_status, summary_status, worker_id in results:
-            assert upload_status == 302, f"Upload {worker_id} failed with status {upload_status}"
-            assert summary_status == 200, f"Summary {worker_id} failed with status {summary_status}"
 
     def test_concurrent_manual_entries(self, test_client):
         """Test input manual bersamaan"""

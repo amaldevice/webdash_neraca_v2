@@ -33,7 +33,6 @@ def test_create_app_registers_core_endpoints(db_path, monkeypatch):
     assert "landing_page" in names
     assert "upload_data" in names
     assert "data_management" in names
-    assert "aggregated_summary" in names
 
 
 def test_module_level_app_is_flask_instance(db_path, monkeypatch):

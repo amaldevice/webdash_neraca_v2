@@ -4,7 +4,7 @@
 
 **Goal:** Mengganti lapisan persistence berbasis `sqlite3` + string SQL dengan **SQLAlchemy 2.0 (sync)**. **Produksi kantor:** MySQL 8 sebagai target utama. **Portabilitas:** satu codebase harus bisa dijalankan dengan **`DATABASE_URL`** menuju **SQLite**, **MySQL**, atau **PostgreSQL** (dev/CI/staging lain) tanpa fork aplikasi — perbedaan dialek diisolasi di modul kecil (upsert, error duplicate, batas bind batch, opsi pool). **CRUD / clean code:** permukaan publik kecil, nama fungsi jelas (*list / get / save / delete*), kurangi fungsi raksasa dan cabang bersarang; **Clean Architecture ringan:** persistence + SQLAlchemy hanya di lapisan luar (`infrastructure/` atau `models/persistence/`); `routes` → `services` orkestrasi; tanpa ORM di `excel_parser/`.
 
-**Architecture:** Pola **strangler** + **“dialect quarantine”**: query utama pakai **`select()` / `update()` / `delete()`** dan tipe kolom portabel (`String`, `Integer`, `Numeric`, `DateTime`); hanya titik rawa (terutama **upsert unik** + deteksi **duplicate key**) yang memakai **dispatcher** `engine.dialect.name in ("sqlite", "mysql", "postgresql")`. Flask: `Engine` + `scoped_session`, `teardown_appcontext` memanggil `remove()`. **Repository tipis** (boleh mulai sebagai modul fungsi, bukan kelas berat): mis. `entries_repository`, `summary_repository` — satu tanggung jawab per file. Opsional: `Protocol` di `ports/` bila tim siap.
+**Architecture:** Pola **strangler** + **“dialect quarantine”**: query utama pakai **`select()` / `update()` / `delete()`** dan tipe kolom portabel (`String`, `Integer`, `Numeric`, `DateTime`); hanya titik rawa (terutama **upsert unik** + deteksi **duplicate key**) yang memakai **dispatcher** `engine.dialect.name in ("sqlite", "mysql", "postgresql")`. Flask: `Engine` + `scoped_session`, `teardown_appcontext` memanggil `remove()`. **Repository tipis** (boleh mulai sebagai modul fungsi, bukan kelas berat): mis. `entries_repository` — satu tanggung jawab per file. Opsional: `Protocol` di `ports/` bila tim siap.
 
 **Tech stack:** Python 3.11–3.13, Flask 3.1, **SQLAlchemy ≥2.0**, **Alembic**, driver opsional ter-pin: `pymysql` / `mysqlclient` (`mysql+pymysql://…`), `psycopg[binary]>=3` (`postgresql+psycopg://…`), SQLite built-in (`sqlite:///…`). CI disarankan **matrix** minimal: SQLite (cepat) + satu job service **MySQL**; PostgreSQL job opsional tapi disarankan agar regresi dialek tidak menumpuk.
 
@@ -21,7 +21,7 @@
 | **P1** | Deps + `database_url` / `use_sqlalchemy` + tes | — | **Selesai** (runtime deps di `requirements.txt`; `psycopg` di `requirements-dev.txt`; `tests/test_database_config.py`) |
 | **P2** | `infrastructure/db.py` + hook `create_app` / teardown session | — | **Selesai** (`infrastructure/db.py`, `dispose_engine` bila tanpa `DATABASE_URL`, `tests/test_app_factory.py::test_create_app_sqlalchemy_engine_when_database_url_set`) |
 | **P3** | ORM models + Alembic initial | — | **Selesai** (`infrastructure/orm_models.py`, `alembic.ini`, `alembic/env.py`, `alembic/versions/001_initial_schema.py`, `tests/test_alembic_initial.py`, README Alembic) |
-| **P4–P7** | Read path, upsert portable, browse/summary, `db_errors` + `upload_flow` | Setelah P3: **boleh paralel** per domain (A/B/C) | **P4** read-path ✓. **P5** write-path ✓ (`dialect_upsert`, `mutations`, `scoped_transaction` di `db.py`, `app` pytest-safe). **P6** browse + `summary_store` ✓ (cabang SA, urut `created_at`/`updated_at` tanpa `datetime()` di path SA; kolom tetap `Text` ISO — migrasi `DateTime` ditunda). **P7** ✓ (`services/db_errors.py`, `upload_flow` + `engine_dialect_name`, `tests/test_db_errors.py`). |
+| **P4–P6** | Read path, upsert portable, browse, `db_errors` + `upload_flow` | Setelah P3: **boleh paralel** per domain (A/B/C) | **P4** read-path ✓. **P5** write-path ✓ (`dialect_upsert`, `mutations`, `scoped_transaction` di `db.py`, `app` pytest-safe). **P6** browse ✓ (query metrik langsung dari `data_entries`, tanpa cache agregat terpisah). **P7** ✓ (`services/db_errors.py`, `upload_flow` + `engine_dialect_name`, `tests/test_db_errors.py`). |
 | **P8–P9** | SQL keluar dari service + dekopling `models/__init__` | P8a preview vs P8b period_comparisons paralel | **Selesai** — Task 8 (termasuk `fetch_series_for_comparison` SA) + Task 9; langkah commit di rencana tercentang. |
 | **P10–P13** | CI matrix, ETL, hapus legacy, CRUD repository | P10 CI terpisah dari P11 skrip | **Selesai** — P10 CI multi-dialect, P11 skrip ETL, P12 cutover SA-only + tes (`temp_db_path` per-tes di simple_tests), P13 repository + `EntryListParams`. |
 
@@ -35,7 +35,7 @@
 |--------|------------------|
 | Hanya `sqlite3` | `models/connection.py` — `get_conn()`, `row_factory=Row`, `PARSE_DECLTYPES`, tidak ada pool |
 | Upsert SQLite | `models/mutations.py` — `INSERT ... ON CONFLICT(...) DO UPDATE` + `excluded.*` |
-| Ordering SQLite | `datetime(created_at)` / `datetime(updated_at)` di `models/queries.py`, `browse.py`, `summary_store.py` |
+| Ordering SQLite | `datetime(created_at)` / `datetime(updated_at)` di `models/queries.py`, `browse.py` |
 | Integrity string match | `services/upload_flow.py` — `sqlite3.IntegrityError` + substring `UNIQUE constraint failed` (empat blok) |
 | SQL di service | `services/period_comparisons.py`, `services/upload_preview.py` — `get_conn()` langsung; batch + komentar batas bind SQLite (~999) di preview |
 | Coupling paket | `models/__init__.py` — re-export `calculate_period_comparisons` dari `services` → baur domain/persistence |
@@ -59,10 +59,10 @@
 ## CRUD Pythonic & penyederhanaan (clean code + CA ringan)
 
 - **Permukaan kecil:** route memanggil service; service memanggil **repository** (bukan 40+ baris SQL inline). Satu alur = satu fungsi tingkat atas + helper privat pendek.
-- **Nama bermakna:** hindari `apply_*` generik tanpa konteks; prefer `save_uploaded_entries`, `delete_entries_by_filter`, `list_entries_page`, `replace_aggregated_summary`.
+- **Nama bermakna:** hindari `apply_*` generik tanpa konteks; prefer `save_uploaded_entries`, `delete_entries_by_filter`, `list_entries_page`, `refresh_dashboard_metrics`.
 - **Struktur data:** `TypedDict` / `dataclass` untuk *filter query* dan *payload insert* di boundary repository ↔ service (bukan `Dict` tak bertanda di mana-mana).
 - **Error handling:** tangkap `IntegrityError` di satu lapisan repository atau `db_errors` — service hanya memetakan ke pesan user / kode alur upload.
-- **SRP:** pecah `services/data_management_actions.py` dan `services/upload_flow.py` menjadi langkah-langkah bernama (validasi → persist → refresh summary) tanpa menggandakan logika cek duplikat.
+- **SRP:** pecah `services/data_management_actions.py` dan `services/upload_flow.py` menjadi langkah-langkah bernama (validasi → persist → sinkronisasi metrik) tanpa menggandakan logika cek duplikat.
 - **Import:** `excel_parser` dan domain murni **tanpa** SQLAlchemy; **frame-orm-in-infrastructure** (lihat skill clean-architecture).
 
 ---
@@ -87,10 +87,10 @@ Pilih kandidat untuk drill-down desain interface terpisah (issue RFC) bila diper
 |------|--------|
 | `config.py` | `DATABASE_URL`, `SQLALCHEMY_ENGINE_OPTIONS` (pool kecil untuk MySQL/PG; khusus SQLite sesuai rekomendasi SA), flag strangler legacy sementara |
 | `infrastructure/db.py` (baru) atau `models/db_session.py` | `create_engine(url, **opts_from_dialect)`, `scoped_session`, `teardown_appcontext` |
-| `infrastructure/orm_models.py` (baru) | `DeclarativeBase`, `Mapped`, tabel `data_entries`, `aggregated_summary` |
+| `infrastructure/orm_models.py` (baru) | `DeclarativeBase`, `Mapped`, tabel `data_entries` |
 | `infrastructure/dialect_upsert.py` (baru) | Hanya logika beda dialek untuk upsert batch |
 | `infrastructure/dialect_batch.py` (baru) | `chunk_in_batches(rows, engine)` untuk batas variabel per dialek |
-| `models/repositories/` atau `infrastructure/repositories/` | `entries_repository.py`, `summary_repository.py` — CRUD Pythonic, panggilan dari `services/*` |
+| `models/repositories/` atau `infrastructure/repositories/` | `entries_repository.py` — CRUD Pythonic, panggilan dari `services/*` |
 | `alembic/` | Revisi skema; **prod** tidak mengandalkan `CREATE TABLE IF NOT EXISTS` di runtime |
 | `scripts/migrate_sqlite_to_mysql.py` | ETL one-off ke MySQL kantor; untuk PG gunakan skrip paralel atau parameter URL target generik bila perlu |
 | `requirements.txt` | Pin `sqlalchemy`, `alembic`, `pymysql`, opsional `psycopg[binary]` untuk CI/dev PG |
@@ -201,15 +201,15 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 
 ---
 
-### Task 6: `browse` + `summary_store` + ordering datetime
+### Task 6: `browse` + ordering datetime
 
 **Files:**
-- Modify: `models/browse.py`, `models/summary_store.py`
+- Modify: `models/browse.py`
 - Test: `tests/test_models.py`, smoke `tests/simple_tests/functional_tests/`
 
 - [x] **Step 1: Urutan portabel tanpa `datetime(created_at)` di path SA** — `ORDER BY created_at DESC` / `updated_at DESC` pada kolom `Text` (ISO); legacy sqlite tetap `datetime(...)`. Migrasi kolom ke tipe `DateTime` + backfill string → ditunda (revisi Alembic terpisah bila perlu).
 
-- [x] **Step 2: `summary_store`** — pola delete-all + insert satu baris lewat `delete`/`insert` + `scoped_transaction()`; `browse.py` fungsi terkait memakai `select`/`func`/`group_by` bila SA aktif.
+- [x] **Step 2: Metode agregasi langsung** — `browse.py` fungsi terkait memakai `select`/`func`/`group_by` bila SA aktif; metrik dihitung saat request.
 
 - [x] **Tes:** `tests/test_browse_summary_sqlalchemy.py` (+ regresi `tests/test_models.py`).
 
@@ -294,9 +294,9 @@ Tambahan: `python -m pytest tests/test_queries_sqlalchemy.py tests/test_bugs.py 
 - Add: `scripts/migrate_sqlite_to_mysql.py` (target SQLAlchemy: MySQL/MariaDB atau PostgreSQL)
 - Modify: `README.md` — subseksi migrasi skrip
 
-- [x] **Step 1:** Baca SQLite lewat engine `sqlite:///`; tulis ke target dengan `INSERT` per chunk (default 500) + commit per chunk; tabel `data_entries` lalu `aggregated_summary`. Opsi `--truncate-target`, `--dry-run`, env `SQLITE_SOURCE_PATH` / `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL`.
+- [x] **Step 1:** Baca SQLite lewat engine `sqlite:///`; tulis ke target dengan `INSERT` per chunk (default 500) + commit per chunk; tabel `data_entries` saja. Opsi `--truncate-target`, `--dry-run`, env `SQLITE_SOURCE_PATH` / `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL`.
 
-- [x] **Step 2:** Verifikasi pasca-muat: `COUNT(*)` + `SUM(value)` `data_entries` dan `COUNT(*)` `aggregated_summary` sumber vs tujuan (gagal jika tidak cocok).
+- [x] **Step 2:** Verifikasi pasca-muat: `COUNT(*)` + `SUM(value)` `data_entries` sumber vs tujuan (gagal jika tidak cocok).
 
 - [x] **Step 3:** Commit
 

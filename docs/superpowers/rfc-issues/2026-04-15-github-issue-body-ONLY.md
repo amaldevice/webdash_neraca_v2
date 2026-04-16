@@ -22,7 +22,7 @@ Meta-issue / RFC to replace ad-hoc `sqlite3` + string SQL with **SQLAlchemy 2.0 
 2. **Portable backends:** one codebase; `DATABASE_URL` selects dialect. Production = MySQL; dev/CI may use SQLite and/or PostgreSQL.
 3. **Dialect quarantine:** `dialect_upsert.py`, `dialect_batch.py`, centralized `is_duplicate_key_error(exc, dialect_name)` (MySQL 1062, PG 23505, SQLite messages) — no scattered driver string matching in upload flows.
 4. **Alembic** as source of truth for schema; avoid ad-hoc `CREATE TABLE` on startup for migrated environments.
-5. **CRUD refactor (Task 13 in plan):** repository-style modules (`entries_repository`, `summary_repository`), meaningful function names, reduce mega-functions in `upload_flow` / `data_management_actions`; TypedDict/dataclass at repository boundaries where it reduces ambiguity.
+5. **CRUD refactor (Task 13 in plan):** repository-style modules (`entries_repository` / service-level helpers), meaningful function names, reduce mega-functions in `upload_flow` / `data_management_actions`; TypedDict/dataclass at repository boundaries where it reduces ambiguity.
 6. **CI:** default fast SQLite job + **integration** job(s) with MySQL service; PostgreSQL job recommended for upsert/integrity regression.
 
 ### Non-goals (for this RFC)
@@ -49,7 +49,7 @@ Meta-issue / RFC to replace ad-hoc `sqlite3` + string SQL with **SQLAlchemy 2.0 
 | P3 | ORM models + Alembic initial revision | `infrastructure/orm_models.py`, `alembic/` |
 | P4 | Read path strangler | `models/queries.py`, `models/browse.py` |
 | P5 | Portable upsert + writes + batch chunking | `infrastructure/dialect_upsert.py`, `infrastructure/dialect_batch.py`, `models/mutations.py` |
-| P6 | Browse/summary + portable datetime columns | `models/browse.py`, `models/summary_store.py` |
+| P6 | Browse + portable datetime columns | `models/browse.py` |
 | P7 | Integrity / duplicate handling | `services/db_errors.py`, `services/upload_flow.py` |
 | P8 | Move SQL out of services | `services/period_comparisons.py`, `services/upload_preview.py` |
 | P9 | Decouple `models/__init__.py` re-exports | `models/__init__.py`, callers |

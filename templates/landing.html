@@ -1,29 +1,73 @@
-{% extends "base_tailwind.html" %}
-{% block page_header %}
-{% set page_header_title = "Dasbor Ringkasan" %}
-{% set page_header_description = "Ringkasan data terbaru dari proses agregasi dan unggahan BPS." %}
-{% set page_header_actions %}
+{% extends "base_tailwind.html" %} {% block page_header %} {% set
+page_header_title = "Dasbor Data" %} {% set page_header_description = "Ringkasan
+repository dan titik masuk pengelolaan data." %} {% set page_header_actions %}
 <span class="chip">Terbaru</span>
 <a class="btn-soft" href="{{ url_for('upload_data') }}">Mulai Unggah</a>
-{% endset %}
-{{ super() }}
-{% endblock %}
-{% block content %}
-{% include "partials/_landing_summary_cards.html" %}
-
+{% endset %} {{ super() }} {% endblock %} {% block content %}
+<div class="section-title">
+  <div>
+    <h3 class="text-lg font-semibold">Ringkasan data repository</h3>
+    <p class="hint">Ringkasan dari isi database saat ini.</p>
+  </div>
+</div>
+<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Total indikator</p>
+    <p class="mt-1 text-2xl font-semibold">
+      {{ landing_summary.total_indicators }}
+    </p>
+  </article>
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Total baris data</p>
+    <p class="mt-1 text-2xl font-semibold">
+      {{ landing_summary.total_data_rows }}
+    </p>
+  </article>
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Data monthly</p>
+    <p class="mt-1 text-2xl font-semibold">
+      {{ landing_summary.monthly_rows }}
+    </p>
+  </article>
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Data quarterly</p>
+    <p class="mt-1 text-2xl font-semibold">
+      {{ landing_summary.quarterly_rows }}
+    </p>
+  </article>
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Data yearly</p>
+    <p class="mt-1 text-2xl font-semibold">{{ landing_summary.yearly_rows }}</p>
+  </article>
+  <article class="panel">
+    <p class="text-xs text-base-content/60">Update terakhir</p>
+    <p class="mt-1 text-2xl font-semibold">
+      {% if landing_summary.latest_uploader or landing_summary.latest_version %}
+      {{ landing_summary.latest_created_at | to_wita if landing_summary.latest_created_at else "—" }}
+      {% else %}
+      Belum ada data
+      {% endif %}
+    </p>
+  </article>
+</section>
 <section class="panel">
-    <div class="section-title">
-        <div>
-            <h3 class="text-lg font-semibold">Mulai kelola data neraca</h3>
-            <p class="hint">Unggah file Excel atau input manual, lalu cek ringkasan agregat.</p>
-        </div>
+  <div class="section-title">
+    <div>
+      <h3 class="text-lg font-semibold">Mulai kelola data neraca</h3>
+      <p class="hint">
+        Unggah file Excel atau input manual, lalu kelola data repository.
+      </p>
     </div>
-    <div class="form-actions-bar">
-        <div class="join join-vertical w-full sm:join-horizontal sm:w-auto">
-            <a class="btn btn-primary join-item" href="{{ url_for('upload_data') }}">Unggah Excel</a>
-            <a class="btn-soft join-item" href="{{ url_for('manual_input') }}">Input Manual</a>
-            <a class="btn-soft join-item" href="{{ url_for('aggregated_summary') }}">Ringkasan Agregat</a>
-        </div>
+  </div>
+  <div class="form-actions-bar">
+    <div class="join join-vertical w-full sm:join-horizontal sm:w-auto">
+      <a class="btn btn-primary join-item" href="{{ url_for('upload_data') }}"
+        >Unggah Excel</a
+      >
+      <a class="btn-soft join-item" href="{{ url_for('manual_input') }}"
+        >Input Manual</a
+      >
     </div>
+  </div>
 </section>
 {% endblock %}

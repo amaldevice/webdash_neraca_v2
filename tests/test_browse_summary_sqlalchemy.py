@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""browse + summary_store via SQLAlchemy on SQLite file."""
+"""browse helpers via SQLAlchemy on SQLite file."""
 from __future__ import annotations
 
 import os
@@ -17,7 +17,7 @@ def _restore_default_pytest_engine() -> None:
     dispose_engine()
     init_engine(url)
     models.init_db()
-from models import browse, summary_store
+from models import browse
 
 
 def test_browse_and_summary_on_sa(tmp_path, monkeypatch) -> None:
@@ -47,22 +47,9 @@ def test_browse_and_summary_on_sa(tmp_path, monkeypatch) -> None:
             ]
         )
 
-        meta = browse.get_latest_metadata()
-        years = browse.get_distinct_years()
-        cards = browse.get_aggregated_cards(limit=5)
         filt = browse.get_filter_options()
-        ind = browse.get_unique_indicators()
-
-        summary_store.save_aggregated_summary({"k": "v"})
-        loaded = summary_store.load_cached_summary()
-
-        assert meta["uploader"] == "A"
-        assert meta["version"] == "v1"
-        assert years == [2024]
-        assert len(cards) >= 1
         assert "GDP" in filt["indicators"]
-        assert ind == ["GDP"]
-        assert loaded == {"k": "v"}
+        assert "A" in filt["uploaders"]
     finally:
         monkeypatch.delenv("DATABASE_URL", raising=False)
         _restore_default_pytest_engine()

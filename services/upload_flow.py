@@ -18,7 +18,6 @@ from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from excel_parser import parse_excel_payload
 from models import insert_entries, upsert_entries
-from services.aggregation import refresh_aggregated_summary
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
 from services.manual_entries import build_manual_entry
 from services.upload_preview import (
@@ -251,11 +250,10 @@ def prepare_duplicate_plan(
 
 def persist_upload_entries(entries: list[dict[str, Any]]) -> None:
     """
-    Persist valid entries ke storage utama kemudian perbarui ringkasan agregasi.
+    Persist valid entries ke storage utama.
     Dipakai agar alur insert langsung maupun setelah dedupe memakai pola transaksi yang sama.
     """
     insert_entries(entries)
-    refresh_aggregated_summary()
 
 
 def persist_upload_entries_with_overwrite(entries: list[dict[str, Any]]) -> None:
@@ -264,7 +262,6 @@ def persist_upload_entries_with_overwrite(entries: list[dict[str, Any]]) -> None
     Dipakai untuk alur konfirmasi duplikasi saat user memilih baris tertentu untuk dikecualikan.
     """
     upsert_entries(entries)
-    refresh_aggregated_summary()
 
 
 def _build_duplicate_confirmation_summary(
@@ -882,7 +879,6 @@ def process_manual_input_post(
 
     try:
         upsert_entries([manual_entry])
-        refresh_aggregated_summary()
         return ManualFlowResponse(
             kind="redirect",
             flashes=[("Entri manual berhasil dicatat dan disimpan.", "success")],

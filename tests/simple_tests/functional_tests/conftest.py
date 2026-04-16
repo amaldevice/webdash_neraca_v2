@@ -198,8 +198,4 @@ def populated_db(test_client, sample_data_entries):
     models.clear_all_data()
     models.insert_entries(sample_data_entries)
 
-    # Refresh aggregated summary
-    from aggregator import refresh_aggregated_summary
-    refresh_aggregated_summary()
-
     return test_client

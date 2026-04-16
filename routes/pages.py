@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Public pages: landing, preview, export, aggregated, chart/analysis JSON."""
+"""Public pages: landing, preview, export, chart/analysis JSON."""
 from __future__ import annotations
 
 from flask import Flask, jsonify, render_template, request
 
-from models import get_distinct_years, get_filter_options, get_unique_indicators
+from models import get_filter_options, get_landing_summary
 from models.repositories.entry_list import count_entries_for_list, fetch_entries_for_list
-from services.aggregation import fetch_aggregated_summary
 from services.period_comparisons import calculate_period_comparisons
 from services.charts import generate_indicator_line_chart
 from services.list_view import (
@@ -19,8 +18,8 @@ from services.request_params import get_period_range_params, get_value_range_par
 
 
 def landing_page():
-    summary = fetch_aggregated_summary()
-    return render_template("landing.html", summary=summary)
+    landing_summary = get_landing_summary()
+    return render_template("landing.html", landing_summary=landing_summary)
 
 
 def preview_data():
@@ -32,8 +31,6 @@ def preview_data():
     value_min, value_max = get_value_range_params(request.args)
 
     page, limit, offset = parse_entries_pagination(request)
-
-    summary = fetch_aggregated_summary()
 
     list_params = EntryListParams.from_request_strings(
         data_type=data_type,
@@ -60,7 +57,7 @@ def preview_data():
     filter_options = get_filter_options()
 
     return render_template(
-        "preview.html", summary=summary, entries=entries, filters=filters, filter_options=filter_options
+        "preview.html", entries=entries, filters=filters, filter_options=filter_options
     )
 
 
@@ -84,19 +81,6 @@ def export_data():
     )
     entries = fetch_entries_for_list(limit=1000, offset=0, filters=list_params.to_query_kwargs())
     return build_raw_data_export_response(entries, fmt)
-
-
-def aggregated_summary():
-    summary = fetch_aggregated_summary()
-    indicators = get_unique_indicators()
-    summary_dict = summary if isinstance(summary, dict) else {}
-    available_years = summary_dict.get("available_years")
-    if not isinstance(available_years, list) or not available_years:
-        available_years = get_distinct_years()
-    summary_with_indicators = dict(summary_dict)
-    summary_with_indicators["indicators"] = indicators
-    summary_with_indicators["available_years"] = available_years
-    return render_template("aggregated.html", summary=summary_with_indicators)
 
 
 def generate_plot():
@@ -146,7 +130,6 @@ def register(app: Flask) -> None:
     app.add_url_rule("/", endpoint="landing_page", view_func=landing_page, methods=["GET"])
     app.add_url_rule("/preview-data", endpoint="preview_data", view_func=preview_data, methods=["GET"])
     app.add_url_rule("/export", endpoint="export_data", view_func=export_data, methods=["GET"])
-    app.add_url_rule("/aggregated", endpoint="aggregated_summary", view_func=aggregated_summary, methods=["GET"])
     app.add_url_rule("/generate-plot", endpoint="generate_plot", view_func=generate_plot, methods=["POST"])
     app.add_url_rule(
         "/generate-period-analysis",

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy import and_, case, desc, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from infrastructure.db import get_session, is_engine_initialized
@@ -103,6 +103,68 @@ def get_total_entries_count(
         value_min,
         value_max,
     )
+
+
+def _sa_get_landing_summary() -> Dict[str, Any]:
+    from infrastructure.orm_models import DataEntry
+
+    summary = {
+        "total_data_rows": 0,
+        "total_indicators": 0,
+        "monthly_rows": 0,
+        "quarterly_rows": 0,
+        "yearly_rows": 0,
+        "latest_uploader": None,
+        "latest_version": None,
+        "latest_created_at": None,
+    }
+
+    metrics_stmt = select(
+        func.count(DataEntry.id).label("total_data_rows"),
+        func.count(func.distinct(DataEntry.indicator_name)).label("total_indicators"),
+        func.sum(case((DataEntry.time_period == "monthly", 1), else_=0)).label("monthly_rows"),
+        func.sum(case((DataEntry.time_period == "quarterly", 1), else_=0)).label("quarterly_rows"),
+        func.sum(case((DataEntry.time_period == "yearly", 1), else_=0)).label("yearly_rows"),
+    )
+    latest_stmt = (
+        select(DataEntry.uploader_name, DataEntry.version, DataEntry.created_at)
+        .order_by(desc(DataEntry.created_at), desc(DataEntry.id))
+        .limit(1)
+    )
+
+    try:
+        session = get_session()
+        metrics_row = session.execute(metrics_stmt).one()
+        latest_row = session.execute(latest_stmt).one_or_none()
+
+        summary["total_data_rows"] = int(metrics_row.total_data_rows or 0)
+        summary["total_indicators"] = int(metrics_row.total_indicators or 0)
+        summary["monthly_rows"] = int(metrics_row.monthly_rows or 0)
+        summary["quarterly_rows"] = int(metrics_row.quarterly_rows or 0)
+        summary["yearly_rows"] = int(metrics_row.yearly_rows or 0)
+        if latest_row is not None:
+            summary["latest_uploader"] = latest_row.uploader_name
+            summary["latest_version"] = latest_row.version
+            summary["latest_created_at"] = latest_row.created_at
+    except SQLAlchemyError:
+        pass
+
+    return summary
+
+
+def get_landing_summary() -> Dict[str, Any]:
+    if not is_engine_initialized():
+        return {
+            "total_data_rows": 0,
+            "total_indicators": 0,
+            "monthly_rows": 0,
+            "quarterly_rows": 0,
+            "yearly_rows": 0,
+            "latest_uploader": None,
+            "latest_version": None,
+            "latest_created_at": None,
+        }
+    return _sa_get_landing_summary()
 
 
 def _sa_query_data_entries(

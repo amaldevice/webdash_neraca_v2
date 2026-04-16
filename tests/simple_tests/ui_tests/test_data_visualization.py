@@ -108,43 +108,6 @@ class TestDataVisualization:
             print(f"❌ Dashboard data table display failed: {e}")
             raise
 
-    def test_aggregated_page_charts(self):
-        """Test halaman aggregated menampilkan chart"""
-        try:
-            # Navigate to aggregated page
-            aggregated_url = f"{APP_CONFIG['base_url']}/aggregated"
-            result = CallMcpTool(
-                server="user-chrome-devtools",
-                toolName="navigate_page",
-                arguments={
-                    "type": "url",
-                    "url": aggregated_url
-                }
-            )
-
-            # Wait for charts to load
-            time.sleep(3)
-
-            # Take screenshot of aggregated view
-            if PATHS["capture_screenshots"]:
-                screenshot_path = get_screenshot_path("aggregated_charts")
-                CallMcpTool(
-                    server="user-chrome-devtools",
-                    toolName="take_screenshot",
-                    arguments={
-                        "format": "png",
-                        "fullPage": True,
-                        "filePath": str(screenshot_path)
-                    }
-                )
-
-            print("✅ Aggregated page charts test completed")
-            assert True
-
-        except Exception as e:
-            print(f"❌ Aggregated page charts failed: {e}")
-            raise
-
     def test_export_buttons_visibility(self):
         """Test tombol export terlihat di dashboard"""
         try:

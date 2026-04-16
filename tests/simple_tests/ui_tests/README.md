@@ -59,7 +59,7 @@ pytest test_form_interactions.py -v
 ### **3. Data Visualization**
 - ✅ Summary display di landing page
 - ✅ Data table di dashboard
-- ✅ Charts di halaman aggregated
+- ✅ Visualization widget di dashboard (summary cards + analisis rentang)
 - ✅ Export buttons visibility
 - ✅ Empty state display
 - ✅ Filter UI interaction

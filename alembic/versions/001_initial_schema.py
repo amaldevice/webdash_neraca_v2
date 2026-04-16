@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Initial schema: data_entries + aggregated_summary (mirror models.connection.init_db)."""
+"""Initial schema: data_entries only."""
 
 from typing import Sequence, Union
 
@@ -37,16 +37,6 @@ def upgrade() -> None:
         ["uploader_name", "version", "indicator_name", "year", "month", "quarter"],
         unique=True,
     )
-    op.create_table(
-        "aggregated_summary",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("summary_json", sa.Text(), nullable=False),
-        sa.Column("updated_at", sa.Text(), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-    )
-
-
 def downgrade() -> None:
     op.drop_index("ux_data_entry_variant", table_name="data_entries")
-    op.drop_table("aggregated_summary")
     op.drop_table("data_entries")

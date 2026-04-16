@@ -1,6 +1,6 @@
 # Sistem Data BPS
 
-> Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun ringkasan agregat, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
+> Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun metrik repository, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
 
 ## Langkah Cepat (1-3 Langkah)
 
@@ -67,25 +67,40 @@ Skrip: `scripts/migrate_sqlite_to_mysql.py` (target URL boleh MySQL/MariaDB atau
 2. Uji baca saja: `python scripts/migrate_sqlite_to_mysql.py --dry-run` (opsional set `MIGRATE_TARGET_URL`).
 3. Muat penuh (biasanya kosongkan dulu): `python scripts/migrate_sqlite_to_mysql.py --truncate-target --target-url "mysql+pymysql://..."` atau set env `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL` dan `SQLITE_SOURCE_PATH` ke file `.db` sumber.
 
-Skrip memverifikasi jumlah baris dan `SUM(value)` pada `data_entries` serta jumlah baris `aggregated_summary` setelah selesai.
+Skrip memverifikasi jumlah baris dan `SUM(value)` pada `data_entries` setelah selesai.
+
+### Backup data SQL → SQLite untuk cadangan
+
+Skrip: `scripts/migrate_mysql_to_sqlite.py`
+
+1. Set DSN sumber (MySQL/PostgreSQL): `--source-url` atau env `MYSQL_SOURCE_URL` / `MYSQL_TARGET_URL` / `MIGRATE_TARGET_URL` / `DATABASE_URL` (non-sqlite).
+2. Jalankan dry-run dulu: `python scripts/migrate_mysql_to_sqlite.py --dry-run`.
+3. Backup penuh ke file default: `python scripts/migrate_mysql_to_sqlite.py`  
+   (default akan menulis ke `backups/data_backup_<YYYYMMDD_HHMMSS>.db`).
+4. Atau backup ke lokasi tertentu: `python scripts/migrate_mysql_to_sqlite.py --sqlite-path "D:/backup/webdash.db"`.
+5. Untuk menulis ke target yang sudah ada: gunakan `--truncate-target` (replace) atau `--append`.
+
+Skrip memverifikasi jumlah baris dan `SUM(value)` antara sumber dan target setelah copy.
+
+Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `chmod`/izin akses minimum pada server.
 
 ## Fitur
 
 ### Fitur Inti
-- [x] **Portal beranda (landing page)**: Menyediakan kartu ringkasan agregat, metadata penting, dan akses cepat untuk unggah, input manual, serta ringkasan.
+- [x] **Portal beranda (landing page)**: Menyediakan metrik ringkas repository, metadata penting, dan akses cepat untuk unggah serta input manual.
 - [x] **Dua jalur masuk data**: Parser Excel mendukung template horizontal dan vertikal, sedangkan input manual tetap memaksa keterisian metadata secara konsisten.
-- [x] **Agregasi dan cache ringkasan**: Layer agregator menyimpan kartu ringkasan dan metadata yang siap pakai ulang pada halaman beranda maupun halaman agregat.
+- [x] **Metrik singkat repository**: Menampilkan ringkasan indikator aktif, rentang periode, dan jumlah baris dari data aktif.
 
 ### Fitur Tambahan
 - [x] **Penyaringan rentang periode**
   - Halaman **Preview-Data** dan **Data-Management** menggunakan parameter `start_period` + `end_period`.
-  - Halaman **Aggregated** menggunakan parameter `period_start` + `period_end` untuk grafik, serta `period_start` + `end_period` untuk analisis periode.
+  - Halaman **Dashboard** menggunakan parameter `period_start` + `period_end` untuk grafik/analisis, serta `start_period` + `end_period` untuk filter rentang yang konsisten.
   - Semua fitur filter ini berlaku untuk proses ekspor dan analisis agar hasil yang ditampilkan konsisten dengan ruang lingkup waktu yang dipilih.
 - [x] **Penelusuran tabel terfilter**: Mendukung paginasi dan pembatasan jumlah data per halaman, dengan tampilan baris/tabel yang konsisten.
 - [x] **Ekspor data mentah**: Menyediakan unduhan CSV/Excel melalui `/export` dengan mempertahankan parameter filter aktif.
 - [x] **Validasi metadata**: Memastikan atribut seperti `uploader`, `version`, `data_type`, dan `time_period` tervalidasi sejak proses unggah/input.
 - [x] **Aksi massal**: Halaman Data-Management menyediakan pembaruan massal, penghapusan massal, dan penghapusan berbasis filter.
-- [x] **Alur analisis periode**: Halaman Aggregated mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
+- [x] **Alur analisis periode**: Halaman Dashboard mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
 - [x] **Deteksi duplikasi lintas unggah/manual**: Sistem menandai konflik awal berdasarkan kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`), sekaligus tetap menjaga penyimpanan berdasarkan unique key database.
 
 ### Catatan penting: warning bukan berarti overwrite otomatis
@@ -118,12 +133,12 @@ Skrip memverifikasi jumlah baris dan `SUM(value)` pada `data_entries` serta juml
 ### Ringkasan Berkas Python
 
 - `app.py`: Fabrikasi app Flask dan route utama aplikasi.
-- `aggregator.py`: Wrapper akses agregat yang menjaga kompatibilitas `aggregated_summary`.
+- `aggregator.py`: Dihapus; fitur agregat dan cache ringkas tidak lagi dipakai.
 - `excel_parser.py` (legacy): Modul parser lama (masih tetap dipertahankan untuk kompatibilitas).
 - `models.py` (legacy): Entrypoint kompatibilitas untuk paket `models/`.
-- `models/`: Paket model utama (`connection`, `queries`, `mutations`, `browse`, `summary_store`, `data_filters`).
+- `models/`: Paket model utama (`connection`, `queries`, `mutations`, `browse`, `data_filters`).
 - `infrastructure/orm_models.py`: Model SQLAlchemy 2.0 (mirror skema); `alembic/` + `alembic.ini` untuk migrasi.
-- `services/aggregation.py`: Perhitungan ringkas agregat dan helper refresh cache.
+- `services/aggregation.py`: Dihapus. Metrik dihitung dari data aktif.
 - `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
 - `services/period_analysis_workbook.py`: Generator workbook analisis periode ke Excel.
 - `services/period_comparisons.py`: Orkestrasi kalkulasi analisis periodik.
@@ -141,7 +156,7 @@ Skrip memverifikasi jumlah baris dan `SUM(value)` pada `data_entries` serta juml
 ## Arsitektur
 
 ### Gambaran Tingkat Tinggi
-Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalisasi bersama, lalu disimpan ke `data_entries` di SQLite dengan dukungan cache agregat. Selanjutnya layer agregator memperbarui ringkasan, template menampilkan halaman beranda, pratinjau, manajemen data, serta halaman agregat, dan endpoint ekspor/analisis menyediakan keluaran data mentah maupun hasil perhitungan.
+Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalisasi bersama, lalu disimpan ke `data_entries` di SQLite. Template menampilkan halaman beranda, pratinjau, manajemen data, dan dashboard; endpoint ekspor/analisis menyediakan data mentah serta hasil perhitungan pada mode analisis.
 
 ### Diagram Komponen
 ```
@@ -149,16 +164,15 @@ Halaman Beranda + Form
     ↓ HTTP POST
 Aplikasi Flask (app.py)
     ↓ Parser / helper model
-    ↓ SQLite (data_entries, aggregated_summary)
-Pemicu agregasi (refresh_aggregated_summary) → ringkasan cache
+    ↓ SQLite (data_entries)
     ↓ HTTP GET
-Template Preview / Data-Management / Aggregated
+Template Preview / Data-Management / Dashboard
 ```
 
 ### Alur Data
 1. **Aksi pengguna**: Mengunggah Excel atau mengisi formulir manual dengan metadata (`data_type`, `time_period`).
-2. **Pemrosesan backend**: Validasi → parsing/normalisasi → penyimpanan ke SQLite → pemicu refresh agregasi.
-3. **Respons sistem**: Menampilkan kartu ringkasan terbaru, tabel terfilter, tautan ekspor, dan ringkasan agregat.
+2. **Pemrosesan backend**: Validasi → parsing/normalisasi → penyimpanan ke SQLite.
+3. **Respons sistem**: Menampilkan metrik terbaru, tabel terfilter, dan tautan ekspor.
 
 ### Alur Utama
 1. Pengguna membuka halaman `/` untuk melihat ringkasan terkini, metadata, dan menu cepat.
@@ -167,23 +181,20 @@ Template Preview / Data-Management / Aggregated
 4. Pengguna melanjutkan analisis melalui:
    - `/preview-data` untuk meninjau data tabel dengan filter rentang periode.
    - `/data-management` untuk pemeliharaan data dan tindakan massal.
-   - `/aggregated` untuk melihat ringkasan agregat dan analisis periodik.
+   - `/dashboard` untuk melihat metrik dan analisis periodik.
 5. Semua filter terkait, termasuk `start_period`/`end_period`, ikut diterapkan pada ekspor dan analisis.
 
 ### Alur Tambahan
-- `/aggregated` menampilkan ringkasan cache berikut metadata waktu pembaruan.
-- `/export` menyediakan data mentah (CSV/Excel) sebelum proses agregasi lanjutan.
+- `/dashboard` menampilkan metrik serta opsi analisis yang berangkat dari data aktif.
+- `/export` menyediakan data mentah (CSV/Excel) sesuai filter aktif.
 
 ## Skema Basis Data
 
 ### Tabel Utama
 - **data_entries**: Menyimpan metadata pengunggah, rincian waktu, `data_type`, `time_period`, indikator, dan nilai.
-- **aggregated_summary**: Menyimpan ringkasan JSON terbaru beserta timestamp.
 
 ### Relasi
-```
-data_entries (N) → aggregated_summary (1 snapshot cache per proses refresh)
-```
+- `data_entries` adalah satu-satunya tabel data utama (tanpa cache ringkasan).
 
 ## Tumpukan Teknologi
 
@@ -229,6 +240,7 @@ Variabel yang dipakai aplikasi / tooling:
 | `ALEMBIC_DATABASE_URL` | Override DSN khusus Alembic (opsional). |
 | `DOTENV_PATH` | Path file env tambahan (opsional), dimuat setelah `.env`. |
 | `SQLITE_SOURCE_PATH` / `MIGRATE_TARGET_URL` / `MYSQL_TARGET_URL` | Default opsional untuk skrip `scripts/migrate_sqlite_to_mysql.py`. |
+| `MYSQL_SOURCE_URL` / `SQLITE_BACKUP_PATH` | Opsional untuk skrip `scripts/migrate_mysql_to_sqlite.py`. |
 
 Contoh isi minimal lokal (bukan untuk commit):
 
@@ -244,7 +256,7 @@ GET,POST /upload               # Unggah file Excel
 GET,POST /manual               # Input data manual
 GET  /preview-data             # Pratinjau data + filter + ekspor
 GET,POST /data-management      # Manajemen data + tindakan massal
-GET  /aggregated               # Ringkasan agregat + grafik + analisis
+GET  /dashboard               # Metrik repository + analisis periode
 GET  /export                   # Ekspor CSV/Excel berdasarkan filter aktif
 POST /generate-plot            # Membuat grafik garis indikator berdasarkan rentang periode
 POST /generate-period-analysis  # Membuat analisis perbandingan periode
@@ -257,7 +269,7 @@ Project Python dapat dijalankan dengan perintah berikut:
 ```bash
 python app.py                  # Menjalankan server lokal
 pytest                         # Menjalankan unit test
-python -m py_compile app.py models.py excel_parser.py aggregator.py
+python -m py_compile app.py models.py excel_parser.py
 
 # Aset frontend
 npm run build:css
@@ -270,7 +282,7 @@ npm run build:css
 2. Lakukan unggahan data melalui `/upload` atau input manual pada `/manual`.
 3. Gunakan `/preview-data` untuk memfilter dan mengekspor data mentah.
 4. Gunakan `/data-management` untuk pemeliharaan, pembaruan massal, serta penghapusan data.
-5. Gunakan `/aggregated` untuk visualisasi dan analisis rentang periode.
+5. Gunakan `/dashboard` untuk visualisasi dan analisis rentang periode.
 
 ### Contoh Pemakaian Endpoint
 ```bash
@@ -291,8 +303,8 @@ POST /export-period-analysis (form: period_start=2024, end_period=2024-Q4)
 2. **Data-Management**
    - Buka `/data-management`.
    - Isi periode yang diinginkan, kirimkan filter, lalu pastikan kontrol aksi (`Hapus Berdasarkan Filter`) tersedia sesuai status filter.
-3. **Aggregated**
-   - Buka `/aggregated`.
+3. **Dashboard**
+   - Buka `/dashboard`.
    - Isi `Periode Mulai` dan `Periode Akhir` pada formulir grafik, klik `Hasilkan Grafik Garis`, lalu pastikan payload request membawa `period_start` dan `period_end`.
    - Pada **Analisis Periode**, isi rentang periode dan klik `Hasilkan Analisis Periode`; pastikan hasil dan ekspor analisis juga menggunakan rentang yang sama.
 

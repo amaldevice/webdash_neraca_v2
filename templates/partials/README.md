@@ -10,8 +10,6 @@ Kumpulan komponen dan fragment Jinja2 yang direuse di beberapa halaman.
   Komponen header halaman (judul, deskripsi, tombol aksi).
 - `_flash_messages.html`  
   Tampil notifikasi flash (`success`, `error`, `warning`, `info`) dengan tombol tutup.
-- `_landing_summary_cards.html`  
-  Kartu ringkasan nilai/indicator untuk halaman landing.
 - `_upload_form.html`  
   Form unggah Excel (field metadata + file).
 - `_manual_form.html`  
@@ -34,12 +32,7 @@ Kumpulan komponen dan fragment Jinja2 yang direuse di beberapa halaman.
   JS untuk reset/filter preview, shortcut, dan pengaturan limit.
 - `_script_management_bulk_actions.html`  
   JS bulk action (pilih baris, confirm, update, delete), edit modal, dan sinkron state checkbox.
-- `_aggregated_period_form.html`  
-  Form analisis periode agregat (indikator dan rentang period).
-- `_aggregated_plot_form.html`  
-  Form request grafik line.
-- `_script_aggregated_analysis.html`  
-  JS untuk generate plot (Plotly), render table pivot periodik, dan export analisis period.
+- (Ringkas) Komponen agregat pada halaman lama telah dihapus; alur visualisasi dan analisis rentang periode berjalan dari komponen dashboard saat ini.
 - `_data_type_badge.html`  
   Badge flow/stock.
 - `_time_period_badge.html`  

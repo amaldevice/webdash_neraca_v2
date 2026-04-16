@@ -21,7 +21,6 @@ def _seed_entry():
 
 def test_get_routes(client):
     assert client.get("/").status_code == 200
-    assert client.get("/aggregated").status_code == 200
     assert client.get("/preview-data").status_code == 200
 
 
