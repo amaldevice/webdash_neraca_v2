@@ -8,7 +8,8 @@ Dokumen ini jadi **indeks + ringkasan state** untuk folder `docs/`. Untuk setup 
 
 1. [README.md](../README.md) — instalasi, Alembic, DSN, skrip migrasi data.
 2. **File ini** — peta `docs/`, unggah & dataset, rehearsal migrasi, changelog ringkas.
-3. [troubleshooting/README.md](troubleshooting/README.md) — indeks masalah operasional (MySQL, Windows).
+3. [plans/bps_data_management_system_bd94389d.plan.md](plans/bps_data_management_system_bd94389d.plan.md) — plan Cursor (YAML todos + arsitektur), **disimpan di repo** untuk GitHub.
+4. [troubleshooting/README.md](troubleshooting/README.md) — indeks masalah operasional (MySQL, Windows).
 
 ---
 
@@ -17,7 +18,8 @@ Dokumen ini jadi **indeks + ringkasan state** untuk folder `docs/`. Untuk setup 
 | Path | Isi |
 |------|-----|
 | **README_DOCS.md** (ini) | Indeks, panduan unggah/dataset, rehearsal `dataset_code`, changelog ringkas. |
-| **planning.md** | Stub sinkron Cursor: taut ke sini + plan eksternal; riwayat panjang di git. |
+| **planning.md** | Stub sinkron: README_DOCS + plan YAML di `docs/plans/`. |
+| **plans/** | Plan Cursor yang dilacak Git (`bps_data_management_system_bd94389d.plan.md`); sinkron ke `.cursor/plans/` bila pakai UI plan lokal. |
 | **superpowers/plans/** | Rencana teknis bertahap (SQLAlchemy/MySQL, dataset-aware upload, REKAP sheet, logging). |
 | **superpowers/contracts/** | Kontrak data (mis. matriks dataset). |
 | **superpowers/rfc-issues/** | Ringkasan isu / RFC GitHub. |
@@ -74,6 +76,7 @@ Setelah `alembic upgrade head` (revisi `002_dataset` / `002_dataset_code_upload_
 ## Changelog ringkas (state fungsional)
 
 - **2026-04-17 — Dokumentasi:** `README_DOCS.md` jadi indeks utama; isi `user_upload_datasets.md`, `migration_rehearsal_dataset_code.md`, dan `refactor-planning.md` digabung ke sini lalu file itu dihapus; `planning.md` dirampingkan jadi stub sinkron; aturan Cursor di `.cursor/rules/` dilacak Git (un-ignore selektif); README root menaut ke sini.
+- **2026-04-17 — Plan Cursor di repo:** `docs/plans/bps_data_management_system_bd94389d.plan.md` (salinan YAML + narasi arsitektur) supaya ikut GitHub; sinkron manual ke `%USERPROFILE%\.cursor\plans\` bila UI Cursor dipakai.
 - **2026-04-16 — Dataset-aware:** katalog dataset, template per slug, kolom `dataset_code`, tabel `upload_runs`, parser long-format (`excel_parser/payload.py`, `dataset_long.py`), filter UI dataset-aware.
 - **2026-04-16 — MySQL / Alembic:** mitigasi 1054/1050/1101/1091; migrasi idempotent `002`; skrip `apply_dataset_code_migration.py`; dokumentasi troubleshooting.
 - **2026-04-16 — Windows unggah:** `pd.ExcelFile` ditutup dengan `with` agar tidak WinError 32 saat `os.remove`.
@@ -89,4 +92,4 @@ Rencana refactor struktural panjang (wave upload/period) pernah di `planning.md`
 
 - Baca [README.md](../README.md) dan file ini sebelum mengubah perilaku atau deploy.
 - Aturan Cursor yang di-commit: [.cursor/rules/planning-&-executing-sync.mdc](../.cursor/rules/planning-&-executing-sync.mdc) (sinkron docs + plan + siap produksi kantor).
-- Setelah perubahan fungsional: tambahkan bullet bertanggal di **Changelog ringkas** (bagian atas yang relevan) dan perbarui `docs/planning.md` (stub) bila perlu; sinkronkan juga plan Cursor `bps_data_management_system_bd94389d.plan.md` sesuai aturan repo.
+- Setelah perubahan fungsional: tambahkan bullet di **Changelog ringkas**; perbarui **`docs/plans/bps_data_management_system_bd94389d.plan.md`** (todos YAML); salin ke `.cursor/plans/bps_data_management_system_bd94389d.plan.md` bila perlu; perbarui `docs/planning.md` (stub) bila perlu.

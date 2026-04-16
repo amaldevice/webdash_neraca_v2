@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-**Project state & docs map:** read [docs/README_DOCS.md](../docs/README_DOCS.md) and [README.md](../README.md).
+**Project state & docs map:** read [docs/README_DOCS.md](../docs/README_DOCS.md), [docs/plans/bps_data_management_system_bd94389d.plan.md](../docs/plans/bps_data_management_system_bd94389d.plan.md), and [README.md](../README.md).
 
 ## Project Structure & Module Organization
 Core backend code lives at the repository root: `app.py` (Flask factory + `create_app`), paket **`excel_parser/`** (normalisasi, layout, payload parse), and the **`models/`** package (SQLite: `connection`, `queries`, `mutations`, `browse`, `data_filters`). HTTP routes are registered from the **`routes/`** package (`pages.py`, `upload_routes.py`, `manage.py`) via `register_routes`. Business logic sits under **`services/`** (e.g. `upload_flow`, `upload_preview`, `dataset_catalog`, `template_service`, `data_management_actions`, `period_comparisons`). `aggregator.py` has been removed; cache aggregation layer is no longer used. UI templates are in `templates/` with reusable fragments in `templates/partials/`. Static assets are under `static/` and Tailwind source is in `assets/tailwind.css`. Runtime upload files go to `uploads/` (including disk-backed preview sessions under `uploads/_preview_sessions/`). Primary automated tests are in `tests/`; browser smoke E2E is in **`e2e/`** (Playwright + POM). Tailwind/npm for CSS may use **`metadata/package.json`** separately from root **`package.json`** (Playwright).

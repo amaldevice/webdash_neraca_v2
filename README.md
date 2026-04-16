@@ -2,7 +2,7 @@
 
 > Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun metrik repository, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
 
-**State proyek, peta `docs/`, unggah/dataset, migrasi, changelog:** baca **[docs/README_DOCS.md](docs/README_DOCS.md)** — gabungan ringkas dokumen operasional; stub sinkron ada di [`docs/planning.md`](docs/planning.md).
+**State proyek, peta `docs/`, unggah/dataset, migrasi, changelog:** baca **[docs/README_DOCS.md](docs/README_DOCS.md)** — gabungan ringkas dokumen operasional; stub sinkron [`docs/planning.md`](docs/planning.md); plan Cursor (YAML todos) di **[docs/plans/bps_data_management_system_bd94389d.plan.md](docs/plans/bps_data_management_system_bd94389d.plan.md)** (ikut Git — salin ke `.cursor/plans/` bila pakai UI plan lokal).
 
 ## Langkah Cepat (1-3 Langkah)
 
