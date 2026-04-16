@@ -16,6 +16,11 @@ from models import (
 FlashTuple = Tuple[str, str]
 
 
+def _norm_dataset_filter(raw: str | None) -> str | None:
+    dc = (raw or "").strip()
+    return None if dc == "" else dc
+
+
 def apply_data_management_post(
     form: Any,
     *,
@@ -27,6 +32,7 @@ def apply_data_management_post(
     period_end: str | None,
     value_min: float | None,
     value_max: float | None,
+    dataset_code: str = "",
 ) -> List[FlashTuple]:
     """Run the requested action; side effects on DB. Caller applies flash() for each tuple."""
     messages: List[FlashTuple] = []
@@ -48,6 +54,7 @@ def apply_data_management_post(
             period_end=period_end,
             value_min=value_min,
             value_max=value_max,
+            dataset_code=_norm_dataset_filter(dataset_code),
         )
         messages.append((f"{deleted_count} data berhasil dihapus berdasarkan filter.", "success"))
 
@@ -128,6 +135,7 @@ def apply_data_management_post(
         insert_period_date = form.get("insert_period_date", "").strip()
         insert_indicator = form.get("insert_indicator", "").strip()
         insert_value = form.get("insert_value", "").strip()
+        insert_dataset_code = form.get("insert_dataset_code", "").strip()
 
         if all([insert_uploader, insert_version, insert_indicator, insert_value, insert_period_date]):
             try:
@@ -139,6 +147,7 @@ def apply_data_management_post(
                     period_date=insert_period_date,
                     indicator=insert_indicator,
                     value=float(insert_value),
+                    dataset_code=insert_dataset_code,
                 )
                 messages.append(("Data baru berhasil ditambahkan.", "success"))
             except ValueError:

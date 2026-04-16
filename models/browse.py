@@ -11,9 +11,9 @@ from infrastructure.orm_models import DataEntry
 
 
 def get_filter_options() -> Dict[str, List[str]]:
-    """Get available options for filters (uploaders and indicators)"""
+    """Get available options for filters (uploaders, indicators, dataset_code)."""
     if not is_engine_initialized():
-        return {"uploaders": [], "indicators": []}
+        return {"uploaders": [], "indicators": [], "dataset_codes": []}
     try:
         session = get_session()
         uploaders = session.scalars(
@@ -22,6 +22,13 @@ def get_filter_options() -> Dict[str, List[str]]:
         indicators = session.scalars(
             select(DataEntry.indicator_name).distinct().order_by(DataEntry.indicator_name)
         ).all()
-        return {"uploaders": list(uploaders), "indicators": list(indicators)}
+        codes = session.scalars(
+            select(DataEntry.dataset_code).distinct().order_by(DataEntry.dataset_code)
+        ).all()
+        return {
+            "uploaders": list(uploaders),
+            "indicators": list(indicators),
+            "dataset_codes": list(codes),
+        }
     except SQLAlchemyError:
-        return {"uploaders": [], "indicators": []}
+        return {"uploaders": [], "indicators": [], "dataset_codes": []}

@@ -20,6 +20,7 @@ class DataEntry(Base):
             "year",
             "month",
             "quarter",
+            "dataset_code",
             name="ux_data_entry_variant",
         ),
     )
@@ -38,4 +39,20 @@ class DataEntry(Base):
     month: Mapped[int | None] = mapped_column(Integer, nullable=True)
     quarter: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_code: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
+
+class UploadRun(Base):
+    """Audit ringkas per unggahan (Fase 4)."""
+
+    __tablename__ = "upload_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    uploader_name: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_code: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    file_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    row_count: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -13,6 +13,7 @@
                 <th>ID</th>
                 <th>Pengunggah</th>
                 <th>Waktu unggah</th>
+                <th>Dataset</th>
                 <th>Indikator</th>
                 <th>Nilai</th>
                 <th>Jenis Data</th>
@@ -26,6 +27,7 @@
                 <td>{{ row.id }}</td>
                 <td>{{ row.uploader_name }}</td>
                 <td>{{ row.created_at | to_wita if row.created_at else "-" }}</td>
+                <td class="text-xs">{{ row.dataset_code or "—" }}</td>
                 <td>{{ row.indicator_name }}</td>
                 <td>{{ row.value }}</td>
                 <td>{% include "partials/_data_type_badge.html" %}</td>

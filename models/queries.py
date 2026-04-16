@@ -44,6 +44,7 @@ def _row_to_public_dict(row: Mapping[str, Any]) -> Dict[str, Any]:
         "year": year,
         "month": month,
         "quarter": quarter,
+        "dataset_code": row.get("dataset_code", ""),
         "tanggal_data": _format_period_text_from_parts(year, month, quarter),
     }
 
@@ -57,6 +58,7 @@ def _sa_get_total_entries_count(
     period_end: Optional[str] = None,
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
+    dataset_code: Optional[str] = None,
 ) -> int:
     from infrastructure.orm_models import DataEntry
 
@@ -69,6 +71,7 @@ def _sa_get_total_entries_count(
         period_end,
         value_min,
         value_max,
+        dataset_code,
     )
     stmt = select(func.count(DataEntry.id)).select_from(DataEntry)
     if where is not None:
@@ -90,6 +93,7 @@ def get_total_entries_count(
     period_end: Optional[str] = None,
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
+    dataset_code: Optional[str] = None,
 ) -> int:
     if not is_engine_initialized():
         return 0
@@ -102,6 +106,7 @@ def get_total_entries_count(
         period_end,
         value_min,
         value_max,
+        dataset_code,
     )
 
 
@@ -178,6 +183,7 @@ def _sa_query_data_entries(
     period_end: Optional[str] = None,
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
+    dataset_code: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     from infrastructure.orm_models import DataEntry
 
@@ -190,6 +196,7 @@ def _sa_query_data_entries(
         period_end,
         value_min,
         value_max,
+        dataset_code,
     )
     safe_offset = offset if offset is not None and offset >= 0 else 0
     stmt = select(DataEntry)
@@ -216,6 +223,7 @@ def _sa_query_data_entries(
             "year": row.year,
             "month": row.month,
             "quarter": row.quarter,
+            "dataset_code": getattr(row, "dataset_code", "") or "",
         }
         out.append(_row_to_public_dict(mapping))
     return out
@@ -232,6 +240,7 @@ def query_data_entries(
     period_end: Optional[str] = None,
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
+    dataset_code: Optional[str] = None,
 ) -> List[Dict]:
     if not is_engine_initialized():
         return []
@@ -246,6 +255,7 @@ def query_data_entries(
         period_end,
         value_min,
         value_max,
+        dataset_code,
     )
 
 
@@ -292,15 +302,15 @@ def fetch_series_for_comparison(
 
 
 def preview_duplicates_batches(
-    unique_keys: Sequence[Tuple[Any, Any, Any, Any]],
+    unique_keys: Sequence[Tuple[Any, ...]],
 ) -> List[Dict[str, Any]]:
-    """Load existing rows matching (indicator_name, year, month, quarter) keys in batches."""
+    """Load existing rows matching (indicator_name, year, month, quarter, dataset_code) keys in batches."""
     if not unique_keys or not is_engine_initialized():
         return []
 
     from infrastructure.orm_models import DataEntry
 
-    def one_key(indicator: Any, year: Any, month: Any, quarter: Any):
+    def one_key(indicator: Any, year: Any, month: Any, quarter: Any, ds_code: Any):
         parts = [DataEntry.indicator_name == indicator, DataEntry.year == year]
         if month is None:
             parts.append(DataEntry.month.is_(None))
@@ -310,15 +320,24 @@ def preview_duplicates_batches(
             parts.append(DataEntry.quarter.is_(None))
         else:
             parts.append(DataEntry.quarter == quarter)
+        dc = (ds_code or "").strip()
+        parts.append(DataEntry.dataset_code == dc)
         return and_(*parts)
 
-    max_batch_size = max(1, 999 // 4)
+    max_batch_size = max(1, 999 // 5)
     out: List[Dict[str, Any]] = []
     try:
         session = get_session()
         for offset in range(0, len(unique_keys), max_batch_size):
             batch = unique_keys[offset : offset + max_batch_size]
-            ors = [one_key(i, y, m, q) for i, y, m, q in batch]
+            ors = []
+            for tup in batch:
+                if len(tup) == 4:
+                    i, y, m, q = tup
+                    dc = ""
+                else:
+                    i, y, m, q, dc = tup[0], tup[1], tup[2], tup[3], tup[4]
+                ors.append(one_key(i, y, m, q, dc))
             stmt = select(DataEntry).where(or_(*ors))
             for row in session.scalars(stmt).all():
                 out.append(
@@ -331,6 +350,7 @@ def preview_duplicates_batches(
                         "month": row.month,
                         "quarter": row.quarter,
                         "value": row.value,
+                        "dataset_code": getattr(row, "dataset_code", "") or "",
                     }
                 )
     except SQLAlchemyError:

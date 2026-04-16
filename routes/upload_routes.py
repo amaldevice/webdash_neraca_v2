@@ -6,8 +6,10 @@ from collections import defaultdict, deque
 import secrets
 import threading
 import time
-from flask import Flask, Response, current_app, flash, make_response, redirect, render_template, request, session, url_for
+from flask import Flask, Response, abort, current_app, flash, make_response, redirect, render_template, request, session, url_for
 
+from services.dataset_catalog import datasets_for_template_context, get_dataset_or_none
+from services.template_service import build_template_file_response
 from services.upload_flow import (
     MANUAL_ROUTE_MODE,
     UPLOAD_ROUTE_MODE,
@@ -33,6 +35,17 @@ from services.timeutil import wita_now_iso
 
 _UPLOAD_RATE_LIMIT_LOCK = threading.Lock()
 _UPLOAD_RATE_LIMIT_STATE: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _dataset_wizard_template_kwargs() -> dict:
+    """Katalog dataset + flag legacy / ketat untuk template upload & manual."""
+    req = bool(current_app.config.get("REQUIRE_DATASET_FOR_UPLOAD", False))
+    return {
+        "datasets": datasets_for_template_context(),
+        "legacy_dataset_choice_allowed": not req,
+        "require_dataset_upload": req,
+        "require_dataset_manual": req,
+    }
 
 
 def _upload_csrf_token() -> str:
@@ -63,6 +76,7 @@ def _upload_client_key() -> str:
 def _ensure_upload_version(form_values: dict | None) -> dict[str, str]:
     values = dict(form_values or {})
     values.setdefault("version", wita_now_iso())
+    values.setdefault("dataset_slug", "")
     return values
 
 
@@ -91,14 +105,16 @@ def _render_upload_template(
     form_values: dict | None = None,
 ) -> Response:
     form_values = _ensure_upload_version(form_values)
+    ctx = _dataset_wizard_template_kwargs()
     return make_response(
         render_template(
-        UPLOAD_TEMPLATE_NAME,
-        mode=UPLOAD_ROUTE_MODE,
-        preview=preview,
-        upload_preview_token=upload_preview_token,
-        form_values=form_values,
-        upload_csrf_token=_upload_csrf_token(),
+            UPLOAD_TEMPLATE_NAME,
+            mode=UPLOAD_ROUTE_MODE,
+            preview=preview,
+            upload_preview_token=upload_preview_token,
+            form_values=form_values,
+            upload_csrf_token=_upload_csrf_token(),
+            **ctx,
         )
     )
 
@@ -121,11 +137,13 @@ def _apply_manual_flow_response(resp):
         flash(msg, cat)
     if resp.kind == "redirect":
         return redirect(url_for("manual_input"))
+    ctx = _dataset_wizard_template_kwargs()
     return render_template(
         UPLOAD_TEMPLATE_NAME,
         mode=MANUAL_ROUTE_MODE,
         form_values=_ensure_upload_version(resp.form_values),
         manual_duplicate=resp.manual_duplicate,
+        **ctx,
     )
 
 
@@ -139,6 +157,8 @@ def upload_data():
         if isinstance(old_token, str):
             session.pop("upload_preview_token", None)
             delete_preview_session(upload_folder, old_token)
+
+    require_dataset = bool(current_app.config.get("REQUIRE_DATASET_FOR_UPLOAD", False))
 
     if request.method == "POST":
         if request.path == "/upload":
@@ -176,17 +196,26 @@ def upload_data():
 
         if action == "confirm":
             return _apply_upload_flow_response(
-                process_upload_confirm(upload_folder, preview_token, form_values, skip_dup)
+                process_upload_confirm(
+                    upload_folder,
+                    preview_token,
+                    form_values,
+                    skip_dup,
+                    require_dataset=require_dataset,
+                )
             )
 
         action = normalize_upload_action(action)
         file = request.files.get("excel_file")
+        slug = (form_values.get("dataset_slug") or "").strip()
         errors = collect_upload_file_errors(
             form_values["uploader"],
             form_values["version"],
             file,
             form_values["data_type"],
             form_values["time_period"],
+            dataset_slug=slug or None,
+            require_dataset=require_dataset,
         )
         if errors:
             for error in errors:
@@ -199,7 +228,14 @@ def upload_data():
 
         destination, display_name, _stored = save_uploaded_excel(upload_folder, file)
         return _apply_upload_flow_response(
-            process_upload_post_file(upload_folder, destination, display_name, form_values, action)
+            process_upload_post_file(
+                upload_folder,
+                destination,
+                display_name,
+                form_values,
+                action,
+                require_dataset=require_dataset,
+            )
         )
 
     preview_token = session.get("upload_preview_token")
@@ -216,6 +252,7 @@ def upload_data():
             "data_type": meta.get("data_type", "flow"),
             "time_period": meta.get("time_period", "monthly"),
             "layout_override": payload.get("layout_override", "auto"),
+            "dataset_slug": (meta.get("dataset_slug") or "").strip(),
         }
         preview_payload = to_preview_context(payload)
 
@@ -236,6 +273,8 @@ def manual_input():
         indicator = request.form.get("indicator", "").strip()
         value = request.form.get("value", "").strip()
         confirm_duplicate = request.form.get("confirm_duplicate") == "1"
+        dataset_slug = request.form.get("dataset_slug", "").strip()
+        require_dataset = bool(current_app.config.get("REQUIRE_DATASET_FOR_UPLOAD", False))
         return _apply_manual_flow_response(
             process_manual_input_post(
                 uploader,
@@ -246,17 +285,34 @@ def manual_input():
                 indicator,
                 value,
                 confirm_duplicate=confirm_duplicate,
+                dataset_slug=dataset_slug,
+                require_dataset=require_dataset,
             )
         )
 
+    ctx = _dataset_wizard_template_kwargs()
     return render_template(
         UPLOAD_TEMPLATE_NAME,
         mode=MANUAL_ROUTE_MODE,
         form_values=_ensure_upload_version({}),
         manual_duplicate=None,
+        **ctx,
     )
+
+
+def upload_dataset_template(dataset_slug: str) -> Response:
+    slug = (dataset_slug or "").strip()
+    if not slug or get_dataset_or_none(slug) is None:
+        abort(404)
+    return build_template_file_response(slug)
 
 
 def register(app: Flask) -> None:
     app.add_url_rule("/upload", endpoint="upload_data", view_func=upload_data, methods=["GET", "POST"])
     app.add_url_rule("/manual", endpoint="manual_input", view_func=manual_input, methods=["GET", "POST"])
+    app.add_url_rule(
+        "/upload/template/<dataset_slug>",
+        endpoint="upload_dataset_template",
+        view_func=upload_dataset_template,
+        methods=["GET"],
+    )

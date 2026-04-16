@@ -19,6 +19,7 @@ from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 from excel_parser import parse_excel_payload
 from models import insert_entries, upsert_entries
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
+from services.dataset_catalog import get_dataset_or_none, normalize_dataset_code
 from services.manual_entries import build_manual_entry
 from services.upload_preview import (
     build_upload_preview,
@@ -32,6 +33,7 @@ from services.upload_preview import (
     parse_selected_duplicate_indexes,
     to_preview_context,
 )
+from services.upload_runs import record_upload_run
 from services.validation import allowed_file, validate_metadata
 from werkzeug.utils import secure_filename
 
@@ -85,6 +87,18 @@ def upload_folder_from_config(config: dict) -> str:
     return config["UPLOAD_FOLDER"]
 
 
+def _form_getlist(form: Any, key: str) -> list[str]:
+    gl = getattr(form, "getlist", None)
+    if callable(gl):
+        return [str(x) for x in gl(key)]
+    raw = form.get(key)  # type: ignore[union-attr]
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple)):
+        return [str(x) for x in raw]
+    return [str(raw)]
+
+
 def normalize_upload_action(action: str) -> str:
     a = (action or "").strip().lower()
     if a not in {"preview", "save", "direct_upload"}:
@@ -119,6 +133,7 @@ def parse_upload_form(form) -> tuple[dict[str, str], str, str, list[str]]:
     data_type = form.get("data_type", "flow").strip()
     time_period = form.get("time_period", "monthly").strip()
     layout_override = form.get("layout_override", "auto").strip().lower()
+    dataset_slug = form.get("dataset_slug", "").strip()
     action = form.get("action", "preview").strip().lower()
     preview_token = form.get("preview_token", "").strip()
     form_values = {
@@ -127,8 +142,9 @@ def parse_upload_form(form) -> tuple[dict[str, str], str, str, list[str]]:
         "data_type": data_type,
         "time_period": time_period,
         "layout_override": layout_override,
+        "dataset_slug": dataset_slug,
     }
-    skip_dup = form.getlist("skip_duplicate_indexes")
+    skip_dup = _form_getlist(form, "skip_duplicate_indexes")
     return form_values, action, preview_token, skip_dup
 
 
@@ -138,6 +154,9 @@ def collect_upload_file_errors(
     file,
     data_type: str,
     time_period: str,
+    *,
+    dataset_slug: str | None = None,
+    require_dataset: bool = False,
 ) -> list[str]:
     errors: list[str] = []
     if not uploader:
@@ -146,6 +165,11 @@ def collect_upload_file_errors(
         errors.append("Versi wajib diisi.")
     if not file or not allowed_file(file.filename):
         errors.append("Harus mengunggah file Excel (.xls/.xlsx).")
+    if require_dataset and not (dataset_slug or "").strip():
+        errors.append("Pilih dataset / tabel terlebih dahulu.")
+    slug = (dataset_slug or "").strip()
+    if slug and get_dataset_or_none(slug) is None:
+        errors.append("Dataset tidak dikenal.")
     errors.extend(validate_metadata(data_type, time_period))
     return errors
 
@@ -171,6 +195,8 @@ def parse_and_validate_upload_payload(
     *,
     layout_override: str = "auto",
     preview_limit: int = PREVIEW_SAMPLE_LIMIT,
+    dataset_slug: str | None = None,
+    require_dataset_context: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[str]]:
     """
     Parse payload from an uploaded file and return (payload, entries, warnings).
@@ -187,8 +213,14 @@ def parse_and_validate_upload_payload(
         time_period,
         layout_override=layout_override,
         preview_limit=preview_limit,
+        sheet_name=None,
+        dataset_slug=dataset_slug,
+        require_dataset_context=require_dataset_context,
     )
     entries = payload.get("entries", [])
+    code = normalize_dataset_code(dataset_slug)
+    for row in entries:
+        row["dataset_code"] = code
     warnings = list(payload.get("warnings", []))
     internal_duplicate_warning = _build_internal_duplicate_warning_message(
         _collect_internal_duplicate_counts(entries)
@@ -212,6 +244,7 @@ def _hydrate_duplicate_records_with_values(
             entry.get("year"),
             entry.get("month"),
             entry.get("quarter"),
+            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
         )
         if key not in value_by_key:
             value_by_key[key] = entry.get("value")
@@ -222,6 +255,7 @@ def _hydrate_duplicate_records_with_values(
             duplicate.get("year"),
             duplicate.get("month"),
             duplicate.get("quarter"),
+            (duplicate.get("dataset_code") or "").strip(),
         )
         hydrated.append({**duplicate, "value": value_by_key.get(key)})
     return hydrated
@@ -283,6 +317,7 @@ def _build_duplicate_confirmation_summary(
             duplicate.get("year"),
             duplicate.get("month"),
             duplicate.get("quarter"),
+            (duplicate.get("dataset_code") or "").strip(),
         )
         for duplicate in duplicates
     ]
@@ -298,6 +333,7 @@ def _build_duplicate_confirmation_summary(
             entry.get("year"),
             entry.get("month"),
             entry.get("quarter"),
+            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
         )
         if key in overwrite_keys:
             deduped_duplicate_count += 1
@@ -355,6 +391,7 @@ def handle_upload_confirm_with_duplicates(
         "data_type": form_values.get("data_type", metadata.get("data_type", "")),
         "time_period": form_values.get("time_period", metadata.get("time_period", "")),
         "layout_override": preview_layout,
+        "dataset_slug": form_values.get("dataset_slug", metadata.get("dataset_slug", "")),
     }
     if not deduped_entries:
         preview_payload = to_preview_context(
@@ -377,6 +414,17 @@ def handle_upload_confirm_with_duplicates(
         )
     try:
         persist_upload_entries_with_overwrite(deduped_entries)
+        if deduped_entries:
+            record_upload_run(
+                uploader_name=deduped_entries[0]["uploader_name"],
+                version=deduped_entries[0]["version"],
+                dataset_code=str(deduped_entries[0].get("dataset_code") or "")
+                or normalize_dataset_code(metadata.get("dataset_slug")),
+                file_name=token_payload.get("file_name"),
+                status="success",
+                message="overwrite_confirm",
+                row_count=len(deduped_entries),
+            )
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -430,9 +478,22 @@ def handle_upload_confirm_without_duplicates(
     file_path: str,
     preview_token: str,
     entries: list[dict[str, Any]],
+    *,
+    token_payload: dict[str, Any] | None = None,
 ) -> UploadFlowResponse:
     try:
         persist_upload_entries(entries)
+        if entries:
+            meta = (token_payload or {}).get("metadata") or {}
+            record_upload_run(
+                uploader_name=entries[0]["uploader_name"],
+                version=entries[0]["version"],
+                dataset_code=str(entries[0].get("dataset_code") or "")
+                or normalize_dataset_code(meta.get("dataset_slug")),
+                file_name=(token_payload or {}).get("file_name"),
+                status="success",
+                row_count=len(entries),
+            )
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -502,6 +563,7 @@ def handle_upload_post_file_save_with_duplicates(
         payload=payload,
         entries=entries,
         duplicates=duplicates,
+        dataset_slug=form_values.get("dataset_slug", ""),
     )
     return build_upload_response(
         "render",
@@ -522,9 +584,20 @@ def handle_upload_post_file_save_with_duplicates(
 def handle_upload_post_file_save_without_duplicates(
     entries: list[dict[str, Any]],
     form_values: dict[str, str],
+    *,
+    source_file_name: str = "",
 ) -> UploadFlowResponse:
     try:
         persist_upload_entries(entries)
+        if entries:
+            record_upload_run(
+                uploader_name=entries[0]["uploader_name"],
+                version=entries[0]["version"],
+                dataset_code=str(entries[0].get("dataset_code") or ""),
+                file_name=source_file_name or None,
+                status="success",
+                row_count=len(entries),
+            )
         return build_upload_response(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
@@ -567,6 +640,7 @@ def handle_upload_post_file_preview(
         "version": form_values["version"],
         "data_type": form_values["data_type"],
         "time_period": form_values["time_period"],
+        "dataset_slug": form_values.get("dataset_slug", ""),
     }
     upload_token = cache_upload_preview(
         upload_folder,
@@ -610,6 +684,8 @@ def process_upload_confirm(
     preview_token: str,
     form_values: dict[str, str],
     skip_duplicate_indexes_raw: list[str],
+    *,
+    require_dataset: bool = False,
 ) -> UploadFlowResponse:
     """
     Handle POST action=confirm.
@@ -618,7 +694,7 @@ def process_upload_confirm(
       Input:
         - upload_folder: direktori penyimpanan sesi file preview.
         - preview_token: token sesi preview yang dibuat saat `build_upload_preview`.
-        - form_values: metadata formulir wajib (uploader/version/data_type/time_period/layout_override).
+        - form_values: metadata formulir wajib (uploader/version/data_type/time_period/layout_override/dataset_slug).
         - skip_duplicate_indexes_raw: daftar index yang disetujui untuk menolak duplikasi.
       Output:
         - UploadFlowResponse.kind:
@@ -638,6 +714,7 @@ def process_upload_confirm(
     meta = token_payload["metadata"]
     file_path = token_payload["file_path"]
     preview_layout = token_payload.get("layout_override", "auto")
+    slug = (meta.get("dataset_slug") or "").strip()
     try:
         payload, entries, _ = parse_and_validate_upload_payload(
             file_path,
@@ -647,6 +724,8 @@ def process_upload_confirm(
             meta["time_period"],
             layout_override=preview_layout,
             preview_limit=PREVIEW_SAMPLE_LIMIT,
+            dataset_slug=slug or None,
+            require_dataset_context=require_dataset,
         )
     except Exception as e:
         return build_upload_response(
@@ -659,7 +738,11 @@ def process_upload_confirm(
     if internal_duplicate_warning:
         return build_upload_response("redirect", [(internal_duplicate_warning, "error")])
     if not entries:
-        return build_upload_response("redirect", [("Sesi pratinjau tidak memuat data valid.", "error")])
+        msg = "Sesi pratinjau tidak memuat data valid."
+        joined = " ".join(str(w) for w in (payload.get("warnings") or []) if w)
+        if require_dataset and slug and "dataset_slug wajib" in joined:
+            msg = "Dataset wajib dipilih untuk pratinjau ini, tetapi metadata sesi tidak lengkap. Unggah ulang dengan dataset yang sama."
+        return build_upload_response("redirect", [(msg, "error")])
 
     duplicates = _hydrate_duplicate_records_with_values(
         find_duplicate_entries_in_db(meta["uploader"], meta["version"], entries),
@@ -684,6 +767,7 @@ def process_upload_confirm(
         file_path=file_path,
         preview_token=preview_token,
         entries=entries,
+        token_payload=token_payload,
     )
 
 
@@ -693,6 +777,8 @@ def process_upload_post_file(
     display_name: str,
     form_values: dict[str, str],
     action: str,
+    *,
+    require_dataset: bool = False,
 ) -> UploadFlowResponse:
     """
     Setelah file multipart tersimpan: parse Excel lalu pilih alur preview / simpan.
@@ -702,7 +788,7 @@ def process_upload_post_file(
         - upload_folder: lokasi disk untuk sesi preview.
         - destination: path file yang baru disimpan.
         - display_name: nama file asli dari user.
-        - form_values: metadata uploader/version/data_type/time_period.
+        - form_values: metadata uploader/version/data_type/time_period/dataset_slug.
         - action: 'preview' | 'save' | 'direct_upload'.
       Output:
         - UploadFlowResponse.kind:
@@ -716,6 +802,7 @@ def process_upload_post_file(
     data_type = form_values["data_type"]
     time_period = form_values["time_period"]
     layout_override = form_values.get("layout_override", "auto") or "auto"
+    slug = (form_values.get("dataset_slug") or "").strip()
 
     try:
         payload, entries, warnings = parse_and_validate_upload_payload(
@@ -726,6 +813,8 @@ def process_upload_post_file(
             time_period,
             layout_override=layout_override or "auto",
             preview_limit=PREVIEW_SAMPLE_LIMIT,
+            dataset_slug=slug or None,
+            require_dataset_context=require_dataset,
         )
     except Exception as e:
         os.remove(destination)
@@ -777,7 +866,9 @@ def process_upload_post_file(
             )
 
         try:
-            response = handle_upload_post_file_save_without_duplicates(entries, form_values)
+            response = handle_upload_post_file_save_without_duplicates(
+                entries, form_values, source_file_name=display_name
+            )
             if response.kind == "redirect":
                 if os.path.exists(destination):
                     os.remove(destination)
@@ -813,6 +904,9 @@ def process_manual_input_post(
     indicator: str,
     value: str,
     confirm_duplicate: bool = False,
+    *,
+    dataset_slug: str = "",
+    require_dataset: bool = False,
 ) -> ManualFlowResponse:
     form_values: dict[str, str] = {
         "uploader": uploader,
@@ -822,7 +916,21 @@ def process_manual_input_post(
         "period_date": period_date,
         "indicator": indicator,
         "value": value,
+        "dataset_slug": (dataset_slug or "").strip(),
     }
+    if require_dataset and not (dataset_slug or "").strip():
+        return ManualFlowResponse(
+            kind="render",
+            flashes=[("Pilih dataset / tabel terlebih dahulu.", "error")],
+            form_values=form_values,
+        )
+    ds = (dataset_slug or "").strip()
+    if ds and get_dataset_or_none(ds) is None:
+        return ManualFlowResponse(
+            kind="render",
+            flashes=[("Dataset tidak dikenal.", "error")],
+            form_values=form_values,
+        )
     if not uploader or not version or not indicator or not value or not period_date:
         return ManualFlowResponse(
             kind="render",
@@ -837,7 +945,14 @@ def process_manual_input_post(
             form_values=form_values,
         )
     manual_entry = build_manual_entry(
-        uploader, version, data_type, time_period, period_date, indicator, value
+        uploader,
+        version,
+        data_type,
+        time_period,
+        period_date,
+        indicator,
+        value,
+        dataset_slug=ds,
     )
     if manual_entry is None:
         return ManualFlowResponse(
@@ -879,6 +994,15 @@ def process_manual_input_post(
 
     try:
         upsert_entries([manual_entry])
+        record_upload_run(
+            uploader_name=manual_entry["uploader_name"],
+            version=manual_entry["version"],
+            dataset_code=str(manual_entry.get("dataset_code") or ""),
+            file_name=None,
+            status="success",
+            message="manual_input",
+            row_count=1,
+        )
         return ManualFlowResponse(
             kind="redirect",
             flashes=[("Entri manual berhasil dicatat dan disimpan.", "success")],

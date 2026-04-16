@@ -27,6 +27,7 @@ def preview_data():
     time_period = request.args.get("time_period", "")
     uploader = request.args.get("uploader", "")
     indicator = request.args.get("indicator", "")
+    dataset_code = request.args.get("dataset_code", "")
     period_start, period_end = get_period_range_params(request.args)
     value_min, value_max = get_value_range_params(request.args)
 
@@ -41,6 +42,7 @@ def preview_data():
         period_end=period_end,
         value_min=value_min,
         value_max=value_max,
+        dataset_code=dataset_code,
     )
     qkw = list_params.to_query_kwargs()
     entries = fetch_entries_for_list(limit=limit, offset=offset, filters=qkw)
@@ -67,6 +69,7 @@ def export_data():
     time_period = request.args.get("time_period")
     uploader = request.args.get("uploader")
     indicator = request.args.get("indicator")
+    dataset_code = request.args.get("dataset_code", "")
     period_start, period_end = get_period_range_params(request.args)
     value_min, value_max = get_value_range_params(request.args)
     list_params = EntryListParams.from_request_strings(
@@ -78,6 +81,7 @@ def export_data():
         period_end=period_end,
         value_min=value_min,
         value_max=value_max,
+        dataset_code=dataset_code or "",
     )
     entries = fetch_entries_for_list(limit=1000, offset=0, filters=list_params.to_query_kwargs())
     return build_raw_data_export_response(entries, fmt)

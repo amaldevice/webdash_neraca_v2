@@ -79,6 +79,11 @@ def _env_truthy(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def require_dataset_for_upload() -> bool:
+    """Jika True, unggah Excel wajib memilih `dataset_slug` (Fase 0–2 dataset-aware). Default: legacy boleh kosong."""
+    return _env_truthy("REQUIRE_DATASET_FOR_UPLOAD")
+
+
 def default_secret_risk_in_production(*, testing: bool, secret_key: str) -> bool:
     """True when FLASK_ENV=production and the app still uses the built-in default secret."""
     if testing or secret_key != DEFAULT_SECRET_KEY:
@@ -101,6 +106,7 @@ def configure_flask_app(app: Flask, *, testing: bool = False) -> None:
     app.config["UPLOAD_RATE_LIMIT_WINDOW_SECONDS"] = int(
         os.environ.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", str(DEFAULT_UPLOAD_RATE_LIMIT_WINDOW_SECONDS))
     )
+    app.config["REQUIRE_DATASET_FOR_UPLOAD"] = require_dataset_for_upload()
 
     if key == DEFAULT_SECRET_KEY and _env_truthy("REQUIRE_FLASK_SECRET"):
         raise RuntimeError(

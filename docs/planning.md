@@ -1,5 +1,15 @@
 ## 2026-04-15 - Deployment Documentation
 
+## 2026-04-16 - Eksplorasi sheet REKAP & tipe tabel (upload dataset-aware)
+
+- **Artefak**: `docs/superpowers/plans/2026-04-16-rekap-sheet-table-type-and-template-mapping.md` — verifikasi langsung dari `REKAP Bank indonesia_rev.xlsx` (openpyxl/pandas): klasifikasi Two-way vs Three-way per sheet proses, peringatan nama sheet `Kartu kredit ` (spasi trailing), sheet yang dikecualikan (`Resume`, `PMSE`, `Perkembangan Indikator`), dan pointer ke kontrak template long di `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md`.
+- **Konteks kode**: parser upload masih sheet pertama + layout generik; gap vs katalog dataset direkam di artefak di atas untuk fase refactor berikutnya.
+- **Template long REKAP**: `static/templates/rekap_dataset_long_templates.xlsx` + generator `scripts/build_rekap_long_templates.py`; kolom contoh di `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md` disamakan ulang dengan nilai sel aktual workbook master (pinjaman pakai hierarki tiga kolom teks; simpanan tambah `produk_simpanan`; transaksi ATM/kartu/UE pakai `jenis_nilai`; ecommerce `triwulan` 1–4; bulan numerik 1–12).
+- **Fase 1 dataset-aware (2026-04-16):** `services/dataset_catalog.py` (7 `DatasetDefinition` + `get_dataset` / `list_dataset_slugs`), `services/template_service.py` (`generate_workbook_for_dataset`, `build_template_file_response`, `build_multi_dataset_reference_workbook`, `template_cache_key`), skrip build memakai service; tes `tests/test_dataset_catalog.py`, `tests/test_template_service.py`. Endpoint `/upload/template/<slug>` masuk Fase 2.
+- **Fase 0 + 2 (2026-04-16):** Matriks kontrak `docs/superpowers/contracts/2026-04-16-dataset-matrix.md`; env `REQUIRE_DATASET_FOR_UPLOAD` + `config.require_dataset_for_upload()`; `excel_parser` + `upload_flow` (sheet/slug, validasi slug); `routes/upload_routes.py` — wizard (`datasets`, legacy flag), `GET /upload/template/<dataset_slug>`; partial upload/manual + hidden `version`/`dataset_slug`; tes `tests/test_excel_parser.py`, `tests/test_upload_flow.py`, `tests/test_upload_template_route.py`.
+- **Fase 3 + 4 (2026-04-16):** Kolom `data_entries.dataset_code` + unique `(uploader, version, dataset_code, indicator, year, month, quarter)` + tabel `upload_runs` (Alembic `002_dataset_code_upload_runs`); stamp `dataset_code` di `upload_flow` / `manual_entries` / upsert; duplikat DB + preview pakai kunci 5-tuple; filter + pagination + export + form insert/delete-by-filter dataset-aware; `services/upload_runs.record_upload_run`; tes regresi `test_upload_preview`, `test_queries_sqlalchemy`, `test_alembic_initial`, `test_app_utils`, dll. Rencana: `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md` (Fase 3–4 dicentang).
+- **Fase 5 + 6 (2026-04-16):** Parser long-format dataset di `excel_parser/payload.py` + `excel_parser/dataset_long.py` (judul lembar template = `dataset_workbook_sheet_title` di `dataset_catalog` / `template_service`); regenerasi `static/templates/rekap_dataset_long_templates.xlsx`; tes `tests/test_dataset_long_parse.py`; dokumen `docs/user_upload_datasets.md`, `docs/migration_rehearsal_dataset_code.md`; smoke `scripts/agent_browser_upload_smoke.ps1` (agent-browser ke `/upload`). Gate wizard ketat tetap `REQUIRE_DATASET_FOR_UPLOAD` di env (bukan default keras di kode).
+
 ## 2026-04-16 - Penghapusan Ringkasan Agregat
 
 - **Keputusan fungsi**: Halaman `Ringkasan Agregat` (`/aggregated`) dan dependensinya diputuskan dihapus agar fokus aplikasi tetap pada repository data mentah.
@@ -444,3 +454,28 @@ Pisahkan helper matematis agar rumus tidak bercampur dengan pembagian indikator.
   - pembaharuan template manual/upload (`templates/partials/_manual_form.html`, `templates/upload.html`) agar alur form dan notifikasi lebih selaras.
   - perluasan test terkait `tests/test_upload_flow.py`, `tests/test_upload_preview.py`, `tests/test_models.py`, `tests/test_mutations_baseline.py`, `tests/test_data_management_actions.py`, `tests/simple_tests/functional_tests/test_manual_entry.py`.
 - Menambahkan catatan rencana kerja dokumen di `docs/superpowers/plans/2026-04-13-logging-and-mysql-migration.md`.
+
+## Update 2026-04-16 (lanjutan planning upload per-sheet)
+- Menetapkan aturan planning untuk:
+  - template per sheet yang dinamis berdasarkan **`REKAP Bank indonesia_rev.xlsx`**.
+  - alur wajib pilih dataset sebelum klik unduh template.
+  - pengelolaan nilai M/Q/Y-to-Y dalam DB sebagai `metric_name` (mis. `realisasi`, `m2m_growth`, `q2q_growth`, `y2y_growth`).
+  - dukungan data partial (baris tidak lengkap di-skip sebagai warning, tidak memaksa impor kosong).
+- Dokumen detail: `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md`.
+- Status akhir penyusunan contoh template: contoh header/jenis kolom dan sample baris direvisi ulang dari hasil pembacaan langsung `D:/webdash_neraca/REKAP Bank indonesia_rev.xlsx` supaya sesuai struktur aslinya.
+
+## Update 2026-04-16 - Refactor Upload/Input per Dataset Sheet
+
+- Menyusun rencana besar alur **pemilihan dataset sheet** sebelum Upload maupun Input Manual dengan template per-sheet (kecuali `Resume`, `PMSE`, `Perkembangan Indikator`), berdasar klasifikasi:
+  - Diproses: `pinjaman` (3-way), `simpanan` (3-way), `ecommerce` (2-way), `ATM` (2-way), `Kartu kredit ` (2-way), `UANG ELEKTRONIK` (2-way), `Indikator sekda BI` (3-way).
+  - Dikecualikan: `Resume`, `PMSE`, `Perkembangan Indikator`.
+- Dokumen planning detail dibuat di:
+  - `docs/superpowers/plans/2026-04-16-dataset-aware-upload-manual-refactor.md`
+- Fase rencana yang disetujui:
+  1. Katalog dataset + service template dinamis.
+  2. Rewire route upload/manual ke wizard 3 langkah (mode, dataset, action).
+  3. Parser dan validasi dataset-aware.
+  4. Penambahan `dataset_code` + migrasi unik key per dataset.
+  5. Audit `upload_runs` dan test plan lintas layer (unit, upload flow, manual input, e2e).
+- Catatan lintas modul:
+  - `routes/upload_routes.py`, `services/upload_flow.py`, `services/upload_preview.py`, `excel_parser/payload.py`, `models/mutations.py`, `models/orm_models.py`, `templates/upload.html` + partial manual.

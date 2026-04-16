@@ -24,13 +24,14 @@
                 </select>
             </div>
             <div class="toolbar-actions">
-            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator or filters.start_period or filters.end_period or (filters.value_min is not none) or (filters.value_max is not none) %}
+            {% if filters.data_type or filters.time_period or filters.uploader or filters.indicator or filters.dataset_code or filters.start_period or filters.end_period or (filters.value_min is not none) or (filters.value_max is not none) %}
             <form method="POST" class="self-end md:pt-8">
                 <input type="hidden" name="action" value="delete_by_filter">
                 <input type="hidden" name="data_type" value="{{ filters.data_type }}">
                 <input type="hidden" name="time_period" value="{{ filters.time_period }}">
                 <input type="hidden" name="uploader" value="{{ filters.uploader }}">
                 <input type="hidden" name="indicator" value="{{ filters.indicator }}">
+                <input type="hidden" name="dataset_code" value="{{ filters.dataset_code or '' }}">
                 <input type="hidden" name="start_period" value="{{ filters.start_period or '' }}">
                 <input type="hidden" name="end_period" value="{{ filters.end_period or '' }}">
                 <input type="hidden" name="value_min" value="{{ filters.value_min if filters.value_min is not none else '' }}">

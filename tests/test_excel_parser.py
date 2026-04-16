@@ -109,6 +109,51 @@ def test_parse_excel_payload_preview_sample_respects_limit(tmp_path):
     assert len(payload["sample"]) <= 2
 
 
+def test_parse_excel_payload_reads_named_sheet(tmp_path):
+    path = tmp_path / "two_sheets.xlsx"
+    wb = Workbook()
+    junk = wb.active
+    junk.title = "Junk"
+    junk.cell(1, 1, "noise")
+    data = wb.create_sheet("Data")
+    data.cell(1, 1, "Indikator")
+    data.cell(1, 2, pd.Timestamp("2024-01-01"))
+    data.cell(2, 1, "GDP")
+    data.cell(2, 2, 7.5)
+    wb.save(path)
+    payload = parse_excel_payload(
+        str(path),
+        "U",
+        "v1",
+        "flow",
+        "monthly",
+        layout_override="horizontal",
+        sheet_name="Data",
+        dataset_slug="pinjaman",
+    )
+    assert payload["sheet_name"] == "Data"
+    assert payload["dataset_slug"] == "pinjaman"
+    names = {e["indicator_name"] for e in payload["entries"]}
+    assert "GDP" in names
+
+
+def test_parse_excel_payload_require_dataset_missing_slug(tmp_path):
+    path = tmp_path / "empty_req.xlsx"
+    Workbook().save(path)
+    payload = parse_excel_payload(
+        str(path),
+        "U",
+        "v1",
+        "flow",
+        "monthly",
+        require_dataset_context=True,
+        dataset_slug="",
+    )
+    assert payload["entries"] == []
+    joined = " ".join(str(w) for w in payload["warnings"])
+    assert "dataset_slug wajib" in joined
+
+
 def _period_to_tuple(parsed):
     return parsed["year"], parsed["month"], parsed["quarter"]
 

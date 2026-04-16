@@ -32,6 +32,7 @@ def test_create_app_registers_core_endpoints(db_path, monkeypatch):
     names = {r.endpoint for r in application.url_map.iter_rules() if r.endpoint is not None}
     assert "landing_page" in names
     assert "upload_data" in names
+    assert "upload_dataset_template" in names
     assert "data_management" in names
 
 
