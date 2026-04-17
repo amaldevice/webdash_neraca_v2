@@ -27,3 +27,23 @@ Recent history follows Conventional Commit style with scope, e.g. `feat(ui): ref
 
 ## Security & Configuration Tips
 Do not commit real data exports or secrets. Configure `FLASK_SECRET_KEY` via environment variables for non-local environments. Validate uploaded file types and preserve existing input-validation patterns when adding routes/forms.
+
+## Cursor Cloud specific instructions
+
+### Services overview
+Single Flask application with embedded SQLite. No external services (Redis, Postgres, etc.) required.
+
+### Starting the app
+- Initialize DB before first run: `python3 -c "from models import init_db; init_db()"`
+- Start dev server: `python3 app.py` (serves at `http://127.0.0.1:5000`, debug mode on)
+- `init_db()` is also called inside `create_app()`, so running `python3 app.py` alone is sufficient after dependencies are installed.
+
+### Running tests
+- **pytest:** `python3 -m pytest tests -q` (264 tests, ~52s). Some `simple_tests/functional_tests/` tests require `beautifulsoup4` which is not in `requirements-dev.txt`; install it with `pip install beautifulsoup4`.
+- **Syntax check:** `python3 -m py_compile app.py && python3 -c "import models; import excel_parser; import services; import routes"`
+
+### Known gotchas
+- `$HOME/.local/bin` must be on `PATH` for `pytest` and `flask` CLI commands (pip installs to `--user` in this environment).
+- The Tailwind CSS build (`metadata/package.json` `build:css`) currently fails due to opacity-modifier syntax (`bg-primary/12`) incompatible with the pinned Tailwind 3.4 version. The pre-built `static/css/tailwind.css` is committed and sufficient for development; do not regenerate unless the build issue is resolved.
+- The Playwright E2E config (`playwright.config.ts`) sets `testDir: "./e2e"` but actual E2E specs live in `tests/e2e/`. As a result, `npx playwright test` finds no tests. This is a pre-existing config mismatch.
+- The concurrency test (`tests/simple_tests/bug_tests/test_concurrency.py::test_concurrent_chart_generation`) may intermittently fail with a plotly `ValueError` due to a deprecated `scattermapbox` trace type; this is not related to application code.
