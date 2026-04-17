@@ -152,6 +152,12 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
 - `services/manual_entries.py`: Helper normalisasi dan validasi input manual.
 
+### Catatan perilaku format periode
+- Marker periode diperlakukan fleksibel untuk `Triwulanan` dan `Tahunan`.
+- `Triwulanan`: `YYYY-MM` dan `YYYY-Q1..YYYY-Q4` sama-sama valid.
+- `Tahunan`: `YYYY` dan `YYYY-MM` valid; jika `YYYY-MM`, sistem menyimpan `month` sebagai penanda agar tampilan tetap `YYYY-MM`.
+- Mekanisme ini berlaku di input manual dan unggah Excel agar perilaku konsisten.
+
 ### Cakupan Fitur yang sebelumnya belum terdokumentasi
 - `playwright_period_filter_smoke.spec.js` sudah tersedia sebagai smoke test untuk validasi alur filter rentang periode.
 - Konsistensi komponen tombol, formulir, dan susunan tabel lintas halaman sudah distandarkan (pratinjau dan manajemen data).
