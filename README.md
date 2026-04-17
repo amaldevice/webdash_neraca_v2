@@ -157,6 +157,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `Triwulanan`: `YYYY-MM` dan `YYYY-Q1..YYYY-Q4` sama-sama valid.
 - `Tahunan`: `YYYY` dan `YYYY-MM` valid; jika `YYYY-MM`, sistem menyimpan `month` sebagai penanda agar tampilan tetap `YYYY-MM`.
 - Mekanisme ini berlaku di input manual dan unggah Excel agar perilaku konsisten.
+- Skenario tambahan `Tahunan=2021` (tanpa bulan) sudah divalidasi lewat E2E untuk mode manual dan upload.
 
 ### Cakupan Fitur yang sebelumnya belum terdokumentasi
 - `playwright_period_filter_smoke.spec.js` sudah tersedia sebagai smoke test untuk validasi alur filter rentang periode.
