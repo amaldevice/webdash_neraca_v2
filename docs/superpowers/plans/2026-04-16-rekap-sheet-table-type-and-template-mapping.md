@@ -7,6 +7,14 @@ status: exploration-complete
 
 # REKAP `Bank indonesia_rev.xlsx` — Tipe Tabel per Sheet & Pemetaan Template
 
+## State current (2026-04-18)
+- **Status dokumen**: referensi eksplorasi/arsip yang tetap dipakai untuk pemetaan sheet.
+- **Yang sudah sesuai kondisi sekarang**:
+  - `services/template_service.py` aktif; unduhan template per dataset melalui `GET /upload/template/<dataset_slug>`.
+  - `excel_parser/payload.py` sudah menerima `dataset_slug`, `sheet_name`, dan resolusi `source_sheet` dari katalog dataset.
+  - `data_entries` sudah memakai `dataset_code` (sesuai fase dataset-aware) dan unique key juga sudah bergeser.
+- **Catatan kompatibilitas**: detail historis di bawah ini tidak otomatis berarti semua itemnya masih tugas aktif; cek status terbaru di `docs/planning.md` dan `.cursor/plans/bps_data_management_system_bd94389d.plan.md`.
+
 ## Tujuan
 
 - Klasifikasi **One-way / Two-way / Three-way** untuk setiap sheet yang masuk refactor upload/input (bukan definisi matematika abstrak, tapi **jumlah dimensi kategori** yang perlu diidentifikasi sebelum nilai + periode).
@@ -78,9 +86,9 @@ Tabel contoh + angka sampel dari sel master: `docs/superpowers/plans/2026-04-16-
 
 Temuan agen `repo-research-analyst` / `explore`:
 
-- Parser saat ini: `excel_parser/payload.py` membaca **sheet pertama saja**, tanpa `dataset_slug` / `sheet_name`.
-- DB: `data_entries` tanpa `dataset_code`; unik `(uploader, version, indicator, year, month, quarter)`.
-- Template statis di UI mungkin mengarah ke `static/templates/upload_template.xlsx` — **per-dataset generator belum ada** (`services/template_service.py` masih rencana).
+- Parser saat ini: `excel_parser/payload.py` membaca sheet via `dataset_slug`, `sheet_name`, dan fallback `source_sheet`; legacy tetap dipertahankan untuk format non-dataset bila diperlukan.
+- DB: `data_entries` memakai `dataset_code`; unique key sekarang memasukkan `dataset_code`.
+- Template per-dataset sudah ada (`services/template_service.py` + `static/templates/rekap_dataset_long_templates.xlsx`), bukan lagi template tunggal statis.
 
 Rekomendasi batas modul (agen `architecture-strategist`): katalog dataset hanya deklaratif; parser hanya mekanik long-row; orkestrasi di `upload_flow` / `upload_preview`; migrasi `dataset_code` + `upload_runs` bertahap.
 

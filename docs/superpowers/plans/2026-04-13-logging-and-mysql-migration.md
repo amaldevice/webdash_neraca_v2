@@ -2,6 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## State current (2026-04-18)
+- **Status plan:** dokumen referensi perencanaan (arsip aktif), dengan banyak task belum diimplementasikan pada file ini.
+- **Fitur yang sudah ada di state sekarang (terkonfirmasi):**
+  - Refactor dataset-aware upload/manual + template per dataset, parser-aware dataset (`services/dataset_catalog.py`, `services/template_service.py`, `excel_parser/payload.py`).
+  - Normalisasi period marker `YYYY-MM` untuk quarterly/yearly sudah diseragamkan di parser manual/upload.
+  - Migrasi `dataset_code` + `upload_runs` serta `002_dataset_code_upload_runs.py` sudah berjalan.
+- **Yang masih jadi backlog di plan ini:**
+  - Task 1–7 (request correlation, audit log CRUD/upload/manual/export, log preview/session, dsb.).
+  - Task 8–13 (inventarisasi SQL legacy, migrasi MySQL driver raw-`get_conn`, rewrite upsert berbasis `INSERT ... ON DUPLICATE KEY`).
+- **Arah integrasi:** setelah fase SQLAlchemy utama, rujuk `docs/superpowers/plans/2026-04-15-sqlalchemy-mysql-refactor.md` untuk eksekusi portabilitas DB; dokumentasi ini berfungsi sebagai checklist kompatibilitas/logging tambahan.
+
 **Goal:** Menambahkan logging terstruktur/audit pada alur CRUD, upload Excel, input manual, dan ekspor hasil analisis periode; serta merencanakan migrasi persistence dari SQLite ke MySQL dengan risiko SQL dialect dan koneksi yang terkendali. **Selaras portabilitas:** implementasi jangka panjang mengikuti **`2026-04-15-sqlalchemy-mysql-refactor.md`** — backend bisa **SQLite / MySQL / PostgreSQL** lewat `DATABASE_URL` (kantor tetap MySQL); **CRUD** diarahkan ke permukaan repository Pythonic (kurang kompleks, mudah diuji).
 
 **Architecture:** Tetap mempertahankan pola Flask saat ini (`routes` → `services` → `models`). Logging dikonfigurasi sekali di bootstrap aplikasi (`create_app` / `configure_flask_app`), correlation id per request via `g`, pesan audit di boundary layanan (`services/*`) dan opsional wrap terpusat di `models/mutations.py`. Migrasi MySQL memfokuskan perubahan pada `models/connection.py`, semua SQL di `models/*.py`, serta penyesuaian exception handling (`sqlite3.IntegrityError` → driver MySQL) di `services/upload_flow.py` dan modul terkait — **setelah SQLAlchemy:** exception + upsert dibungkus modul portabel (bukan string error per DB tersebar).
