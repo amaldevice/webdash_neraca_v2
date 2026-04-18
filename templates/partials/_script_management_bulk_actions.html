@@ -211,14 +211,14 @@ function updateInsertPeriodFormat() {
             periodInput.title = 'Format: YYYY-MM';
             break;
         case 'quarterly':
-            periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 (contoh: 2024-Q1)';
-            periodInput.pattern = '\\d{4}-Q[1-4]';
-            periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4';
+            periodInput.placeholder = 'Format: YYYY-Q1/Q2/Q3/Q4 atau YYYY-MM (contoh: 2024-Q1 / 2024-01)';
+            periodInput.pattern = '\\d{4}-(?:Q[1-4]|\\d{1,2})';
+            periodInput.title = 'Format: YYYY-Q1 sampai YYYY-Q4, atau YYYY-MM';
             break;
         case 'yearly':
-            periodInput.placeholder = 'Format: YYYY (contoh: 2024)';
-            periodInput.pattern = '\\d{4}';
-            periodInput.title = 'Format: YYYY';
+            periodInput.placeholder = 'Format: YYYY atau YYYY-MM (contoh: 2024 atau 2021-01)';
+            periodInput.pattern = '\\d{4}(?:-\\d{1,2})?';
+            periodInput.title = 'Format: YYYY atau YYYY-MM';
             break;
     }
 }

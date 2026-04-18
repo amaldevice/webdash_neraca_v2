@@ -127,6 +127,58 @@ class TestManualEntry:
         assert entries[0]["value"] == 300.25, "Nilai harus sesuai dengan input"
         assert entries[0]["year"] == 2024, "Tahun harus di-parse dengan benar"
 
+    def test_manual_entry_valid_quarterly_marker_data(self, test_client):
+        """Test input manual triwulan juga menerima format YYYY-MM sebagai penanda"""
+        response = test_client.post(
+            "/manual",
+            data={
+                "uploader": "TestUser",
+                "version": "v1.0",
+                "data_type": "stock",
+                "time_period": "quarterly",
+                "period_date": "2024-01",
+                "indicator": "QuarterMarker",
+                "value": "150.00",
+            },
+        )
+
+        assert response.status_code in [200, 302], "Input yang valid harus redirect"
+
+        from infrastructure.db import remove_scoped_session
+        from models import query_data_entries
+
+        remove_scoped_session()
+        entries = query_data_entries(uploader="TestUser", indicator="QuarterMarker")
+        assert len(entries) > 0, "Data marker harus tersimpan"
+        assert entries[0]["quarter"] == 1, "Kuartal dari marker harus di-parse sebagai 1"
+        assert entries[0]["month"] == 1, "Nilai bulan dari marker triwulan disimpan sebagai 1"
+
+    def test_manual_entry_valid_yearly_marker_data(self, test_client):
+        """Test input manual tahunan menerima format YYYY-MM sebagai penanda"""
+        response = test_client.post(
+            "/manual",
+            data={
+                "uploader": "TestUser",
+                "version": "v1.0",
+                "data_type": "flow",
+                "time_period": "yearly",
+                "period_date": "2021-01",
+                "indicator": "YearlyMarker",
+                "value": "75.00",
+            },
+        )
+
+        assert response.status_code in [200, 302], "Input yang valid harus redirect"
+
+        from infrastructure.db import remove_scoped_session
+        from models import query_data_entries
+
+        remove_scoped_session()
+        entries = query_data_entries(uploader="TestUser", indicator="YearlyMarker")
+        assert len(entries) > 0, "Data marker harus tersimpan"
+        assert entries[0]["year"] == 2021, "Tahun harus di-parse"
+        assert entries[0]["month"] == 1, "Marker bulan pada tahunan dipertahankan"
+
     def test_manual_entry_missing_required_fields(self, test_client):
         """Test input manual dengan field yang hilang"""
         # Test tanpa uploader

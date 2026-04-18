@@ -113,6 +113,9 @@ class TestValidation(unittest.TestCase):
         year, month, quarter = _parse_period_date("quarterly", "2024-Q1")
         self.assertEqual((year, month, quarter), (2024, None, 1))
 
+        year, month, quarter = _parse_period_date("quarterly", "2024-01")
+        self.assertEqual((year, month, quarter), (2024, 1, 1))
+
         year, month, quarter = _parse_period_date("quarterly", "2024-Q4")
         self.assertEqual((year, month, quarter), (2024, None, 4))
 
@@ -120,6 +123,8 @@ class TestValidation(unittest.TestCase):
         """Test period date parsing for yearly format"""
         year, month, quarter = _parse_period_date("yearly", "2024")
         self.assertEqual((year, month, quarter), (2024, None, None))
+        year, month, quarter = _parse_period_date("yearly", "2024-01")
+        self.assertEqual((year, month, quarter), (2024, 1, None))
 
     def test_parse_period_date_invalid(self):
         """Test period date parsing with invalid inputs"""

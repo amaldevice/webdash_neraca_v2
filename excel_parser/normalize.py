@@ -85,7 +85,7 @@ def _parse_yearly_period(period_value, normalized: str) -> Dict[str, Optional[in
     parsed = _to_datetime(period_value)
     if parsed is None:
         return {"year": None, "month": None, "quarter": None}
-    return {"year": parsed.year, "month": None, "quarter": None}
+    return {"year": parsed.year, "month": parsed.month, "quarter": None}
 
 
 def _parse_quarterly_period(period_value, normalized: str) -> Dict[str, Optional[int]]:
@@ -111,7 +111,7 @@ def _parse_quarterly_period(period_value, normalized: str) -> Dict[str, Optional
     parsed = _to_datetime(period_value)
     if parsed is None:
         return {"year": None, "month": None, "quarter": None}
-    return {"year": parsed.year, "month": None, "quarter": parsed.quarter}
+    return {"year": parsed.year, "month": parsed.month, "quarter": parsed.quarter}
 
 
 def _parse_monthly_period(period_value, normalized: str) -> Dict[str, Optional[int]]:
