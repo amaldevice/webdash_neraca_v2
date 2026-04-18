@@ -76,6 +76,7 @@ Setelah `alembic upgrade head` (revisi `002_dataset` / `002_dataset_code_upload_
 ## Changelog ringkas (state fungsional)
 
 - **2026-04-17 — Dokumentasi:** `README_DOCS.md` jadi indeks utama; isi `user_upload_datasets.md`, `migration_rehearsal_dataset_code.md`, dan `refactor-planning.md` digabung ke sini lalu file itu dihapus; `planning.md` dirampingkan jadi stub sinkron; aturan Cursor di `.cursor/rules/` dilacak Git (un-ignore selektif); README root menaut ke sini.
+- **2026-04-17 — Parsing periode lebih fleksibel untuk penanda:** `quarterly` dan `yearly` menerima `YYYY-MM` di input manual/upload; `2024-01` pada Triwulanan/Januari tetap tersimpan sebagai bulan marker (`year=2024`, `month=1`, `quarter=1`) agar tampilan tetap `YYYY-MM`, sementara `YYYY-Q#` tetap valid.
 - **2026-04-17 — Plan Cursor di repo:** `docs/plans/bps…` lalu **2026-04-18 — `.cursor/plans/` dilacak Git:** satu file kanon `.cursor/plans/bps_data_management_system_bd94389d.plan.md` (YAML + arsitektur); `docs/plans/README.md` hanya menaut.
 - **2026-04-16 — Dataset-aware:** katalog dataset, template per slug, kolom `dataset_code`, tabel `upload_runs`, parser long-format (`excel_parser/payload.py`, `dataset_long.py`), filter UI dataset-aware.
 - **2026-04-16 — MySQL / Alembic:** mitigasi 1054/1050/1101/1091; migrasi idempotent `002`; skrip `apply_dataset_code_migration.py`; dokumentasi troubleshooting.

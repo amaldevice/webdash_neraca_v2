@@ -70,6 +70,20 @@ def test_build_manual_entry(app_module):
     )
     assert entry_quarterly is not None
     assert entry_quarterly["quarter"] == 1
+    # Test quarterly fallback with monthly marker
+    entry_quarterly_marker = app_module._build_manual_entry(
+        "Uploader",
+        "v1",
+        "flow",
+        "quarterly",
+        "2024-01",
+        "GDP",
+        "500.0",
+    )
+    assert entry_quarterly_marker is not None
+    assert entry_quarterly_marker["year"] == 2024
+    assert entry_quarterly_marker["month"] == 1
+    assert entry_quarterly_marker["quarter"] == 1
 
     # Test yearly format
     entry_yearly = app_module._build_manual_entry(
@@ -85,3 +99,18 @@ def test_build_manual_entry(app_module):
     assert entry_yearly["year"] == 2024
     assert entry_yearly["month"] is None
     assert entry_yearly["quarter"] is None
+
+    # Test yearly fallback with monthly marker format
+    entry_yearly_marker = app_module._build_manual_entry(
+        "Uploader",
+        "v1",
+        "stock",
+        "yearly",
+        "2024-01",
+        "Population",
+        "270000001",
+    )
+    assert entry_yearly_marker is not None
+    assert entry_yearly_marker["year"] == 2024
+    assert entry_yearly_marker["month"] == 1
+    assert entry_yearly_marker["quarter"] is None

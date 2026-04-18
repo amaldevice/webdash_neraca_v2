@@ -42,6 +42,12 @@ todos:
   - id: add-manual-duplicate-early-detection
     content: Add early duplicate detection on manual input using indicator + period key (indicator_name, year, month, quarter) and show confirmation warning before save.
     status: completed
+  - id: relax-manual-period-parser
+    content: Izinkan parsing periode manual yang toleran (Triwulanan menerima YYYY-MM, Tahunan menerima YYYY-MM sebagai penanda) supaya tidak ada penolakan format period_date.
+    status: completed
+  - id: retain-quarterly-yearly-month-marker
+    content: Pertahankan `month` pada path marker `YYYY-MM` untuk `quarterly` dan `yearly` agar penyimpanan dan tampilan ikut `YYYY-MM` bila marker eksplisit dipakai.
+    status: completed
   - id: add-upload-template-download
     content: Add default single-sheet Excel template and expose download link from /upload form
     status: completed

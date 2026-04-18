@@ -25,8 +25,8 @@ def _resolve_read_sheet(
 
     Returns ``(resolved, ok)``. ``ok`` is False when a dataset slug was given but no sheet matched.
     """
-    xl = pd.ExcelFile(file_path, engine="openpyxl")
-    names = xl.sheet_names
+    with pd.ExcelFile(file_path, engine="openpyxl") as xl:
+        names = xl.sheet_names
     name_set = set(names)
 
     resolved: str | int | None = None
@@ -92,11 +92,12 @@ def parse_excel_payload(
 
     resolved, sheet_ok = _resolve_read_sheet(file_path, sheet_name, definition)
     if not sheet_ok:
-        xl = pd.ExcelFile(file_path, engine="openpyxl")
+        with pd.ExcelFile(file_path, engine="openpyxl") as xl:
+            sheet_names = xl.sheet_names
         warnings.append(
             "Lembar data dataset tidak ditemukan di berkas. "
-            f"Lembar tersedia (awal): {', '.join(xl.sheet_names[:12])}"
-            + (" …" if len(xl.sheet_names) > 12 else "")
+            f"Lembar tersedia (awal): {', '.join(sheet_names[:12])}"
+            + (" …" if len(sheet_names) > 12 else "")
         )
         payload["warnings"] = warnings
         return payload

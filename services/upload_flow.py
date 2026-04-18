@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import uuid
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -40,6 +41,21 @@ from werkzeug.utils import secure_filename
 UPLOAD_TEMPLATE_NAME = "upload.html"
 UPLOAD_ROUTE_MODE = "upload"
 MANUAL_ROUTE_MODE = "manual"
+
+
+def _safe_remove_file(path: str) -> None:
+    if not path or not os.path.exists(path):
+        return
+    for attempt in range(3):
+        try:
+            os.remove(path)
+            return
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            if attempt >= 2:
+                raise
+            time.sleep(0.2)
 
 
 def _duplicate_conflict_message() -> str:
@@ -427,7 +443,7 @@ def handle_upload_confirm_with_duplicates(
             )
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
-            os.remove(file_path)
+            _safe_remove_file(file_path)
 
         if overwrite_count > 0 and skipped_count > 0:
             msg = (
@@ -496,7 +512,7 @@ def handle_upload_confirm_without_duplicates(
             )
         delete_preview_session(upload_folder, preview_token)
         if os.path.exists(file_path):
-            os.remove(file_path)
+            _safe_remove_file(file_path)
         return build_upload_response(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
@@ -527,7 +543,7 @@ def handle_upload_post_file_no_entries(
     if not warnings:
         flashes.append(("File Excel tidak berisi data yang valid.", "error"))
     if os.path.exists(destination):
-        os.remove(destination)
+        _safe_remove_file(destination)
     return build_upload_response(
         "render",
         flashes,
@@ -817,7 +833,7 @@ def process_upload_post_file(
             require_dataset_context=require_dataset,
         )
     except Exception as e:
-        os.remove(destination)
+        _safe_remove_file(destination)
         return build_upload_response(
             "render",
             [(f"Gagal membaca berkas Excel: {str(e)}", "error")],
@@ -871,7 +887,7 @@ def process_upload_post_file(
             )
             if response.kind == "redirect":
                 if os.path.exists(destination):
-                    os.remove(destination)
+                    _safe_remove_file(destination)
                 return response
             return response
         except Exception as e:
