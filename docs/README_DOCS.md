@@ -87,6 +87,13 @@ Setelah `alembic upgrade head` (revisi `002_dataset` / `002_dataset_code_upload_
 
 Rencana refactor struktural panjang (wave upload/period) pernah di `planning.md` / `refactor-planning.md`; narasi panjang itu **tidak** di-copy penuh ke sini — gunakan `git log -p -- docs/planning.md` atau plan SQLAlchemy di atas.
 
+## Status plan yang belum dieksekusi (ringkas)
+
+- **Sudah terkonfirmasi berjalan di state sekarang:** dataset-aware upload/manual, template per dataset, period marker `YYYY-MM` untuk quarterly/yearly, serta migrasi `dataset_code` + `upload_runs`.
+- **Belum (utama) dari backlog docs:** `docs/superpowers/plans/2026-04-13-logging-and-mysql-migration.md` (Task 1–13 logging/audit + pipeline migrasi SQL legacy) masih largely `[ ]`.
+- **Catatan:** jalur MySQL di dokumen 2026-04-13 dianggap **rujukan migrasi lama**; eksekusi kompatibilitas DB sebenarnya mengikuti `docs/superpowers/plans/2026-04-15-sqlalchemy-mysql-refactor.md`.
+- Untuk update eksekusi yang lebih presisi per fitur, cek `docs/README_DOCS.md` + `docs/planning.md` (stub) + `.cursor/plans/bps_data_management_system_bd94389d.plan.md`.
+
 ---
 
 ## Kontributor & agen (Cursor)

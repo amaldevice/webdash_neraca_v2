@@ -1,12 +1,18 @@
-# Panduan Deployment ke Server (via Webmin / Git, bukan GitHub UI)
+# Panduan Deployment ke Server (via Webmin di Linux kantor)
 
-Tujuan dokumen ini: deploy **webdash_neraca** ke server production/staging melalui terminal Webmin (atau shell SSH), inisialisasi DB, dan migrasi data dari SQLite ke MySQL.
+Tujuan dokumen ini: deploy **webdash_neraca_v2** ke server kantor Linux melalui terminal Webmin (atau SSH), inisialisasi DB, dan migrasi data dari SQLite ke MySQL.
 
 Semua langkah menulis ke `.env` lokal di server (`.env` tidak di-commit).
 
 ## 1) Asumsi lingkungan
 
 - Server Linux (Debian/Ubuntu) yang bisa diakses via **Webmin**.
+- **Catatan deployment:** container `docker-compose` di repo dipakai untuk **testing lokal laptop**, bukan pola deploy di server kantor.
+
+## 1.1) Arsitektur testing lokal vs server kantor
+
+- **Server kantor (Webmin/production):** pakai instalasi sistem langsung + `systemd` + reverse proxy.
+- **Laptop pribadi:** pakai `docker-compose.mysql.yml` untuk simulasi cepat dan validasi fitur.
 - Tersedia `python3`, `git`, `mysql` client, `node` (kalau perlu build CSS), `systemd`.
 - Aplikasi akan dijalankan di belakang reverse proxy (Nginx/Apache) dengan HTTPS.
 
@@ -18,8 +24,8 @@ Semua langkah menulis ke `.env` lokal di server (`.env` tidak di-commit).
 
 ```bash
 cd /var/www
-git clone ssh://git@internal.example.com:2222/team/webdash_neraca.git webdash_neraca
-cd webdash_neraca
+git clone ssh://git@internal.example.com:2222/team/webdash_neraca_v2.git webdash_neraca_v2
+cd webdash_neraca_v2
 ```
 
 4. Pin dan checkout branch rilis:
@@ -37,7 +43,7 @@ git pull --ff-only
 ## 3) Setup Python + dependensi
 
 ```bash
-cd /var/www/webdash_neraca
+cd /var/www/webdash_neraca_v2
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
@@ -70,30 +76,36 @@ FLASK_SECRET_KEY=isi_dengan_secret_panjang
 REQUIRE_FLASK_SECRET=1
 SESSION_COOKIE_SECURE=1
 
-MYSQL_TARGET_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca?charset=utf8mb4
-DATABASE_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca?charset=utf8mb4
-ALEMBIC_DATABASE_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca?charset=utf8mb4
+MYSQL_TARGET_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca_v2?charset=utf8mb4
+DATABASE_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca_v2?charset=utf8mb4
+ALEMBIC_DATABASE_URL=mysql+pymysql://user_db:password_db@127.0.0.1:3306/webdash_neraca_v2?charset=utf8mb4
 
-SQLITE_SOURCE_PATH=/var/backups/webdash_neraca/data.db   # hanya dipakai saat migrasi
+SQLITE_SOURCE_PATH=/var/backups/webdash_neraca_v2/data.db   # hanya dipakai saat migrasi
 ```
 
 > Catatan: `DATABASE_URL` adalah DSN utama runtime Flask.
+
+### Mode koneksi DB (praktis)
+
+- **Production kantor (Webmin):** set `DATABASE_URL` ke MySQL (`mysql+pymysql://...`), isi variabel user/password khusus service.
+- **Fallback lokal / operasi backup sementara:** set `DATABASE_URL=sqlite:////var/backups/webdash_neraca_v2/data.db` untuk verifikasi cepat atau pemulihan darurat.
+- **Tip:** `SQLITE_SOURCE_PATH` hanya dipakai saat migrasi, tidak dipakai sebagai source runtime normal.
 
 ## 6) Inisialisasi MySQL dari awal (kalau DB/tabel belum ada)
 
 ### 6.1 Cek & buat DB serta user
 
 ```bash
-mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS webdash_neraca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS webdash_neraca_v2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -uroot -p -e "CREATE USER IF NOT EXISTS 'webdash_user'@'127.0.0.1' IDENTIFIED BY 'ganti_password_kuat';"
-mysql -uroot -p -e "GRANT ALL PRIVILEGES ON webdash_neraca.* TO 'webdash_user'@'127.0.0.1';"
+mysql -uroot -p -e "GRANT ALL PRIVILEGES ON webdash_neraca_v2.* TO 'webdash_user'@'127.0.0.1';"
 mysql -uroot -p -e "FLUSH PRIVILEGES;"
 ```
 
 ### 6.2 Cek apakah tabel sudah ada
 
 ```bash
-mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SHOW TABLES;"
+mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca_v2 -e "SHOW TABLES;"
 ```
 
 - Jika hasilnya **kosong**, lanjut ke migrasi skema.
@@ -103,7 +115,7 @@ mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SHOW 
 
 ```bash
 source .venv/bin/activate
-cd /var/www/webdash_neraca
+cd /var/www/webdash_neraca_v2
 export DATABASE_URL="$(grep '^DATABASE_URL=' .env | cut -d= -f2-)"
 python -m alembic upgrade head
 ```
@@ -111,7 +123,7 @@ python -m alembic upgrade head
 Verifikasi:
 
 ```bash
-mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SHOW TABLES;"
+mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca_v2 -e "SHOW TABLES;"
 ```
 
 Pastikan ada `data_entries`.
@@ -120,13 +132,13 @@ Pastikan ada `data_entries`.
 
 Gunakan ketika masih ada `data.db` lokal (legacy) yang ingin dipindah.
 
-1. Salin file sumber SQLite ke server (contoh: `/var/backups/webdash_neraca/data.db`).
+1. Salin file sumber SQLite ke server (contoh: `/var/backups/webdash_neraca_v2/data.db`).
 2. Validasi read-only (dry-run):
 
 ```bash
 source .venv/bin/activate
-cd /var/www/webdash_neraca
-export SQLITE_SOURCE_PATH=/var/backups/webdash_neraca/data.db
+cd /var/www/webdash_neraca_v2
+export SQLITE_SOURCE_PATH=/var/backups/webdash_neraca_v2/data.db
 export MYSQL_TARGET_URL="$DATABASE_URL"
 python scripts/migrate_sqlite_to_mysql.py --dry-run
 ```
@@ -140,13 +152,13 @@ python scripts/migrate_sqlite_to_mysql.py --truncate-target
 4. Validasi pasca-migrasi:
 
 ```bash
-mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca -e "SELECT COUNT(*) FROM data_entries;"
+mysql -uwebdash_user -pganti_password_kuat -h 127.0.0.1 webdash_neraca_v2 -e "SELECT COUNT(*) FROM data_entries;"
 ```
 
 5. Jaga backup lama (sebelum truncate/migrate):
 
 ```bash
-cp /var/backups/webdash_neraca/data.db /var/backups/webdash_neraca/data.db.$(date +%F_%H%M%S)
+cp /var/backups/webdash_neraca_v2/data.db /var/backups/webdash_neraca_v2/data.db.$(date +%F_%H%M%S)
 ```
 
 ## 8) Cek cepat koneksi runtime (sebelum service aktif)
@@ -169,19 +181,19 @@ Jika sudah benar, stop proses `flask run` dan lanjut service.
 
 ## 9) Jalankan dengan Gunicorn + systemd (produksi)
 
-Buat `/etc/systemd/system/webdash.service`:
+Buat `/etc/systemd/system/webdash_neraca_v2.service`:
 
 ```ini
 [Unit]
-Description=Webdash Flask App
+Description=webdash_neraca_v2 Flask App
 After=network.target
 
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/webdash_neraca
-EnvironmentFile=/var/www/webdash_neraca/.env
-ExecStart=/var/www/webdash_neraca/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 wsgi:app
+WorkingDirectory=/var/www/webdash_neraca_v2
+EnvironmentFile=/var/www/webdash_neraca_v2/.env
+ExecStart=/var/www/webdash_neraca_v2/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 wsgi:app
 Restart=always
 RestartSec=5
 
@@ -193,50 +205,67 @@ Enable & start:
 
 ```bash
 systemctl daemon-reload
-systemctl enable --now webdash.service
-systemctl status webdash.service
+systemctl enable --now webdash_neraca_v2.service
+systemctl status webdash_neraca_v2.service
 ```
 
 ## 10) Reverse proxy di Webmin (Nginx/Apache)
 
 Di Webmin, arahkan domain/subdomain ke `http://127.0.0.1:5000` lalu pasang sertifikat TLS.
 
-## 11) Backup & restore operasional
+## 11) Backup & restore operasional (Webmin server kantor)
 
-- Backup DB:
+- Backup MySQL:
 
 ```bash
-mysqldump -uwebdash_user -pganti_password_kuat webdash_neraca > /var/backups/webdash_neraca/webdash_neraca_$(date +%F).sql
+mysqldump -uwebdash_user -pganti_password_kuat webdash_neraca_v2 > /var/backups/webdash_neraca_v2/webdash_neraca_v2_$(date +%F).sql
 ```
 
-- Backup upload:
+- Backup direktori upload:
 
 ```bash
-tar -czf /var/backups/webdash_neraca/uploads_$(date +%F).tar.gz /var/www/webdash_neraca/uploads
+tar -czf /var/backups/webdash_neraca_v2/uploads_$(date +%F).tar.gz /var/www/webdash_neraca_v2/uploads
 ```
 
-- Backup MySQL ke SQLite (cadangan file, cocok untuk restore cepat):
+- Backup MySQL ke SQLite (opsional, untuk audit/restore lokal):
 
 ```bash
-cd /var/www/webdash_neraca
+cd /var/www/webdash_neraca_v2
 source .venv/bin/activate
 
-# satu jalur default timestamped di /var/www/webdash_neraca/backups
+# satu jalur default timestamped di /var/www/webdash_neraca_v2/backups
 python scripts/migrate_mysql_to_sqlite.py
+# contoh backup SQLite dari hasil konversi
+ls -lh /var/www/webdash_neraca_v2/backups/*.db || true
 
 # target file tetap untuk cron backup harian
-export SQLITE_BACKUP_PATH=/var/backups/webdash_neraca/webdash_data_backup.db
+export SQLITE_BACKUP_PATH=/var/backups/webdash_neraca_v2/webdash_data_backup.db
 python scripts/migrate_mysql_to_sqlite.py --truncate-target
 
 # preview dulu
 python scripts/migrate_mysql_to_sqlite.py --truncate-target --dry-run
 ```
 
-- Restore:
+- Restore MySQL:
 
 ```bash
-mysql -uwebdash_user -pganti_password_kuat webdash_neraca < /var/backups/webdash_neraca/webdash_neraca_YYYY-MM-DD.sql
-tar -xzf /var/backups/webdash_neraca/uploads_YYYY-MM-DD.tar.gz -C /var/www/webdash_neraca
+mysql -uwebdash_user -pganti_password_kuat webdash_neraca_v2 < /var/backups/webdash_neraca_v2/webdash_neraca_v2_YYYY-MM-DD.sql
+tar -xzf /var/backups/webdash_neraca_v2/uploads_YYYY-MM-DD.tar.gz -C /var/www/webdash_neraca_v2
+```
+
+### 11.1 Backup SQLite (jika dipakai untuk debug/arsip)
+
+Jika menggunakan SQLite untuk analisis lokal atau backup ringan:
+
+```bash
+cp /var/backups/webdash_neraca_v2/data.db /var/backups/webdash_neraca_v2/data.db.$(date +%F_%H%M%S)
+sqlite3 /var/backups/webdash_neraca_v2/data.db "PRAGMA integrity_check;"
+```
+
+Restore SQLite dari backup:
+
+```bash
+cp /var/backups/webdash_neraca_v2/data.db.YYYY-MM-DD_HHMMSS /var/backups/webdash_neraca_v2/data.db
 ```
 
 ## 12) Checklist go-live
@@ -245,14 +274,14 @@ tar -xzf /var/backups/webdash_neraca/uploads_YYYY-MM-DD.tar.gz -C /var/www/webda
 - [ ] MySQL terpasang dan dapat diakses dari service user `www-data`.
 - [ ] `python -m alembic upgrade head` sukses.
 - [ ] `migrasi SQLite→MySQL` selesai dan `SELECT COUNT(*)` sesuai target.
-- [ ] Service `webdash.service` aktif (systemd).
+- [ ] Service `webdash_neraca_v2.service` aktif (systemd).
 - [ ] Reverse proxy + HTTPS aktif.
 - [ ] `/` dan `/preview-data` bisa diakses lewat domain publik.
 - [ ] Pengujian upload satu file sample + generate chart/analysis sukses.
 
 ## 13) Troubleshooting cepat
 
-- `Unknown database 'webdash_neraca'`  
+- `Unknown database 'webdash_neraca_v2'`  
   -> Cek `CREATE DATABASE` dan `DATABASE_URL` di `.env`.
 - `Access denied`  
   -> Cek user/host/password MySQL dan firewall bind-address.
@@ -262,4 +291,6 @@ tar -xzf /var/backups/webdash_neraca/uploads_YYYY-MM-DD.tar.gz -C /var/www/webda
  -> Pastikan `pip install -r requirements.txt` di environment yang dipakai service.
 - `Tables not found`  
  -> Jalankan `python -m alembic upgrade head` lagi setelah cek `.env`.
+- `docker compose` di production gagal terhubung
+  -> Normal jika kamu deploy via systemd. Pastikan perintah di checklist server kantor memakai service/systemd + konfigurasi Webmin, bukan container local.
 
