@@ -19,7 +19,7 @@ _NEW_UX_COLS = ["uploader_name", "version", "indicator_name", "year", "month", "
 def upgrade() -> None:
     op.add_column(
         "data_entries",
-        sa.Column("dataset_code", sa.Text(), nullable=False, server_default=""),
+        sa.Column("dataset_code", sa.String(64), nullable=False, server_default=""),
     )
     op.drop_index(_UX, table_name="data_entries")
     op.create_index(_UX, "data_entries", _NEW_UX_COLS, unique=True)
@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.Text(), nullable=False),
         sa.Column("uploader_name", sa.Text(), nullable=False),
         sa.Column("version", sa.Text(), nullable=False),
-        sa.Column("dataset_code", sa.Text(), nullable=False, server_default=""),
+        sa.Column("dataset_code", sa.String(64), nullable=False, server_default=""),
         sa.Column("file_name", sa.Text(), nullable=True),
         sa.Column("status", sa.Text(), nullable=False),
         sa.Column("message", sa.Text(), nullable=True),
