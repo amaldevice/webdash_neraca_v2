@@ -251,7 +251,6 @@ def upload_data():
             "version": meta.get("version", ""),
             "data_type": meta.get("data_type", "flow"),
             "time_period": meta.get("time_period", "monthly"),
-            "layout_override": payload.get("layout_override", "auto"),
             "dataset_slug": (meta.get("dataset_slug") or "").strip(),
         }
         preview_payload = to_preview_context(payload)

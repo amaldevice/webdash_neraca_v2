@@ -201,8 +201,11 @@ function bindConfirmActionButtons() {
 }
 
 function updateInsertPeriodFormat() {
-    const timePeriod = document.getElementById('insert_time_period').value;
+    const timePeriodEl = document.getElementById('insert_time_period');
     const periodInput = document.getElementById('insert_period_date');
+    if (!timePeriodEl || !periodInput) return;
+
+    const timePeriod = timePeriodEl.value;
 
     switch(timePeriod) {
         case 'monthly':

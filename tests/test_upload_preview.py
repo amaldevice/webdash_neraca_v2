@@ -67,7 +67,6 @@ def test_cache_upload_preview_and_load_session(app_module, tmp_path):
             destination,
             "sample.xlsx",
             _entry_payload(),
-            "auto",
             _parse_payload(),
             [],
         )
@@ -78,7 +77,6 @@ def test_cache_upload_preview_and_load_session(app_module, tmp_path):
         assert payload is not None
         assert payload["file_name"] == "sample.xlsx"
         assert payload["metadata"] == _entry_payload()
-        assert payload["layout_override"] == "auto"
         assert payload["skip_duplicate_indexes"] == []
 
 
@@ -107,7 +105,6 @@ def test_build_upload_preview_returns_payload_and_token(app_module, tmp_path):
             version="v1",
             data_type="flow",
             time_period="monthly",
-            layout_override="auto",
             payload=_parse_payload(),
             entries=_parse_payload()["entries"],
             duplicates=duplicates,
@@ -128,7 +125,6 @@ def test_load_preview_session_expired_session_is_removed(tmp_path):
         "file_path": str(file_path),
         "file_name": "x.xlsx",
         "metadata": _entry_payload(),
-        "layout_override": "auto",
         "layout": "vertical",
         "header_row": 1,
         "source_rows": [],
@@ -166,7 +162,6 @@ def test_cleanup_upload_preview_cache_removes_stale_token_from_session(tmp_path)
         "file_path": str(stale_file),
         "file_name": "stale.xlsx",
         "metadata": _entry_payload(),
-        "layout_override": "auto",
         "layout": "vertical",
         "header_row": 1,
         "source_rows": [],
@@ -251,7 +246,6 @@ def test_to_preview_context_returns_default_sample_count_and_duplicates():
         "header_row": 1,
         "source_rows": [],
         "source_columns": [],
-        "layout_override": "auto",
         "warnings": [],
         "entries_preview": [{"value": 1}],
         "invalid_rows": [],

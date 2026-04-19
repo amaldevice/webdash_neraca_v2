@@ -239,7 +239,6 @@ def cache_upload_preview(
     destination: str,
     file_name: str,
     metadata: dict,
-    layout_override: str,
     payload: dict,
     duplicates: list[dict],
 ) -> str:
@@ -251,7 +250,6 @@ def cache_upload_preview(
         destination=destination,
         file_name=file_name,
         metadata=metadata,
-        layout_override=layout_override,
         payload=payload,
         duplicates=duplicates,
     )
@@ -265,7 +263,6 @@ def _build_preview_session_payload(
     destination: str,
     file_name: str,
     metadata: dict[str, Any],
-    layout_override: str,
     payload: dict,
     duplicates: list[dict],
 ) -> dict[str, Any]:
@@ -273,7 +270,6 @@ def _build_preview_session_payload(
         "file_path": destination,
         "file_name": file_name,
         "metadata": metadata,
-        "layout_override": layout_override,
         "layout": payload["layout"],
         "header_row": payload["header_row"],
         "source_rows": payload["source_rows"],
@@ -292,7 +288,6 @@ def excel_preview_source_from_payload(
     *,
     file_name: str,
     payload: dict,
-    layout_override: str,
     upload_preview_token: str,
     total_records: int,
 ) -> dict:
@@ -315,7 +310,6 @@ def excel_preview_source_from_payload(
         "header_row": payload["header_row"],
         "source_rows": payload["source_rows"],
         "source_columns": payload["source_columns"],
-        "layout_override": layout_override,
         "warnings": payload.get("warnings", []),
         "entries_preview": payload.get("sample", []),
         "invalid_rows": payload.get("invalid_rows", []),
@@ -349,7 +343,6 @@ def _to_template_context(
         "header_row": payload.get("header_row"),
         "source_rows": payload.get("source_rows"),
         "source_columns": payload.get("source_columns"),
-        "layout_override": payload.get("layout_override"),
         "warnings": payload.get("warnings", []),
         "entries_preview": payload.get("entries_preview", []),
         "sample_count": len(payload.get("entries_preview", [])),
@@ -372,14 +365,12 @@ def build_upload_preview(
     version: str,
     data_type: str,
     time_period: str,
-    layout_override: str,
     payload: dict,
     entries: list[dict],
     duplicates: list[dict],
     dataset_slug: str = "",
 ) -> tuple[str, dict]:
     """Create cached preview state and normalized preview context for templates."""
-    effective_layout_override = layout_override or "auto"
     upload_token = cache_upload_preview(
         upload_folder,
         destination,
@@ -391,7 +382,6 @@ def build_upload_preview(
             "time_period": time_period,
             "dataset_slug": (dataset_slug or "").strip(),
         },
-        effective_layout_override,
         payload,
         duplicates,
     )
@@ -399,7 +389,6 @@ def build_upload_preview(
         excel_preview_source_from_payload(
             file_name=display_name,
             payload=payload,
-            layout_override=layout_override or "auto",
             upload_preview_token=upload_token,
             total_records=len(entries),
         ),
