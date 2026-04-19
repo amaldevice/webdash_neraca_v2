@@ -148,7 +148,6 @@ def parse_upload_form(form) -> tuple[dict[str, str], str, str, list[str]]:
     version = form.get("version", "").strip()
     data_type = form.get("data_type", "flow").strip()
     time_period = form.get("time_period", "monthly").strip()
-    layout_override = form.get("layout_override", "auto").strip().lower()
     dataset_slug = form.get("dataset_slug", "").strip()
     action = form.get("action", "preview").strip().lower()
     preview_token = form.get("preview_token", "").strip()
@@ -157,7 +156,7 @@ def parse_upload_form(form) -> tuple[dict[str, str], str, str, list[str]]:
         "version": version,
         "data_type": data_type,
         "time_period": time_period,
-        "layout_override": layout_override,
+        "layout_override": "auto",
         "dataset_slug": dataset_slug,
     }
     skip_dup = _form_getlist(form, "skip_duplicate_indexes")
@@ -381,7 +380,6 @@ def handle_upload_confirm_with_duplicates(
     upload_folder: str,
     preview_token: str,
     file_path: str,
-    preview_layout: str,
     parse_payload: dict[str, Any],
     token_payload: dict[str, Any],
     entries: list[dict[str, Any]],
@@ -406,7 +404,6 @@ def handle_upload_confirm_with_duplicates(
         "version": form_values.get("version", metadata.get("version", "")),
         "data_type": form_values.get("data_type", metadata.get("data_type", "")),
         "time_period": form_values.get("time_period", metadata.get("time_period", "")),
-        "layout_override": preview_layout,
         "dataset_slug": form_values.get("dataset_slug", metadata.get("dataset_slug", "")),
     }
     if not deduped_entries:
@@ -414,7 +411,6 @@ def handle_upload_confirm_with_duplicates(
             excel_preview_source_from_payload(
                 file_name=token_payload.get("file_name", ""),
                 payload=parse_payload,
-                layout_override=preview_layout,
                 upload_preview_token=preview_token,
                 total_records=len(entries),
             ),
@@ -561,7 +557,6 @@ def handle_upload_post_file_save_with_duplicates(
     version: str,
     data_type: str,
     time_period: str,
-    layout_override: str,
     payload: dict[str, Any],
     entries: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
@@ -575,7 +570,6 @@ def handle_upload_post_file_save_with_duplicates(
         version=version,
         data_type=data_type,
         time_period=time_period,
-        layout_override=layout_override,
         payload=payload,
         entries=entries,
         duplicates=duplicates,
@@ -646,7 +640,6 @@ def handle_upload_post_file_preview(
     destination: str,
     display_name: str,
     form_values: dict[str, str],
-    layout_override: str,
     payload: dict[str, Any],
     entries: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
@@ -663,7 +656,6 @@ def handle_upload_post_file_preview(
         destination,
         display_name,
         metadata,
-        layout_override,
         payload,
         duplicates,
     )
@@ -671,7 +663,6 @@ def handle_upload_post_file_preview(
         excel_preview_source_from_payload(
             file_name=display_name,
             payload=payload,
-            layout_override=layout_override,
             upload_preview_token=upload_token,
             total_records=len(entries),
         ),
@@ -710,7 +701,7 @@ def process_upload_confirm(
       Input:
         - upload_folder: direktori penyimpanan sesi file preview.
         - preview_token: token sesi preview yang dibuat saat `build_upload_preview`.
-        - form_values: metadata formulir wajib (uploader/version/data_type/time_period/layout_override/dataset_slug).
+      - form_values: metadata formulir wajib (uploader/version/data_type/time_period/dataset_slug).
         - skip_duplicate_indexes_raw: daftar index yang disetujui untuk menolak duplikasi.
       Output:
         - UploadFlowResponse.kind:
@@ -729,7 +720,6 @@ def process_upload_confirm(
 
     meta = token_payload["metadata"]
     file_path = token_payload["file_path"]
-    preview_layout = token_payload.get("layout_override", "auto")
     slug = (meta.get("dataset_slug") or "").strip()
     try:
         payload, entries, _ = parse_and_validate_upload_payload(
@@ -738,7 +728,7 @@ def process_upload_confirm(
             meta["version"],
             meta["data_type"],
             meta["time_period"],
-            layout_override=preview_layout,
+            layout_override="auto",
             preview_limit=PREVIEW_SAMPLE_LIMIT,
             dataset_slug=slug or None,
             require_dataset_context=require_dataset,
@@ -769,7 +759,6 @@ def process_upload_confirm(
             upload_folder=upload_folder,
             preview_token=preview_token,
             file_path=file_path,
-            preview_layout=preview_layout,
             parse_payload=payload,
             token_payload=token_payload,
             entries=entries,
@@ -817,7 +806,6 @@ def process_upload_post_file(
     version = form_values["version"]
     data_type = form_values["data_type"]
     time_period = form_values["time_period"]
-    layout_override = form_values.get("layout_override", "auto") or "auto"
     slug = (form_values.get("dataset_slug") or "").strip()
 
     try:
@@ -827,7 +815,7 @@ def process_upload_post_file(
             version,
             data_type,
             time_period,
-            layout_override=layout_override or "auto",
+            layout_override="auto",
             preview_limit=PREVIEW_SAMPLE_LIMIT,
             dataset_slug=slug or None,
             require_dataset_context=require_dataset,
@@ -874,7 +862,6 @@ def process_upload_post_file(
                 version=version,
                 data_type=data_type,
                 time_period=time_period,
-                layout_override=layout_override,
                 payload=payload,
                 entries=entries,
                 duplicates=duplicates,
@@ -904,7 +891,6 @@ def process_upload_post_file(
         destination=destination,
         display_name=display_name,
         form_values=form_values,
-        layout_override=layout_override,
         payload=payload,
         entries=entries,
         duplicates=duplicates,

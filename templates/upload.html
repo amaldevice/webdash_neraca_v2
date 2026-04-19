@@ -83,9 +83,6 @@
                     <p class="text-xs text-base-content/70">Layout</p>
                     <p class="font-semibold mt-2">
                         {{ preview.layout }}
-                        {% if preview.layout_override and preview.layout_override != "auto" %}
-                        <span class="text-sm text-base-content/70">(override: {{ preview.layout_override }})</span>
-                        {% endif %}
                     </p>
                     <p class="text-sm text-base-content/70">Sumber: {{ preview.source_mode }}</p>
                 </article>

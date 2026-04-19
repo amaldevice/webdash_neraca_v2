@@ -76,20 +76,6 @@
         </select>
     </div>
 
-    <div class="form-control">
-        <label for="layout_override" class="label">
-            <span class="label-text">Tipe Layout</span>
-        </label>
-        <select id="layout_override" name="layout_override" class="control">
-            <option value="auto" {% if not form_values or not form_values.layout_override or form_values.layout_override == 'auto' %}selected{% endif %}>Auto (deteksi otomatis)</option>
-            <option value="vertical" {% if form_values and form_values.layout_override == 'vertical' %}selected{% endif %}>Vertical (kolom period)</option>
-            <option value="horizontal" {% if form_values and form_values.layout_override == 'horizontal' %}selected{% endif %}>Horizontal (baris period)</option>
-        </select>
-        <label class="label">
-            <span class="field-help">Pilih jika format Excel tidak terdeteksi otomatis.</span>
-        </label>
-    </div>
-
     <input type="hidden" name="preview_token" value="{{ upload_preview_token or '' }}">
     <input type="hidden" name="csrf_token" value="{{ upload_csrf_token }}">
     </div>
@@ -108,24 +94,10 @@
             </label>
         </div>
 
-        <div class="form-control">
-            <a
-                href="{{ url_for('static', filename='templates/upload_template.xlsx') }}"
-                class="btn btn-soft w-full"
-                download="upload_template.xlsx"
-            >
-                Unduh Template Excel
-            </a>
-            <label class="label">
-                <span class="field-help">
-                    Template generik (dua format sheet) untuk indikator lebar klasik; untuk dataset REKAP pakai tautan template long per dataset di atas.
-                </span>
-            </label>
-        </div>
         <div class="label">
             <span class="field-help">
                 Tanpa pilihan dataset: parser membaca lembar pertama / aktif. Dengan dataset: sheet mengikuti katalog (nama persis seperti di Excel BI).
-                Layout override tetap dipakai bila format tidak terdeteksi otomatis.
+                Dataset-aware memakai format template long agar tidak perlu override manual.
             </span>
         </div>
             </div>

@@ -18,6 +18,7 @@ Path relatif terhadap **akar workspace** (folder repo).
   1. **`docs/README_DOCS.md`** — minimal bagian **Changelog ringkas** (bullet bertanggal; taut ke file kode bila perlu).
   2. **`.cursor/plans/bps_data_management_system_bd94389d.plan.md`** — todos / notes YAML (satu sumber di repo).
   3. **`docs/planning.md`** bila checklist stub perlu penyesuaian satu baris.
+  4. **`README.md`** — ringkasan fitur/penyesuaian yang sudah visible untuk pengguna dan operator.
 - Saat menyesuaikan requirement, alur kerja, atau perilaku sistem, catat maksud baru di dokumen di atas sebelum commit atau menutup pekerjaan.
 - Sebutkan bagian yang terpengaruh (fase, todo, pekerjaan selesai) agar reviewer bisa mengikuti evolusi tanpa menggali git.
 
