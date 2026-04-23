@@ -19,3 +19,4 @@
 - `.env.mysql.example` provides canonical aliases for host-based Flask + Docker MySQL operations, including `DATABASE_URL`, `MYSQL_TARGET_URL`, `MYSQL_SOURCE_URL`, and `MIGRATE_TARGET_URL`.
 - Pytest runs may require Python 3.11 because `requirements.txt` pins `numpy==2.3.1` (Python >=3.11).
 - Upload/template workflows write files into `uploads/`; on Windows, `WinError 32` commonly indicates file lock from a still-open local Excel instance or other process, so closing those handles is required before rerunning upload/save.
+Apa 
