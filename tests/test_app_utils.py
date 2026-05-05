@@ -1,7 +1,7 @@
-from services.list_view import EntryListParams, entries_query_kwargs
+from services.list_view import EntryListParams
 
 
-def test_entry_list_params_matches_entries_query_kwargs():
+def test_entry_list_params_query_kwargs():
     p = EntryListParams.from_request_strings(
         data_type="flow",
         time_period="monthly",
@@ -12,8 +12,11 @@ def test_entry_list_params_matches_entries_query_kwargs():
         value_min=1.0,
         value_max=9.0,
     )
-    legacy = entries_query_kwargs("flow", "monthly", "u1", "GDP", "2024-01", "2024-03", 1.0, 9.0, "")
-    assert p.to_query_kwargs() == legacy
+    qkw = p.to_query_kwargs()
+    assert qkw["data_type"] == "flow"
+    assert qkw["time_period"] == "monthly"
+    assert qkw["uploader"] == "u1"
+    assert qkw["indicator"] == "GDP"
 
 
 def test_allowed_file(app_module):

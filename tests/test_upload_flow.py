@@ -17,6 +17,7 @@ from services.upload_flow import (
     process_upload_confirm,
     process_upload_post_file,
 )
+from services import upload_handlers
 
 
 def _minimal_entry() -> dict:
@@ -147,7 +148,7 @@ def test_process_upload_confirm_inserts_without_duplicates(db_path, tmp_path):
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=[]):
-                with patch.object(upload_flow, "delete_preview_session") as del_sess:
+                with patch.object(upload_handlers, "delete_preview_session") as del_sess:
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
 
     assert r.kind == "redirect"
@@ -193,7 +194,7 @@ def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
-                with patch.object(upload_flow, "delete_preview_session"):
+                with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
 
     assert r.kind == "redirect"
@@ -270,7 +271,7 @@ def test_process_upload_confirm_skip_duplicate_inserts_remaining_rows(db_path, t
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
-                with patch.object(upload_flow, "delete_preview_session"):
+                with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
 
     assert r.kind == "redirect"
@@ -314,7 +315,7 @@ def test_process_upload_confirm_duplicate_without_skip_overwrites_existing_row(d
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
         with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
-                with patch.object(upload_flow, "delete_preview_session"):
+                with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
 
     assert r.kind == "redirect"
@@ -368,7 +369,7 @@ def test_process_upload_post_file_preview_mocks_cache(db_path, tmp_path):
 
     with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
         with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=[]):
-            with patch.object(upload_flow, "cache_upload_preview", return_value="mocktok") as cache:
+            with patch.object(upload_handlers, "cache_upload_preview", return_value="mocktok") as cache:
                 r = process_upload_post_file(str(upload_dir), dest, "ok.xlsx", form_values, "preview")
 
     assert r.kind == "render"

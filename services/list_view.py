@@ -112,31 +112,6 @@ def parse_entries_pagination(request: Any) -> tuple[int, int, int]:
     return page, limit, offset
 
 
-def entries_query_kwargs(
-    data_type: Optional[str],
-    time_period: Optional[str],
-    uploader: Optional[str],
-    indicator: Optional[str],
-    period_start: Optional[str],
-    period_end: Optional[str],
-    value_min: Optional[float],
-    value_max: Optional[float],
-    dataset_code: str = "",
-) -> dict[str, Any]:
-    """Keyword args for query_data_entries / get_total_entries_count."""
-    return EntryListParams.from_request_strings(
-        data_type=data_type or "",
-        time_period=time_period or "",
-        uploader=uploader or "",
-        indicator=indicator or "",
-        period_start=period_start,
-        period_end=period_end,
-        value_min=value_min,
-        value_max=value_max,
-        dataset_code=dataset_code or "",
-    ).to_query_kwargs()
-
-
 def build_entries_filters_ui_dict(
     *,
     data_type: str,

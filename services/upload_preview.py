@@ -14,9 +14,6 @@ from config import UPLOAD_PREVIEW_TTL_SECONDS
 from models.queries import preview_duplicates_batches
 from services.timeutil import utc_now_timestamp
 
-# Back-compat: in-memory cache removed; kept as empty mapping for any legacy monkeypatches.
-UPLOAD_PREVIEW_CACHE: dict[str, dict] = {}
-
 
 def _sessions_root(upload_folder: str) -> str:
     return os.path.join(upload_folder, "_preview_sessions")
@@ -150,15 +147,6 @@ def _collect_duplicate_lookup_keys(entries: list[dict]) -> list[tuple]:
         seen.add(key)
         unique_keys.append(key)
     return unique_keys
-
-
-def _lookup_existing_duplicate_records(
-    uploader: str,
-    version: str,
-    unique_keys: list[tuple],
-) -> list[dict]:
-    """Legacy helper: keep compatibility, now delegates to indicator+period matching."""
-    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
 
 
 def find_duplicate_entries_in_db(

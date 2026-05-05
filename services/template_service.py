@@ -18,13 +18,6 @@ if TYPE_CHECKING:
 HEADER_FONT = Font(name="Arial", size=11, bold=True)
 BODY_FONT = Font(name="Arial", size=11, color="000000")
 
-# Bump when schema contoh atau header berubah (cache / CDN opsional).
-TEMPLATE_BUILD_VERSION = "2026-04-16.1"
-
-
-def template_cache_key(dataset_slug: str, version: str = TEMPLATE_BUILD_VERSION) -> str:
-    return f"rekap-template:{dataset_slug}:{version}"
-
 
 def _write_long_sheet(wb: Workbook, definition: DatasetDefinition, *, with_sample: bool) -> None:
     title = dataset_workbook_sheet_title(definition)

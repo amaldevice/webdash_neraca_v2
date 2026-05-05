@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 from sqlalchemy import and_, func, or_
 
 from infrastructure.orm_models import DataEntry
-from services.period_filters import apply_period_range_filter, parse_period_filter_value, period_index
+from services.period_filters import parse_period_filter_value, period_index
 
 
 def period_analysis_range_sqlalchemy(
     period_start: Optional[str], period_end: Optional[str]
 ) -> Optional[Any]:
-    """Period range when listing filter is not monthly/quarterly/yearly (analysis / mixed).
-
-    Matches ``apply_period_range_filter`` with ``time_period_filter`` falsy.
-    """
+    """Period range when listing filter is not monthly/quarterly/yearly (analysis / mixed)."""
     t = DataEntry
     start_year, start_month, start_quarter = parse_period_filter_value(period_start)
     end_year, end_month, end_quarter = parse_period_filter_value(period_end)
@@ -34,54 +31,6 @@ def period_analysis_range_sqlalchemy(
     return and_(*subparts) if len(subparts) > 1 else subparts[0]
 
 
-def _build_data_entry_filter_clauses(
-    data_type: Optional[str],
-    time_period: Optional[str],
-    uploader: Optional[str],
-    indicator: Optional[str],
-    period_start: Optional[str],
-    period_end: Optional[str],
-    value_min: Optional[float],
-    value_max: Optional[float],
-    dataset_code: Optional[str] = None,
-) -> Tuple[List[str], List]:
-    clauses: List[str] = []
-    params: List = []
-    if data_type:
-        clauses.append("LOWER(data_type) = LOWER(?)")
-        params.append(data_type)
-    if time_period:
-        clauses.append("LOWER(time_period) = LOWER(?)")
-        params.append(time_period)
-    if uploader:
-        clauses.append("LOWER(uploader_name) LIKE LOWER(?)")
-        params.append(f"%{uploader}%")
-    if indicator:
-        clauses.append("LOWER(indicator_name) LIKE LOWER(?)")
-        params.append(f"%{indicator}%")
-    if dataset_code == "__EMPTY__":
-        clauses.append("(dataset_code IS NULL OR dataset_code = '')")
-    elif dataset_code:
-        clauses.append("dataset_code = ?")
-        params.append(dataset_code)
-
-    apply_period_range_filter(
-        clauses=clauses,
-        params=params,
-        time_period_filter=time_period,
-        period_start=period_start,
-        period_end=period_end,
-    )
-
-    if value_min is not None:
-        clauses.append("value >= ?")
-        params.append(value_min)
-    if value_max is not None:
-        clauses.append("value <= ?")
-        params.append(value_max)
-    return clauses, params
-
-
 def build_data_entry_filter_sqlalchemy(
     data_type: Optional[str],
     time_period: Optional[str],
@@ -93,7 +42,7 @@ def build_data_entry_filter_sqlalchemy(
     value_max: Optional[float],
     dataset_code: Optional[str] = None,
 ):
-    """Combined ``WHERE`` fragment for ``DataEntry`` (mirrors ``_build_data_entry_filter_clauses``)."""
+    """Combined ``WHERE`` fragment for ``DataEntry``."""
     t = DataEntry
     parts: List = []
     if data_type:

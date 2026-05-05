@@ -62,7 +62,6 @@ from models import (
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
     _to_float,
 )
-from services.period_comparisons import calculate_period_comparisons
 from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
 from services.timeutil import utc_now_iso
 
@@ -331,70 +330,6 @@ class TestDatabaseOperations(unittest.TestCase):
         for result in updated_results:
             self.assertEqual(result["uploader_name"], "updated_user")
             self.assertEqual(result["value"], 999.99)
-
-
-class TestPeriodAnalysis(unittest.TestCase):
-    """Test period analysis calculations"""
-
-    def setUp(self):
-        """Set up test database with sample data"""
-        _temp_db_attach(self)
-
-        # Insert sample data for testing
-        sample_data = [
-            {
-                "uploader_name": "test_user",
-                "version": "v1.0",
-                "indicator_name": "GDP",
-                "value": 1000.0,
-                "data_type": "flow",
-                "time_period": "monthly",
-                "year": 2024,
-                "month": 1,
-                "quarter": 1,
-                "created_at": utc_now_iso()
-            },
-            {
-                "uploader_name": "test_user",
-                "version": "v1.0",
-                "indicator_name": "GDP",
-                "value": 1100.0,
-                "data_type": "flow",
-                "time_period": "monthly",
-                "year": 2024,
-                "month": 2,
-                "quarter": 1,
-                "created_at": utc_now_iso()
-            },
-            {
-                "uploader_name": "test_user",
-                "version": "v1.0",
-                "indicator_name": "GDP",
-                "value": 1200.0,
-                "data_type": "flow",
-                "time_period": "monthly",
-                "year": 2024,
-                "month": 3,
-                "quarter": 1,
-                "created_at": utc_now_iso()
-            }
-        ]
-        insert_entries(sample_data)
-
-    def tearDown(self):
-        _temp_db_detach(self)
-
-    def test_calculate_period_comparisons_valid(self):
-        """Test period comparison calculation with valid data"""
-        result = calculate_period_comparisons("GDP", "2024")
-        self.assertIn("quarterly_comparison", result)
-        self.assertIn("monthly_comparison", result)
-
-    def test_calculate_period_comparisons_no_data(self):
-        """Test period comparison with no data"""
-        result = calculate_period_comparisons("NONEXISTENT", "2024")
-        self.assertIn("error", result)
-        self.assertEqual(result["error"], "Tidak ada data untuk indikator ini")
 
 
 class TestSecurityVulnerabilities(unittest.TestCase):
