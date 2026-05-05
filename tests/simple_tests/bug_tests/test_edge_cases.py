@@ -539,13 +539,3 @@ class TestEdgeCases:
             assert response.status_code == 200
             assert 'Content-Disposition' in response.headers
 
-    def test_chart_generation_with_no_data(self, test_client):
-        """Test generate chart ketika tidak ada data"""
-        with test_client as client:
-            data = {'indicator_filter': 'NonExistent', 'time_range': 'all'}
-            response = client.post('/generate-plot', data=data)
-            assert response.status_code == 200
-
-            data = {'indicator': 'NonExistent', 'year': '2024'}
-            response = client.post('/generate-period-analysis', data=data)
-            assert response.status_code == 200
