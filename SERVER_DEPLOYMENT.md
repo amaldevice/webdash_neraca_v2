@@ -1,7 +1,5 @@
 # Panduan Deployment ke Server (via Webmin di Linux kantor)
 
-- Untuk kesesuaian dan kecocokan codebase ini di keperluan deployment/production, wajib mengikuti settingan **[webapps.service](webapps.service)**
-
 Tujuan dokumen ini: deploy **webdash_neraca_v2** ke server kantor Linux melalui terminal Webmin (atau SSH), inisialisasi DB, dan migrasi data dari SQLite ke MySQL.
 
 Semua langkah menulis ke `.env` lokal di server (`.env` tidak di-commit).
@@ -288,10 +286,11 @@ cp /var/backups/webdash_neraca_v2/data.db.YYYY-MM-DD_HHMMSS /var/backups/webdash
 - `Access denied`  
   -> Cek user/host/password MySQL dan firewall bind-address.
 - `Migration fails: Target already has rows`  
-  -> Gunakan `--truncate-target` saat full replace, atau migrasi ke DB kosong.
+ -> Gunakan `--truncate-target` saat full replace, atau migrasi ke DB kosong.
 - `No module named PyMySQL`  
-  -> Pastikan `pip install -r requirements.txt` di environment yang dipakai service.
+ -> Pastikan `pip install -r requirements.txt` di environment yang dipakai service.
 - `Tables not found`  
-  -> Jalankan `python -m alembic upgrade head` lagi setelah cek `.env`.
+ -> Jalankan `python -m alembic upgrade head` lagi setelah cek `.env`.
 - `docker compose` di production gagal terhubung
   -> Normal jika kamu deploy via systemd. Pastikan perintah di checklist server kantor memakai service/systemd + konfigurasi Webmin, bukan container local.
+
