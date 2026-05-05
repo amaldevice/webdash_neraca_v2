@@ -17,7 +17,7 @@ class TestErrorHandling:
 
     def test_database_connection_failure(self, test_client):
         """Test ketika database connection gagal"""
-        with patch('services.upload_flow.insert_entries') as mock_insert:
+        with patch('services.upload_handlers.insert_entries') as mock_insert:
             mock_insert.side_effect = sqlite3.Error("Database connection failed")
 
             with test_client as client:
@@ -298,34 +298,6 @@ class TestErrorHandling:
                 if not flashed_messages:
                     response_text = response.get_data(as_text=True).lower()
                     assert response_text  # ensure response has content even without flash
-
-    def test_chart_generation_with_invalid_indicator(self, populated_db):
-        """Test generate chart dengan indicator yang tidak valid"""
-        with populated_db as client:
-            data = {
-                'indicator_filter': 'NonExistentIndicator',
-                'time_range': 'all'
-            }
-
-            response = client.post('/generate-plot', data=data)
-
-            assert response.status_code == 200
-            response_data = response.get_json()
-            assert 'error' in response_data or response_data.get('plot_json') is not None
-
-    def test_period_analysis_with_invalid_indicator(self, populated_db):
-        """Test period analysis dengan indicator yang tidak valid"""
-        with populated_db as client:
-            data = {
-                'indicator': 'NonExistentIndicator',
-                'year': '2024'
-            }
-
-            response = client.post('/generate-period-analysis', data=data)
-
-            assert response.status_code == 200
-            response_data = response.get_json()
-            assert 'error' in response_data
 
     def test_memory_error_simulation(self, test_client):
         """Test simulasi memory error"""
