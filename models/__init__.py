@@ -6,7 +6,6 @@ from .browse import (
     get_filter_options,
 )
 from .connection import DB_PATH, init_db
-from .data_filters import _build_data_entry_filter_clauses
 from .mutations import (
     _to_float,
     bulk_delete_entries,
@@ -40,6 +39,5 @@ __all__ = [
     "query_data_entries",
     "update_data_entry",
     "update_data_entry_full",
-    "_build_data_entry_filter_clauses",
     "_to_float",
 ]

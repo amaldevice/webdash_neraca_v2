@@ -8,17 +8,10 @@ import pandas as pd
 
 from services.dataset_catalog import dataset_workbook_sheet_title, get_dataset, list_dataset_slugs
 from services.template_service import (
-    TEMPLATE_BUILD_VERSION,
     build_multi_dataset_reference_workbook,
     generate_workbook_for_dataset,
-    template_cache_key,
     workbook_to_bytes,
 )
-
-
-def test_template_cache_key() -> None:
-    assert template_cache_key("pinjaman") == f"rekap-template:pinjaman:{TEMPLATE_BUILD_VERSION}"
-    assert "atm" in template_cache_key("atm", version="v2")
 
 
 def test_generate_single_dataset_workbook_roundtrip() -> None:

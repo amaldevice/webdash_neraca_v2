@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Public pages: landing, preview, export, chart/analysis JSON."""
+"""Public pages: landing, preview, export."""
 from __future__ import annotations
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, render_template, request
 
 from models import get_filter_options, get_landing_summary
 from models.repositories.entry_list import count_entries_for_list, fetch_entries_for_list
-from services.period_comparisons import calculate_period_comparisons
-from services.charts import generate_indicator_line_chart
 from services.list_view import (
     EntryListParams,
     build_entries_filters_ui_dict,
@@ -87,57 +85,7 @@ def export_data():
     return build_raw_data_export_response(entries, fmt)
 
 
-def generate_plot():
-    indicator = request.form.get("indicator_filter", "").strip()
-    time_range = request.form.get("time_range", "all")
-    period_start, period_end = get_period_range_params(
-        request.form, start_key="period_start", end_key="period_end"
-    )
-
-    if not indicator:
-        return jsonify({"error": "Pilih indikator terlebih dahulu"})
-
-    if time_range == "all":
-        range_start = None
-        range_end = None
-    else:
-        normalized_year = time_range.strip()
-        range_start = normalized_year
-        range_end = normalized_year
-
-    start_period = period_start or range_start
-    end_period = period_end or range_end
-
-    fig_json = generate_indicator_line_chart(indicator, time_range, start_period, end_period)
-    return jsonify({"plot_json": fig_json})
-
-
-def generate_period_analysis():
-    indicator = request.form.get("indicator", "").strip()
-    analysis_year = request.form.get("year", "").strip()
-    period_start, period_end = get_period_range_params(
-        request.form, start_key="period_start", end_key="end_period"
-    )
-
-    if not indicator:
-        return jsonify({"error": "Pilih indikator terlebih dahulu"})
-
-    results = calculate_period_comparisons(indicator, analysis_year or None, period_start, period_end)
-
-    if "error" in results:
-        return jsonify({"error": results["error"]})
-
-    return jsonify({"analysis": results})
-
-
 def register(app: Flask) -> None:
     app.add_url_rule("/", endpoint="landing_page", view_func=landing_page, methods=["GET"])
     app.add_url_rule("/preview-data", endpoint="preview_data", view_func=preview_data, methods=["GET"])
     app.add_url_rule("/export", endpoint="export_data", view_func=export_data, methods=["GET"])
-    app.add_url_rule("/generate-plot", endpoint="generate_plot", view_func=generate_plot, methods=["POST"])
-    app.add_url_rule(
-        "/generate-period-analysis",
-        endpoint="generate_period_analysis",
-        view_func=generate_period_analysis,
-        methods=["POST"],
-    )

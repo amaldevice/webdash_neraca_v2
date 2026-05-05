@@ -55,11 +55,6 @@ def database_url() -> str:
     return f"sqlite:///{p.as_posix()}"
 
 
-def use_sqlalchemy() -> bool:
-    """Always true: persistence goes through SQLAlchemy (including default SQLite file)."""
-    return True
-
-
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}
 ALLOWED_DATA_TYPES = {"flow", "stock"}
 ALLOWED_TIME_PERIODS = {"monthly", "quarterly", "yearly"}

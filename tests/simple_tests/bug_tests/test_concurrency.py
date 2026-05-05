@@ -155,23 +155,6 @@ class TestConcurrency:
 
         assert len(errors) == 0, f"Errors occurred during concurrent operations: {errors}"
 
-    def test_concurrent_chart_generation(self, populated_db):
-        """Test generate chart bersamaan"""
-        def chart_worker(worker_id):
-            with populated_db.application.test_client() as client:
-                data = {'indicator_filter': 'GDP', 'time_range': 'all'}
-                response = client.post('/generate-plot', data=data)
-                return response.status_code, worker_id
-
-        # Run multiple concurrent chart generations
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(chart_worker, i) for i in range(5)]
-            results = [future.result() for future in concurrent.futures.as_completed(futures)]
-
-        # All chart generations should succeed
-        for status, worker_id in results:
-            assert status == 200, f"Chart generation {worker_id} failed with status {status}"
-
     def test_concurrent_export_operations(self, populated_db):
         """Test export bersamaan"""
         def export_worker(worker_id, format_type):

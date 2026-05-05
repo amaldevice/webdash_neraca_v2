@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Data management CRUD UI and period-analysis Excel export."""
+"""Data management CRUD UI."""
 from __future__ import annotations
 
 from flask import Flask, flash, redirect, render_template, request, url_for
@@ -12,7 +12,6 @@ from services.list_view import (
     build_entries_filters_ui_dict,
     parse_entries_pagination,
 )
-from services.period_analysis_export import build_period_analysis_excel_response
 from services.request_params import get_period_range_params, get_value_range_params
 
 
@@ -75,24 +74,10 @@ def data_management():
     return render_template("data_management.html", entries=entries, filters=filters, filter_options=filter_options)
 
 
-def export_period_analysis_excel():
-    response, err = build_period_analysis_excel_response(request.form)
-    if err:
-        flash(err, "error")
-        return redirect(url_for("data_management"))
-    return response
-
-
 def register(app: Flask) -> None:
     app.add_url_rule(
         "/data-management",
         endpoint="data_management",
         view_func=data_management,
         methods=["GET", "POST"],
-    )
-    app.add_url_rule(
-        "/export-period-analysis",
-        endpoint="export_period_analysis_excel",
-        view_func=export_period_analysis_excel,
-        methods=["POST"],
     )
