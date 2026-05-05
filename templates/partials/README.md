@@ -20,8 +20,6 @@ Kumpulan komponen dan fragment Jinja2 yang direuse di beberapa halaman.
   Tabel pratinjau data + pagination include.
 - `_management_filters.html`  
   Filter khusus halaman manajemen data (mirip preview, plus aksesoris bulk by filter).
-- `_management_insert_form.html`  
-  Form tambah data tunggal dari halaman manajemen.
 - `_management_table.html`  
   Tabel CRUD manajemen data (mobile + desktop), checkbox, edit/delete row.
 - `_management_bulk_modal.html`  

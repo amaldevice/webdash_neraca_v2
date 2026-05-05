@@ -9,7 +9,6 @@ alwaysApply: true
 - Baca **[docs/README_DOCS.md](docs/README_DOCS.md)** untuk **state proyek**, peta folder `docs/`, panduan unggah/dataset, rehearsal migrasi `dataset_code`, changelog ringkas, dan troubleshooting (taut).
 - **[docs/planning.md](docs/planning.md)** — stub sinkron: saat mengubah perilaku, ikuti checklist di sana.
 - **[`.cursor/plans/bps_data_management_system_bd94389d.plan.md`](.cursor/plans/bps_data_management_system_bd94389d.plan.md)** — plan Cursor (YAML `todos` + arsitektur), **ikut Git** (path yang sama dipakai Cursor saat workspace = root repo).
-- Untuk kesesuaian dan kecocokan codebase ini di keperluan deployment/production, wajib mengikuti settingan **[webapps.service](webapps.service)**
 
 Path relatif terhadap **akar workspace** (folder repo).
 

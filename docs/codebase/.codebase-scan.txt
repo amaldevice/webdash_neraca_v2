@@ -1,0 +1,384 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.cursor
+.cursor\hooks
+.cursor\hooks\state
+.cursor\hooks\state\continual-learning-index.json
+.cursor\hooks\state\continual-learning.json
+.cursor\plans
+.cursor\plans\bps_data_management_system_bd94389d.plan.md
+.cursor\rules
+.cursor\rules\planning-&-executing-sync.mdc
+.env
+.env.example
+.gitignore
+.playwright-cli
+.playwright-cli\after_pinjaman_confirm.yml
+.playwright-cli\after_pinjaman_preview.yml
+.playwright-cli\after_pinjaman_saved.yml
+.playwright-cli\console-2026-04-16T15-53-18-893Z.log
+.playwright-cli\console-2026-04-17T02-14-50-729Z.log
+.playwright-cli\console-2026-04-17T02-15-27-262Z.log
+.playwright-cli\console-2026-04-17T02-17-15-250Z.log
+.playwright-cli\console-2026-04-17T02-18-03-486Z.log
+.playwright-cli\console-2026-04-17T02-18-18-966Z.log
+.playwright-cli\console-2026-04-17T02-18-35-466Z.log
+.playwright-cli\console-2026-04-17T02-18-52-401Z.log
+.playwright-cli\console-2026-04-17T02-19-08-945Z.log
+.playwright-cli\console-2026-04-17T02-19-27-238Z.log
+.playwright-cli\console-2026-04-17T02-19-43-776Z.log
+.playwright-cli\console-2026-04-17T02-20-26-049Z.log
+.playwright-cli\console-2026-04-17T02-21-05-850Z.log
+.playwright-cli\console-2026-04-17T03-53-02-761Z.log
+.playwright-cli\console-2026-04-17T03-56-11-769Z.log
+.playwright-cli\console-2026-04-17T03-59-13-688Z.log
+.playwright-cli\console-2026-04-17T08-57-27-752Z.log
+.playwright-cli\console-2026-04-17T09-00-38-114Z.log
+.playwright-cli\console-2026-04-17T10-11-37-468Z.log
+.playwright-cli\console-2026-04-17T10-13-30-228Z.log
+.playwright-cli\console-2026-04-17T10-37-10-264Z.log
+.playwright-cli\console-2026-04-17T10-51-17-215Z.log
+.playwright-cli\console-2026-04-17T10-53-42-961Z.log
+.playwright-cli\console-2026-04-17T10-54-26-507Z.log
+.playwright-cli\console-2026-04-19T03-30-54-062Z.log
+.playwright-cli\console-2026-04-19T03-33-53-047Z.log
+.playwright-cli\console-2026-04-19T03-35-22-769Z.log
+.playwright-cli\console-2026-04-19T03-36-06-237Z.log
+.playwright-cli\manual_after_error.yml
+.playwright-cli\manual_current0.yml
+.playwright-cli\manual_mismatch_snapshot.yml
+.playwright-cli\manual_upload_upload_page.yml
+.playwright-cli\misalign_upload_after_reset.yml
+.playwright-cli\misalign_upload_snapshot.yml
+.playwright-cli\network-2026-04-17T10-13-21-450Z.log
+.playwright-cli\page-2026-04-16T15-53-22-568Z.yml
+.playwright-cli\page-2026-04-16T15-53-25-920Z.yml
+.playwright-cli\page-2026-04-16T15-53-28-344Z.yml
+.playwright-cli\page-2026-04-16T15-54-03-366Z.yml
+.playwright-cli\page-2026-04-16T15-54-35-038Z.yml
+.playwright-cli\page-2026-04-16T15-55-12-453Z.yml
+.playwright-cli\page-2026-04-16T15-55-36-752Z.yml
+.playwright-cli\page-2026-04-16T15-55-48-651Z.yml
+.playwright-cli\page-2026-04-16T15-56-00-307Z.yml
+.playwright-cli\page-2026-04-16T15-56-13-167Z.yml
+.playwright-cli\page-2026-04-16T15-56-26-402Z.yml
+.playwright-cli\page-2026-04-16T15-59-19-284Z.yml
+.playwright-cli\page-2026-04-16T15-59-26-878Z.yml
+.playwright-cli\page-2026-04-16T15-59-39-131Z.yml
+.playwright-cli\page-2026-04-16T15-59-42-181Z.yml
+.playwright-cli\page-2026-04-16T15-59-43-411Z.yml
+.playwright-cli\page-2026-04-16T15-59-43-664Z.yml
+.playwright-cli\page-2026-04-16T15-59-44-931Z.yml
+.playwright-cli\page-2026-04-16T15-59-46-481Z.yml
+.playwright-cli\page-2026-04-16T15-59-46-678Z.yml
+.playwright-cli\page-2026-04-16T15-59-57-853Z.yml
+.playwright-cli\page-2026-04-16T15-59-58-068Z.yml
+.playwright-cli\page-2026-04-16T16-00-17-741Z.yml
+.playwright-cli\page-2026-04-16T16-00-19-306Z.yml
+.playwright-cli\page-2026-04-16T16-00-19-511Z.yml
+.playwright-cli\page-2026-04-16T16-00-33-468Z.yml
+.playwright-cli\page-2026-04-16T16-02-08-961Z.yml
+.playwright-cli\page-2026-04-16T16-02-12-455Z.yml
+.playwright-cli\page-2026-04-16T16-02-13-872Z.yml
+.playwright-cli\page-2026-04-16T16-02-14-267Z.yml
+.playwright-cli\page-2026-04-16T16-02-15-653Z.yml
+.playwright-cli\page-2026-04-16T16-02-17-701Z.yml
+.playwright-cli\page-2026-04-16T16-02-18-827Z.yml
+.playwright-cli\page-2026-04-16T16-02-22-179Z.yml
+.playwright-cli\page-2026-04-16T16-02-24-103Z.yml
+.playwright-cli\page-2026-04-16T16-02-24-506Z.yml
+.playwright-cli\page-2026-04-16T16-02-26-089Z.yml
+.playwright-cli\page-2026-04-16T16-02-28-406Z.yml
+.playwright-cli\page-2026-04-16T16-02-29-402Z.yml
+.playwright-cli\page-2026-04-16T16-02-32-801Z.yml
+.playwright-cli\page-2026-04-16T16-02-34-224Z.yml
+.playwright-cli\page-2026-04-16T16-02-34-751Z.yml
+.playwright-cli\page-2026-04-16T16-02-36-202Z.yml
+.playwright-cli\page-2026-04-16T16-02-38-001Z.yml
+.playwright-cli\page-2026-04-16T16-02-39-446Z.yml
+.playwright-cli\page-2026-04-16T16-02-43-343Z.yml
+.playwright-cli\page-2026-04-16T16-02-45-286Z.yml
+.playwright-cli\page-2026-04-16T16-02-46-076Z.yml
+.playwright-cli\page-2026-04-16T16-02-47-779Z.yml
+.playwright-cli\page-2026-04-16T16-02-50-952Z.yml
+.playwright-cli\page-2026-04-16T16-02-53-250Z.yml
+.playwright-cli\page-2026-04-16T16-02-58-507Z.yml
+.playwright-cli\page-2026-04-16T16-03-00-107Z.yml
+.playwright-cli\page-2026-04-16T16-03-00-882Z.yml
+.playwright-cli\page-2026-04-16T16-03-03-047Z.yml
+.playwright-cli\page-2026-04-16T16-03-05-770Z.yml
+.playwright-cli\page-2026-04-16T16-03-09-859Z.yml
+.playwright-cli\page-2026-04-16T16-03-12-560Z.yml
+.playwright-cli\page-2026-04-16T16-03-13-950Z.yml
+.playwright-cli\page-2026-04-16T16-03-14-369Z.yml
+.playwright-cli\page-2026-04-16T16-03-15-747Z.yml
+.playwright-cli\page-2026-04-16T16-03-16-041Z.yml
+.playwright-cli\page-2026-04-16T16-03-17-440Z.yml
+.playwright-cli\page-2026-04-16T16-03-18-392Z.yml
+.playwright-cli\page-2026-04-16T16-03-20-027Z.yml
+.playwright-cli\page-2026-04-16T16-03-44-594Z.yml
+.playwright-cli\page-2026-04-16T16-03-47-573Z.yml
+.playwright-cli\page-2026-04-16T16-03-48-851Z.yml
+.playwright-cli\page-2026-04-16T16-03-49-107Z.yml
+.playwright-cli\page-2026-04-16T16-03-50-416Z.yml
+.playwright-cli\page-2026-04-16T16-03-52-163Z.yml
+.playwright-cli\page-2026-04-16T16-04-03-489Z.yml
+.playwright-cli\page-2026-04-16T16-04-06-387Z.yml
+.playwright-cli\page-2026-04-16T16-04-07-685Z.yml
+.playwright-cli\page-2026-04-16T16-04-07-980Z.yml
+.playwright-cli\page-2026-04-16T16-04-09-347Z.yml
+.playwright-cli\page-2026-04-16T16-04-10-868Z.yml
+.playwright-cli\page-2026-04-16T16-04-22-354Z.yml
+.playwright-cli\page-2026-04-16T16-04-25-486Z.yml
+.playwright-cli\page-2026-04-16T16-04-27-288Z.yml
+.playwright-cli\page-2026-04-16T16-04-27-530Z.yml
+.playwright-cli\page-2026-04-16T16-04-28-814Z.yml
+.playwright-cli\page-2026-04-16T16-04-30-319Z.yml
+.playwright-cli\page-2026-04-16T16-04-39-458Z.yml
+.playwright-cli\page-2026-04-16T16-04-42-089Z.yml
+.playwright-cli\page-2026-04-16T16-04-43-383Z.yml
+.playwright-cli\page-2026-04-16T16-04-43-654Z.yml
+.playwright-cli\page-2026-04-16T16-04-44-942Z.yml
+.playwright-cli\page-2026-04-16T16-04-46-545Z.yml
+.playwright-cli\page-2026-04-16T16-05-40-317Z.yml
+.playwright-cli\page-2026-04-16T16-05-48-214Z.yml
+.playwright-cli\page-2026-04-16T16-05-48-481Z.yml
+.playwright-cli\page-2026-04-16T16-05-49-784Z.yml
+.playwright-cli\page-2026-04-16T16-05-51-564Z.yml
+.playwright-cli\page-2026-04-16T16-06-12-898Z.yml
+.playwright-cli\page-2026-04-16T16-06-25-567Z.yml
+.playwright-cli\page-2026-04-16T16-06-34-612Z.yml
+.playwright-cli\page-2026-04-16T16-06-45-917Z.yml
+.playwright-cli\page-2026-04-16T16-06-48-580Z.yml
+.playwright-cli\page-2026-04-16T16-06-49-861Z.yml
+.playwright-cli\page-2026-04-16T16-06-50-275Z.yml
+.playwright-cli\page-2026-04-16T16-06-51-678Z.yml
+.playwright-cli\page-2026-04-16T16-06-53-143Z.yml
+.playwright-cli\page-2026-04-17T02-14-51-602Z.yml
+.playwright-cli\page-2026-04-17T02-15-28-071Z.yml
+.playwright-cli\page-2026-04-17T02-15-32-468Z.yml
+.playwright-cli\page-2026-04-17T02-15-33-835Z.yml
+.playwright-cli\page-2026-04-17T02-15-34-208Z.yml
+.playwright-cli\page-2026-04-17T02-15-35-605Z.yml
+.playwright-cli\page-2026-04-17T02-15-37-385Z.yml
+.playwright-cli\page-2026-04-17T02-15-58-185Z.yml
+.playwright-cli\page-2026-04-17T02-17-16-101Z.yml
+.playwright-cli\page-2026-04-17T02-17-20-503Z.yml
+.playwright-cli\page-2026-04-17T02-17-22-076Z.yml
+.playwright-cli\page-2026-04-17T02-17-22-505Z.yml
+.playwright-cli\page-2026-04-17T02-17-24-374Z.yml
+.playwright-cli\page-2026-04-17T02-17-26-101Z.yml
+.playwright-cli\page-2026-04-17T02-18-04-401Z.yml
+.playwright-cli\page-2026-04-17T02-18-08-355Z.yml
+.playwright-cli\page-2026-04-17T02-18-09-828Z.yml
+.playwright-cli\page-2026-04-17T02-18-10-219Z.yml
+.playwright-cli\page-2026-04-17T02-18-11-606Z.yml
+.playwright-cli\page-2026-04-17T02-18-13-155Z.yml
+.playwright-cli\page-2026-04-17T02-18-20-112Z.yml
+.playwright-cli\page-2026-04-17T02-18-23-680Z.yml
+.playwright-cli\page-2026-04-17T02-18-25-018Z.yml
+.playwright-cli\page-2026-04-17T02-18-25-382Z.yml
+.playwright-cli\page-2026-04-17T02-18-26-908Z.yml
+.playwright-cli\page-2026-04-17T02-18-29-576Z.yml
+.playwright-cli\page-2026-04-17T02-18-36-773Z.yml
+.playwright-cli\page-2026-04-17T02-18-40-514Z.yml
+.playwright-cli\page-2026-04-17T02-18-41-929Z.yml
+.playwright-cli\page-2026-04-17T02-18-42-362Z.yml
+.playwright-cli\page-2026-04-17T02-18-44-245Z.yml
+.playwright-cli\page-2026-04-17T02-18-46-128Z.yml
+.playwright-cli\page-2026-04-17T02-18-53-452Z.yml
+.playwright-cli\page-2026-04-17T02-18-57-251Z.yml
+.playwright-cli\page-2026-04-17T02-18-59-157Z.yml
+.playwright-cli\page-2026-04-17T02-18-59-550Z.yml
+.playwright-cli\page-2026-04-17T02-19-00-933Z.yml
+.playwright-cli\page-2026-04-17T02-19-02-856Z.yml
+.playwright-cli\page-2026-04-17T02-19-09-759Z.yml
+.playwright-cli\page-2026-04-17T02-19-14-691Z.yml
+.playwright-cli\page-2026-04-17T02-19-16-143Z.yml
+.playwright-cli\page-2026-04-17T02-19-16-671Z.yml
+.playwright-cli\page-2026-04-17T02-19-18-277Z.yml
+.playwright-cli\page-2026-04-17T02-19-20-233Z.yml
+.playwright-cli\page-2026-04-17T02-19-28-428Z.yml
+.playwright-cli\page-2026-04-17T02-19-32-158Z.yml
+
+=== STACK DETECTION (manifest files) ===
+
+--- package.json ---
+{
+  "name": "webdash-neraca",
+  "private": true,
+  "description": "Root tooling: Playwright E2E (Python app started via webServer). Tailwind/CSS may use metadata/package.json.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}
+
+--- requirements.txt ---
+# Pinned runtime (install: pip install -r requirements.txt)
+Flask==3.1.1
+Werkzeug==3.1.3
+numpy==2.3.1
+pandas==3.0.1
+openpyxl==3.1.5
+plotly==6.5.0
+SQLAlchemy==2.0.40
+alembic==1.15.2
+PyMySQL==1.1.1
+python-dotenv==1.1.1
+
+
+=== ENTRY POINTS ===
+Found: app.py
+
+=== LINTING AND FORMATTING CONFIG ===
+No linting or formatting config files found in project root.
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+--- .env.example ---
+# Salin ke `.env` di root repo (file `.env` diabaikan git).
+# Nilai yang sudah di-set di lingkungan proses (systemd, Docker, shell) tidak ditimpa oleh file ini.
+
+# --- Wajib produksi (FLASK_ENV=production) ---
+# DSN SQLAlchemy (lihat README contoh mysql/postgresql/sqlite)
+# DATABASE_URL=mysql+pymysql://USER:PASSWORD@HOST:3306/DBNAME?charset=utf8mb4
+#
+# Konfigurasi MySQL (template lokal/Docker):
+# MYSQL_ROOT_PASSWORD=ubah_di_lokal
+# MYSQL_DATABASE=webdash
+# MYSQL_USER=webdash
+# MYSQL_PASSWORD=ubah_di_lokal
+# MYSQL_HOST_PORT=3306
+# Jika app jalan di host (bukan container), pakai DSN ini:
+# DATABASE_URL=mysql+pymysql://webdash:ubah_di_lokal@127.0.0.1:3306/webdash?charset=utf8mb4
+# Untuk operasi MySQL internal tools/migrasi:
+# MYSQL_TARGET_URL=mysql+pymysql://webdash:ubah_di_lokal@127.0.0.1:3306/webdash?charset=utf8mb4
+# MYSQL_SOURCE_URL=mysql+pymysql://webdash:ubah_di_lokal@127.0.0.1:3306/webdash?charset=utf8mb4
+# MIGRATE_TARGET_URL=mysql+pymysql://webdash:ubah_di_lokal@127.0.0.1:3306/webdash?charset=utf8mb4
+
+# Secret penandatanganan cookie sesi (gunakan string panjang acak)
+# FLASK_SECRET_KEY=
+
+# --- Lingkungan Flask ---
+# FLASK_ENV=development
+# FLASK_RUN_PORT=5000
+
+# --- Opsional keamanan / sesi ---
+# Set ke 1 jika aplikasi hanya di-serve lewat HTTPS (cookie Secure)
+# SESSION_COOKIE_SECURE=0
+
+# Gagal start jika secret masih default `change-me-for-production` (setelah FLASK_SECRET_KEY kuat)
+# REQUIRE_FLASK_SECRET=0
+
+# --- Rate limit unggahan (routes/upload) ---
+# UPLOAD_RATE_LIMIT_MAX_REQUESTS=120
+# UPLOAD_RATE_LIMIT_WINDOW_SECONDS=60
+
+# --- Dataset-aware upload (Fase 0–2) ---
+# 1/true/yes/on = wajib pilih dataset di form upload (dan input manual); tanpa ini legacy boleh kosong.
+# REQUIRE_DATASET_FOR_UPLOAD=0
+
+# --- Alembic (migrasi skema) ---
+# Jika kosong: pakai `database_url()` (biasanya sama dengan DATABASE_URL)
+# ALEMBIC_DATABASE_URL=
+
+# --- Skrip ETL `scripts/migrate_sqlite_to_mysql.py` ---
+# SQLITE_SOURCE_PATH=D:/path/to/source.db
+# MIGRATE_TARGET_URL=mysql+pymysql://...
+# MYSQL_TARGET_URL=
+# MYSQL_SOURCE_URL=mysql+pymysql://...
+# SQLITE_BACKUP_PATH=D:/path/to/backup/data_backup.db
+
+# --- File env tambahan (path absolut) dimuat setelah `.env`, tetap override=False ---
+# DOTENV_PATH=/etc/webdash.env
+
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+None found.
+
+=== GIT RECENT COMMITS (last 20) ===
+b78c7e8 chore(config): merge mysql env template and track pending schema updates
+271fee6 feat(upload): remove layout override UI/backend path
+03b05dd docs: require README update for feature changes in project rules
+f0295ca docs: sync deployment and docs state for current ops model
+0f1ac3d feat(period): retain month marker for quarterly/yearly
+b9834a2 docs: tambah catatan e2e skenario tahunan 2021
+a661160 docs: dokumentasikan perilaku periode flex Tahunan/Triwulanan
+6c4fd2b Merge pull request #15 from amaldevice/docs/readme-docs-consolidation
+608a310 chore(cursor): track .cursor/plans in Git; single BPS plan file
+a0399c7 Merge pull request #14 from amaldevice/docs/readme-docs-consolidation
+ff1d8f5 docs(plans): track Cursor BPS plan in repo under docs/plans
+62004a5 chore(cursor): workspace-root-relative links in planning rule
+023aa01 docs: add README_DOCS index, consolidate planning, track Cursor rules
+c5f05a8 Merge pull request #13 from amaldevice/chore/add-server-deployment-doc
+d39e04c feat(dataset): add dataset-aware upload workflows
+790c4be Merge pull request #12 from amaldevice/chore/add-server-deployment-doc
+de6d504 feat: add MySQL/PostgreSQL to SQLite backup utility
+9db369c Merge pull request #11 from amaldevice/chore/add-server-deployment-doc
+fbe0f2d docs: add webmin deployment tutorial
+9d9ce3f chore: remove .github workflows from repo; refresh docs for local CI
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+  20 planning.md
+  18 templates/upload.html
+  18 app.py
+  17 README.md
+  15 templates/aggregated.html
+  13 templates/preview.html
+  11 templates/partials/_management_table.html
+  10 services/upload_flow.py
+  10 templates/data_management.html
+  10 static/css/tailwind.css
+   9 templates/partials/_upload_form.html
+   9 data.db
+   9 models/queries.py
+   9 templates/landing.html
+   9 assets/tailwind.css
+   8 metadata/AGENTS.md
+   8 .gitignore
+   8 templates/partials/_management_filters.html
+   8 templates/partials/_preview_filters.html
+   8 templates/partials/_script_aggregated_analysis.html
+
+=== MONOREPO SIGNALS ===
+Sub-package directory found: services/
+
+=== CODE METRICS ===
+Total files scanned: 588
+Total lines of code: 17119
+
+Files by language:
+  Other: 476
+  Python: 105
+  TypeScript: 4
+  JavaScript: 3
+
+Top 10 largest files:
+REKAP Bank indonesia_rev.xlsx: 654.4KB
+data.db: 352.0KB
+tests\simple_tests\test_results\ui_harmonization\management.png: 234.4KB
+tests\simple_tests\test_results\ui_harmonization\preview.png: 188.1KB
+static\css\tailwind.css: 146.5KB
+tests\simple_tests\bug_tests\bug_test_results.txt: 98.2KB
+tests\simple_tests\test_results\bug_test_results.txt: 98.2KB
+tests\simple_tests\test_results\ui_harmonization\aggregated.png: 79.6KB
+tests\simple_tests\test_results\ui_harmonization\manual.png: 75.6KB
+tests\simple_tests\test_results\ui_harmonization\upload.png: 72.9KB
+
+=== CI/CD PIPELINES ===
+No CI/CD pipelines detected.
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===
