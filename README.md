@@ -92,7 +92,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 
 ### Fitur Inti
 - [x] **Portal beranda (landing page)**: Menyediakan metrik ringkas repository, metadata penting, dan akses cepat untuk unggah serta input manual.
-- [x] **Dua jalur masuk data**: Parser Excel mendukung template horizontal dan vertikal, sedangkan input manual tetap memaksa keterisian metadata secara konsisten.
+- [x] **Dua jalur masuk data**: Parser Excel mendukung template horizontal dan vertikal, template **long universal** (`dataset` `universal`: `nama_dataset`, `indikator`, `periode`, `nilai`), serta input manual dengan metadata konsisten.
 - [x] **Metrik singkat repository**: Menampilkan ringkasan indikator aktif, rentang periode, dan jumlah baris dari data aktif.
 
 ### Fitur Tambahan

@@ -30,6 +30,8 @@ def test_multi_dataset_workbook_has_all_tabs() -> None:
     names = set(wb.sheetnames)
     assert "README" in names
     for slug in list_dataset_slugs():
+        if slug == "universal":
+            continue
         title = dataset_workbook_sheet_title(get_dataset(slug))
         assert title in names
 
@@ -37,6 +39,14 @@ def test_multi_dataset_workbook_has_all_tabs() -> None:
 def test_workbook_bytes_non_empty() -> None:
     wb = generate_workbook_for_dataset("ecommerce", include_notes=False)
     assert len(workbook_to_bytes(wb)) > 500
+
+
+def test_build_template_file_response_universal_filename() -> None:
+    from services.template_service import build_template_file_response
+
+    resp = build_template_file_response("universal")
+    cd = resp.headers.get("Content-Disposition", "")
+    assert "template_universal" in cd
 
 
 def test_build_template_file_response_attachment() -> None:

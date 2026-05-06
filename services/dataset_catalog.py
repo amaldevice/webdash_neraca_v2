@@ -7,7 +7,7 @@ from typing import Final, Literal, Mapping
 
 TableType = Literal["one_way", "two_way", "three_way"]
 TimePeriodMode = Literal["monthly", "quarterly", "yearly"]
-TemplateMode = Literal["long"]
+TemplateMode = Literal["long", "universal_long"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +26,32 @@ class DatasetDefinition:
 
 
 _DATASETS: Final[tuple[DatasetDefinition, ...]] = (
+    DatasetDefinition(
+        slug="universal",
+        label="Universal",
+        source_sheet="Data",
+        table_type="two_way",
+        time_period_mode="monthly",
+        required_template_headers=(
+            "nama_dataset",
+            "indikator",
+            "periode",
+            "nilai",
+        ),
+        manual_form_fields=(
+            "nama_dataset",
+            "indikator",
+            "periode",
+            "nilai",
+        ),
+        template_mode="universal_long",
+        enabled_for_upload=True,
+        enabled_for_manual=False,
+        sample_rows=(
+            ("PLN", "A. Jumlah Pelanggan | kota", "2024-01", 71790.0),
+            ("BI", "Pinjaman | Bank Nasional | BNI", "2024-Q2", 123.45),
+        ),
+    ),
     DatasetDefinition(
         slug="pinjaman",
         label="Pinjaman",

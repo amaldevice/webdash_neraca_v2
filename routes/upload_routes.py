@@ -107,6 +107,7 @@ def _render_upload_template(
     form_values: dict | None = None,
 ) -> Response:
     form_values = _ensure_upload_version(form_values)
+    form_values["dataset_slug"] = "universal"
     ctx = _dataset_wizard_template_kwargs()
     return make_response(
         render_template(

@@ -75,6 +75,7 @@ Setelah `alembic upgrade head` (revisi `002_dataset` / `002_dataset_code_upload_
 
 ## Changelog ringkas (state fungsional)
 
+- **2026-05-06 — Template universal unggah:** Dataset `universal` (kolom `nama_dataset`, `indikator`, `periode`, `nilai`), parser `excel_parser.dataset_long.try_parse_universal_long_dataframe` + `parse_flexible_universal_period`, UI Unggah satu tautan unduh template (tanpa pemilih dataset REKAP BI). Terkait PRD/issue [#53](https://github.com/amaldevice/webdash_neraca_v2/issues/53).
 - **2026-05-06 — Epic #47 (issues #48–#51) merged:** PR [#52](https://github.com/amaldevice/webdash_neraca_v2/pull/52) ke `main` — default pytest SQLite vs `.env`, periode triwulanan tahun polos, tes kolom Nilai lewat header, sinkron `docs/codebase/TESTING.md` + README integrasi + `USE_ENV_DATABASE_URL_FOR_TESTS`, regresi `tests/test_suite_database_defaults.py`.
 - **2026-05-06 — Dead code removal:** Hapus `services/charts.py` (plotly visualization), `fetch_series_for_comparison` (orphan query), dead CSS selectors pivot/period-analysis, stale README route docs. Lihat issues #36, #37, #38.
 - **2026-05-06 — Import cleanup:** Konsolidasi `_to_float` ke satu implementasi (`excel_parser.normalize`), hapus legacy test aliases dari `app.py`, bersihkan unused imports di `upload_flow.py` dan `repositories/__init__.py`. Issues #41–#43.

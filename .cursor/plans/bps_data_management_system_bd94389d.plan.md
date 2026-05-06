@@ -149,6 +149,9 @@ todos:
   - id: make-universal-parser-time-period-aware
     content: Make universal Excel period parser respect time_period (monthly/quarterly/yearly) to avoid malformed/serial-based period misparsing.
     status: completed
+  - id: prd-53-universal-template-slices-54-56
+    content: "PRD-53 (GitHub #54–#56): dataset `universal`, `template_universal.xlsx`, long-row parse + flexible period, upload form tanpa picker BI, tes + docs/prd/."
+    status: completed
   - id: make-period-display-period-aware
     content: Make display of saved periods in data-management, preview-data, and upload sample table period-aware for monthly/quarterly/yearly (YYYY-MM, YYYY-Qn, YYYY).
     status: completed

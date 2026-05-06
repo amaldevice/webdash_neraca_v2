@@ -142,6 +142,68 @@ def _parse_monthly_period(period_value, normalized: str) -> Dict[str, Optional[i
     return {"year": parsed.year, "month": parsed.month, "quarter": parsed.quarter}
 
 
+def parse_flexible_universal_period(period_value) -> Dict[str, Optional[int]]:
+    """
+    Parse one ``periode`` cell for the universal long template (mixed formats in-column).
+
+    Accepts year-only (YYYY), month (YYYY-MM, YYYY/MM), quarter (YYYY-Q1 / Q1-YYYY),
+    and calendar dates (YYYY-MM-DD or Excel datetime).
+    """
+    from datetime import datetime as dt_module
+
+    try:
+        if period_value is None:
+            return {"year": None, "month": None, "quarter": None}
+        if isinstance(period_value, pd.Timestamp):
+            return {
+                "year": int(period_value.year),
+                "month": int(period_value.month),
+                "quarter": None,
+            }
+        if isinstance(period_value, dt_module):
+            return {
+                "year": period_value.year,
+                "month": period_value.month,
+                "quarter": None,
+            }
+
+        normalized = _normalize_value(period_value)
+        if not normalized:
+            return {"year": None, "month": None, "quarter": None}
+
+        compact = normalized.replace(" ", "")
+        m1 = _QUARTERLY_PERIOD_RE_1.fullmatch(compact)
+        if m1:
+            return {
+                "year": int(m1.group("year")),
+                "month": None,
+                "quarter": int(m1.group("quarter")),
+            }
+        m2 = _QUARTERLY_PERIOD_RE_2.fullmatch(compact)
+        if m2:
+            return {
+                "year": int(m2.group("year")),
+                "month": None,
+                "quarter": int(m2.group("quarter")),
+            }
+
+        if _YEARLY_PERIOD_RE.fullmatch(normalized):
+            return {"year": int(normalized), "month": None, "quarter": None}
+
+        if _MONTHLY_PERIOD_RE.fullmatch(normalized):
+            parsed = _to_datetime(normalized)
+            if parsed is not None:
+                return {"year": int(parsed.year), "month": int(parsed.month), "quarter": None}
+
+        parsed = _to_datetime(period_value)
+        if parsed is not None:
+            return {"year": int(parsed.year), "month": int(parsed.month), "quarter": None}
+
+        return {"year": None, "month": None, "quarter": None}
+    except Exception:
+        return {"year": None, "month": None, "quarter": None}
+
+
 def _parse_period(period_value, time_period: str | None = None) -> Dict[str, Optional[int]]:
     """Parse a period value into year/month/quarter tuple."""
     try:

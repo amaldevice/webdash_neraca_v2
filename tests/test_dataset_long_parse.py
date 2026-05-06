@@ -9,7 +9,7 @@ from services.dataset_catalog import get_dataset, list_dataset_slugs
 from services.template_service import generate_workbook_for_dataset, workbook_to_bytes
 
 
-@pytest.mark.parametrize("slug", list(list_dataset_slugs()))
+@pytest.mark.parametrize("slug", [s for s in list_dataset_slugs() if s != "universal"])
 def test_parse_generated_template_long_format_roundtrip(slug: str, tmp_path) -> None:
     wb = generate_workbook_for_dataset(slug, with_sample=True, include_notes=False)
     raw = workbook_to_bytes(wb)
@@ -33,6 +33,28 @@ def test_parse_generated_template_long_format_roundtrip(slug: str, tmp_path) -> 
     assert all(e.get("time_period") == definition.time_period_mode for e in entries)
     assert all(e.get("indicator_name") for e in entries)
     assert all(e.get("value") is not None for e in entries)
+
+
+def test_parse_universal_generated_roundtrip(tmp_path) -> None:
+    slug = "universal"
+    wb = generate_workbook_for_dataset(slug, with_sample=True, include_notes=False)
+    raw = workbook_to_bytes(wb)
+    p = tmp_path / "univ.xlsx"
+    p.write_bytes(raw)
+    payload = parse_excel_payload(
+        str(p),
+        "U-uni",
+        "v-u1",
+        "flow",
+        "monthly",
+        dataset_slug=slug,
+    )
+    assert payload.get("source_mode") == "long"
+    entries = payload.get("entries") or []
+    assert len(entries) >= 1
+    assert entries[0]["template_type"] == "universal_long"
+    assert entries[0].get("dataset_code") == "universal"
+    assert "|" in entries[0]["indicator_name"]
 
 
 def test_parse_legacy_horizontal_without_dataset_slug(tmp_path) -> None:

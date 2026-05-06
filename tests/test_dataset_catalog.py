@@ -7,10 +7,10 @@ import pytest
 from services.dataset_catalog import get_dataset, get_dataset_or_none, list_dataset_slugs
 
 
-def test_list_slugs_seven_ordered() -> None:
+def test_list_slugs_eight_ordered() -> None:
     slugs = list_dataset_slugs()
-    assert len(slugs) == 7
-    assert slugs[0] == "pinjaman"
+    assert len(slugs) == 8
+    assert slugs[0] == "universal"
     assert "kartu_kredit" in slugs
 
 
