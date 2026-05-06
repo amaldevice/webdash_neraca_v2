@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .venv/
+.venv*/
 .Python
 env/
 venv/
@@ -50,6 +51,7 @@ package-lock.json
 playwright-report/
 test-results/
 .pytest_cache/
+.pytest*.sqlite3
 tests/logs/
 simple_tests/__pycache__/
 tests/__pycache__/

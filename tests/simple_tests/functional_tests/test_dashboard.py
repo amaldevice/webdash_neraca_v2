@@ -14,6 +14,17 @@ import pytest
 from bs4 import BeautifulSoup
 
 
+def _preview_value_column_index(table) -> int:
+    """Return 0-based index of the **Nilai** column from the first header row."""
+    header_row = table.find("tr")
+    assert header_row is not None, "Tabel harus punya baris header"
+    headers = [th.get_text(strip=True).lower() for th in header_row.find_all("th")]
+    for i, label in enumerate(headers):
+        if label == "nilai":
+            return i
+    raise AssertionError(f"Kolom Nilai tidak ditemukan; header={headers!r}")
+
+
 class TestDashboard:
     """Test suite untuk dashboard functionality"""
 
@@ -184,12 +195,12 @@ class TestDashboard:
         # Cari tabel data
         table = soup.find('table')
         if table:
+            value_idx = _preview_value_column_index(table)
             rows = table.find_all('tr')[1:]  # Skip header row
             for row in rows:
                 cells = row.find_all('td')
-                if len(cells) >= 5:  # id, uploader, version, indicator, value, ...
-                    # Periksa value adalah angka (kolom ke-5, index 4)
-                    value_cell = cells[4]  # Value column (0-indexed)
+                if len(cells) > value_idx:
+                    value_cell = cells[value_idx]
                     value_text = value_cell.get_text().strip()
                     if value_text and value_text != 'N/A':  # Skip empty or N/A values
                         try:

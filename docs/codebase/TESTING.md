@@ -2,64 +2,50 @@
 
 ## Tujuan Testing
 
-- Menjamin stabilitas alur unggah + manual + preview.
-- Memastikan query/filter/export konsisten.
-- Menjaga analisis periode dan workbook export tetap valid.
-- Mempertahankan keamanan dasar input dan CSRF/CSRF-adjacent flows.
+- Menjamin stabilitas alur unggah + manual + pratinjau data (`preview-data`).
+- Memastikan query, filter `period marker`, dan ekspor konsisten.
+- Mempertahankan parser Excel (layout horizontal/vertikal, dataset-aware) dan normalisasi periode.
+- Menjaga keamanan dasar input dan alur yang berdekatan dengan CSRF pada unggah.
 
-## Unit / Functional Test Suite
+## Default pytest & basis data
 
-- `tests/test_app_factory.py`
-- `tests/test_models.py`
-- `tests/test_routes.py`
-- `tests/test_queries_sqlalchemy.py`
-- `tests/test_upload_flow.py`
-- `tests/test_dataset_long_parse.py`
-- `tests/test_upload_preview.py`
-- `tests/test_data_management_actions.py`
-- `tests/test_mutations_sqlalchemy.py`
-- `tests/test_period_comparisons.py`
-- `tests/test_performance_smoke.py`
+- Root `tests/conftest.py` mengatur **`DATABASE_URL`** ke SQLite berkas di repo **sebelum** impor `models`, supaya nilai `DATABASE_URL` dari `.env` (mis. MySQL produksi) tidak memutuskan koleksi tes atau suite default.
+- Untuk menjalankan tes **terhadap DSN dari lingkungan** (mis. integrasi MySQL di Docker): set  
+  `USE_ENV_DATABASE_URL_FOR_TESTS=1` (atau `true` / `yes` / `on`) **dan** `DATABASE_URL` ke DSN non-sqlite, lalu jalankan subset yang relevan (lihat README root bagian integrasi dialek).
 
-## E2E / UI / Browser
+## Unit / functional (cuplikan — lihat `tests/` untuk daftar aktual)
 
-- `tests/e2e/smoke.spec.ts`
-- `tests/simple_tests/ui_tests/*.spec.js`
-- `tests/simple_tests/ui_tests/*.py`
-- Playwright CLI di `package.json`:
-  - `npm run test:e2e`
-  - `npm run test:e2e:ui`
-  - `npm run test:e2e:install`
+- `tests/test_app_factory.py`, `tests/test_models.py`, `tests/test_routes.py`
+- `tests/test_queries_sqlalchemy.py`, `tests/test_mutations_sqlalchemy.py`
+- `tests/test_upload_flow.py`, `tests/test_upload_preview.py`, `tests/test_dataset_long_parse.py`
+- `tests/test_excel_parser.py`, `tests/test_data_management_actions.py`
+- `tests/simple_tests/functional_tests/` (termasuk pratinjau / dashboard)
+- `tests/test_bugs.py` — regresi edge case
 
-## Dokumen Testing Eksisting
+## Integrasi dialek remote
 
-- `tests/README.md` (overview)
-- `tests/README_TESTING.md` (laporan lengkap)
-- `tests/TESTING_SUMMARY.md` (ringkasan hasil dan risiko)
+- `tests/integration/test_remote_dialect_smoke.py` — memerlukan `USE_ENV_DATABASE_URL_FOR_TESTS=1`, `DATABASE_URL` non-sqlite, dan skema `alembic upgrade head` pada target.
 
-## Command Set
+## E2E / UI
 
-- Semua unit: `python -m pytest tests/ -v`
-- Coverage dasar: `python -m pytest tests/ --cov=app --cov=models --cov=services --cov-report=term-missing`
-- Test spesifik:
-  - `python -m pytest tests/test_upload_flow.py -v`
-  - `python -m pytest tests/test_upload_template_route.py -v`
-  - `python -m pytest tests/test_dataset_catalog.py -v`
-- Integrasi dialek remote: `python -m pytest tests/integration/test_remote_dialect_smoke.py -v` (memerlukan DB non-SQLite + migrasi).
-- E2E:
-  - `cd` root, `npm run test:e2e`
+- `tests/e2e/smoke.spec.ts` (Playwright)
+- `tests/simple_tests/ui_tests/` (Python / legacy JS sesuai tree)
 
-## Status Terkini (Berdasarkan Dokumentasi)
+Perintah npm: lihat `package.json` (`test:e2e`, dll.).
 
-- Ringkasan di dokumen testing menunjukkan cakupan besar dengan beberapa ketidaksempurnaan historis.
-- Ada indikasi skor partial pada periode tertentu (mis. 22/35 atau 75% pass) dan catatan bug kritikal lama dalam dokumen ringkas.
-- Data ini bisa stale; jika perlu, jalankan suite baseline setelah setiap patch besar untuk status yang valid saat ini.
+## Dokumen testing lain
 
-## Focus Test Baru (yang perlu dipertahankan)
+- `tests/README.md` — overview
+- `tests/README_TESTING.md`, `tests/TESTING_SUMMARY.md` — laporan historis (bisa stale)
 
-- Upload parser tolerance untuk `quarterly`/`yearly` marker.
-- Duplicate candidate warning vs actual overwrite path.
-- Template dataset-aware generation/download.
-- Filter period range dan status filter persistence across export + analysis.
-- File lock handling di Windows (`WinError 32`) saat delete preview file.
+## Command set
 
+- Suite Python utama: `python -m pytest tests -q`
+- Integrasi remote (contoh):  
+  `USE_ENV_DATABASE_URL_FOR_TESTS=1 DATABASE_URL=mysql+pymysql://... python -m pytest tests/integration/test_remote_dialect_smoke.py -q`
+- E2E: dari root, `npm run test:e2e`
+
+## Status & fokus
+
+- Setelah patch besar, jalankan ulang suite baseline; angka historis di dokumen lama tidak dijamin mutakhir.
+- Fokus regresi: toleransi periode (`time_period` + parser), duplikat unggah, template dataset-aware, filter rentang periode + ekspor, WinError 32 pada file pratinjau (Windows).
