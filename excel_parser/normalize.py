@@ -92,6 +92,10 @@ def _parse_quarterly_period(period_value, normalized: str) -> Dict[str, Optional
     if pd.api.types.is_bool(period_value):
         return {"year": None, "month": None, "quarter": None}
 
+    # Bare calendar year → Q1 of that year (no calendar month; avoids Jan-from-_to_datetime drift).
+    if _YEARLY_PERIOD_RE.fullmatch(normalized):
+        return {"year": int(normalized), "month": None, "quarter": 1}
+
     m1 = _QUARTERLY_PERIOD_RE_1.fullmatch(normalized)
     if m1:
         return {

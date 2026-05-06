@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """Smoke tests for SQLAlchemy write/read against MySQL or PostgreSQL (CI services).
 
-Local: skip unless ``DATABASE_URL`` is set to a non-sqlite DSN and schema exists
+Local: skip unless ``USE_ENV_DATABASE_URL_FOR_TESTS=1`` (or ``true``/``yes``/``on``)
+**and** ``DATABASE_URL`` is set to a non-sqlite DSN and schema exists
 (``python -m alembic upgrade head``).
+
+The root ``tests/conftest.py`` forces an in-repo SQLite DSN for the default suite so
+``.env`` MySQL does not break collection; integration opts out via the env flag above.
 """
 from __future__ import annotations
 
@@ -29,7 +33,10 @@ def _remote_database_url() -> str | None:
 
 pytestmark = pytest.mark.skipif(
     _remote_database_url() is None,
-    reason="Set DATABASE_URL to mysql+ or postgresql+ (see README integration section)",
+    reason=(
+        "Set USE_ENV_DATABASE_URL_FOR_TESTS=1 and DATABASE_URL to mysql+ or postgresql+ "
+        "(see README integration section; root conftest defaults suite to SQLite)"
+    ),
 )
 
 

@@ -203,6 +203,10 @@ todos:
     content: "Consolidate _to_float, remove app.py test aliases, clean import noise. Issues #41-43."
     status: completed
     notes: "Part of dead code sweep 2026-05-06. Issues #41, #42, #43 closed."
+  - id: prd-006-test-reliability-period-architecture
+    content: "PRD 006 — pytest bootstrap vs .env, semantik periode triwulanan (tahun polos), tes dashboard berbasis makna kolom, seam error integritas & kebijakan unggah, rapatkan API parser, sinkron docs/plan. Lihat docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md"
+    status: in_progress
+    notes: "Slices #48–#51: #48–#50 selesai di branch; #51 docs; seam upload/HITL masih open."
 isProject: false
 ---
 

@@ -75,6 +75,7 @@ Setelah `alembic upgrade head` (revisi `002_dataset` / `002_dataset_code_upload_
 
 ## Changelog ringkas (state fungsional)
 
+- **2026-05-06 — Epic #47 (issues #48–#51):** Default pytest SQLite vs `.env`, perbaikan periode triwulanan tahun polos, tes kolom Nilai lewat header, sinkron `docs/codebase/TESTING.md` + README integrasi + `USE_ENV_DATABASE_URL_FOR_TESTS` untuk smoke dialek.
 - **2026-05-06 — Dead code removal:** Hapus `services/charts.py` (plotly visualization), `fetch_series_for_comparison` (orphan query), dead CSS selectors pivot/period-analysis, stale README route docs. Lihat issues #36, #37, #38.
 - **2026-05-06 — Import cleanup:** Konsolidasi `_to_float` ke satu implementasi (`excel_parser.normalize`), hapus legacy test aliases dari `app.py`, bersihkan unused imports di `upload_flow.py` dan `repositories/__init__.py`. Issues #41–#43.
 - **2026-04-17 — Dokumentasi:** `README_DOCS.md` jadi indeks utama; isi `user_upload_datasets.md`, `migration_rehearsal_dataset_code.md`, dan `refactor-planning.md` digabung ke sini lalu file itu dihapus; `planning.md` dirampingkan jadi stub sinkron; aturan Cursor di `.cursor/rules/` dilacak Git (un-ignore selektif); README root menaut ke sini.
