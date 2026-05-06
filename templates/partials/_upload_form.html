@@ -1,4 +1,5 @@
 <form method="POST" enctype="multipart/form-data" class="space-y-5">
+    <input type="hidden" name="dataset_slug" value="universal">
     <div class="form-grid">
     <div class="form-control">
         <label for="uploader" class="label">
@@ -18,38 +19,18 @@
     </div>
 
     <div class="form-control md:col-span-2">
-        <label for="dataset_slug" class="label">
-            <span class="label-text">Dataset (sheet sumber BI)</span>
-        </label>
-        <select
-            id="dataset_slug"
-            name="dataset_slug"
-            class="control"
-            {% if require_dataset_upload %}required{% endif %}
-        >
-            {% if legacy_dataset_choice_allowed %}
-            <option value="" {% if not form_values or not form_values.dataset_slug %}selected{% endif %}>Tanpa dataset — format generik / lembar pertama</option>
-            {% endif %}
-            {% for d in datasets %}
-            {% if d.enabled_for_upload %}
-            <option value="{{ d.slug }}" {% if form_values and form_values.dataset_slug == d.slug %}selected{% endif %}>{{ d.label }} — sheet: {{ d.source_sheet }}</option>
-            {% endif %}
-            {% endfor %}
-        </select>
         <label class="label">
-            <span class="field-help">
-                Pilih dataset agar parser membaca sheet yang benar. Mode ketat: set <code>REQUIRE_DATASET_FOR_UPLOAD=1</code> di server.
-            </span>
+            <span class="label-text">Template Excel</span>
         </label>
-        <ul class="text-xs space-y-1 mt-2 list-disc list-inside text-base-content/80">
-            {% for d in datasets %}
-            {% if d.enabled_for_upload %}
-            <li>
-                <a class="link link-primary" href="{{ url_for('upload_dataset_template', dataset_slug=d.slug) }}">Unduh template long — {{ d.label }}</a>
-            </li>
-            {% endif %}
-            {% endfor %}
-        </ul>
+        <div class="rounded-xl border border-base-300 bg-base-200/40 p-4 space-y-2">
+            <p class="text-sm text-base-content/90">
+                Gunakan <strong>satu template universal</strong>: kolom <code>nama_dataset</code>, <code>indikator</code>, <code>periode</code>, <code>nilai</code>.
+                Panduan lengkap ada di lembar README dalam berkas unduhan.
+            </p>
+            <a class="btn btn-primary btn-sm w-fit" href="{{ url_for('upload_dataset_template', dataset_slug='universal') }}">
+                Unduh template universal (.xlsx)
+            </a>
+        </div>
     </div>
 
     <div class="form-control">
@@ -74,6 +55,9 @@
             <option value="quarterly" {% if form_values and form_values.time_period == 'quarterly' %}selected{% endif %}>Triwulanan</option>
             <option value="yearly" {% if form_values and form_values.time_period == 'yearly' %}selected{% endif %}>Tahunan</option>
         </select>
+        <label class="label">
+            <span class="field-help">Metadata konteks laporan; format tanggal di kolom <code>periode</code> mengikuti isi sel (YYYY, YYYY-MM, triwulan, dll.).</span>
+        </label>
     </div>
 
     <input type="hidden" name="preview_token" value="{{ upload_preview_token or '' }}">
@@ -90,17 +74,9 @@
             </label>
             <input id="excel_file" name="excel_file" type="file" class="file-input file-input-bordered file-input-primary w-full" accept=".xls,.xlsx" required>
             <label class="label">
-                <span class="field-help">Format .xls atau .xlsx. Pastikan satu sheet aktif berisi data.</span>
+                <span class="field-help">Format .xls atau .xlsx. Lewati lembar README; isi data di lembar berjudul seperti kolom pertama template (biasanya &quot;Data&quot;).</span>
             </label>
         </div>
-
-        <div class="label">
-            <span class="field-help">
-                Tanpa pilihan dataset: parser membaca lembar pertama / aktif. Dengan dataset: sheet mengikuti katalog (nama persis seperti di Excel BI).
-                Dataset-aware memakai format template long agar tidak perlu override manual.
-            </span>
-        </div>
-            </div>
     </div>
 
     <div class="form-actions-bar">

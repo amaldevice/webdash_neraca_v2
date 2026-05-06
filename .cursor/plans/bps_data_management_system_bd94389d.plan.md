@@ -149,6 +149,9 @@ todos:
   - id: make-universal-parser-time-period-aware
     content: Make universal Excel period parser respect time_period (monthly/quarterly/yearly) to avoid malformed/serial-based period misparsing.
     status: completed
+  - id: prd-53-universal-template-slices-54-56
+    content: "PRD-53 (GitHub #54–#56): dataset `universal`, `template_universal.xlsx`, long-row parse + flexible period, upload form tanpa picker BI, tes + docs/prd/."
+    status: completed
   - id: make-period-display-period-aware
     content: Make display of saved periods in data-management, preview-data, and upload sample table period-aware for monthly/quarterly/yearly (YYYY-MM, YYYY-Qn, YYYY).
     status: completed
@@ -205,8 +208,8 @@ todos:
     notes: "Part of dead code sweep 2026-05-06. Issues #41, #42, #43 closed."
   - id: prd-006-test-reliability-period-architecture
     content: "PRD 006 — pytest bootstrap vs .env, semantik periode triwulanan (tahun polos), tes dashboard berbasis makna kolom, seam error integritas & kebijakan unggah, rapatkan API parser, sinkron docs/plan. Lihat docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md"
-    status: in_progress
-    notes: "Slices #48–#51: #48–#50 selesai di branch; #51 docs; seam upload/HITL masih open."
+    status: completed
+    notes: "PR #52 merged ke main (2026-05-06); #48–#51 closed. Item PRD lanjutan (seam error integritas unggah, permukaan publik parser, DRY period marker) belum dieksekusi — lihat isi PRD 006 bila dilanjut."
 isProject: false
 ---
 

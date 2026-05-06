@@ -7,7 +7,7 @@ from typing import Dict, List
 import pandas as pd
 
 from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
-from excel_parser.dataset_long import try_parse_dataset_long_dataframe
+from excel_parser.dataset_long import try_parse_dataset_long_dataframe, try_parse_universal_long_dataframe
 from excel_parser.layout import _detect_layout, _materialize_data_frame, detect_template_format
 from excel_parser.normalize import _trim_sparse_data
 from excel_parser.parse_layouts import _parse_horizontal_layout, _parse_vertical_layout
@@ -91,6 +91,13 @@ def parse_excel_payload(
     definition = get_dataset_or_none(slug) if slug else None
 
     resolved, sheet_ok = _resolve_read_sheet(file_path, sheet_name, definition)
+    if definition is not None and getattr(definition, "slug", "") == "universal" and resolved is None:
+        with pd.ExcelFile(file_path, engine="openpyxl") as xl:
+            names = xl.sheet_names
+        if names:
+            resolved = names[0]
+            sheet_ok = True
+
     if not sheet_ok:
         with pd.ExcelFile(file_path, engine="openpyxl") as xl:
             sheet_names = xl.sheet_names
@@ -114,13 +121,23 @@ def parse_excel_payload(
             df_header = pd.DataFrame()
         # Do not `_trim_sparse_data` here: it can drop trailing numeric columns (e.g. `nilai`)
         # that are still sparse in sample rows but required by the long-format contract.
-        long_entries = try_parse_dataset_long_dataframe(
-            df_header,
-            definition,
-            uploader=uploader,
-            version=version,
-            data_type=data_type,
-        )
+        if getattr(definition, "template_mode", "long") == "universal_long":
+            long_entries = try_parse_universal_long_dataframe(
+                df_header,
+                definition,
+                uploader=uploader,
+                version=version,
+                data_type=data_type,
+                form_time_period=time_period,
+            )
+        else:
+            long_entries = try_parse_dataset_long_dataframe(
+                df_header,
+                definition,
+                uploader=uploader,
+                version=version,
+                data_type=data_type,
+            )
         if long_entries is not None:
             payload["entries"] = long_entries
             payload["sheet_name"] = str(resolved)

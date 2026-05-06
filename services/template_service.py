@@ -61,15 +61,29 @@ def generate_workbook_for_dataset(
     wb = Workbook()
     wb.remove(wb.active)
     if include_notes:
-        _add_readme_sheet(
-            wb,
-            [
-                f"Template long-format: {definition.label}",
-                f"Sheet sumber BI: {definition.source_sheet!r}",
-                f"Mode waktu: {definition.time_period_mode}; tipe tabel: {definition.table_type}.",
-                "Baris 1 = header wajib. Hapus baris contoh lalu isi data. Satuan nilai mengikuti publikasi BI.",
-            ],
-        )
+        if definition.template_mode == "universal_long":
+            _add_readme_sheet(
+                wb,
+                [
+                    "Template universal — satu format untuk berbagai sumber (PLN, BI, BPJS, dll.).",
+                    "Lembar data: kolom wajib baris 1 — nama_dataset | indikator | periode | nilai.",
+                    "nama_dataset: nama kelompok data Anda (bebas teks).",
+                    "indikator: satu kolom; beberapa dimensi dipisah dengan | (contoh: Kelompok | Metrik | Detail).",
+                    "periode: gunakan salah satu format — YYYY, YYYY-MM, YYYY-Q1 / Q1-YYYY, atau tanggal YYYY-MM-DD.",
+                    "nilai: angka. Kosongkan baris contoh jika tidak dipakai.",
+                    "Form unggah web: pilih Flow/Stock dan Bulanan/Triwulanan/Tahunan sesuai konteks; metadata itu berbeda dari format tanggal di kolom periode.",
+                ],
+            )
+        else:
+            _add_readme_sheet(
+                wb,
+                [
+                    f"Template long-format: {definition.label}",
+                    f"Sheet sumber BI: {definition.source_sheet!r}",
+                    f"Mode waktu: {definition.time_period_mode}; tipe tabel: {definition.table_type}.",
+                    "Baris 1 = header wajib. Hapus baris contoh lalu isi data. Satuan nilai mengikuti publikasi BI.",
+                ],
+            )
     _write_long_sheet(wb, definition, with_sample=with_sample)
     return wb
 
@@ -80,8 +94,25 @@ def workbook_to_bytes(wb: Workbook) -> bytes:
     return buf.getvalue()
 
 
+def build_universal_template_file_response() -> Response:
+    """Same workbook as ``generate_workbook_for_dataset('universal')`` with stable filename."""
+    from flask import Response
+
+    wb = generate_workbook_for_dataset("universal", with_sample=True, include_notes=True)
+    data = workbook_to_bytes(wb)
+    fname = _attachment_filename("template_universal.xlsx")
+    return Response(
+        data,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
+
+
 def build_template_file_response(dataset_slug: str) -> Response:
     from flask import Response
+
+    if (dataset_slug or "").strip().lower() == "universal":
+        return build_universal_template_file_response()
 
     definition = get_dataset(dataset_slug)
     wb = generate_workbook_for_dataset(dataset_slug, with_sample=True, include_notes=True)
@@ -114,6 +145,8 @@ def build_multi_dataset_reference_workbook(*, with_sample: bool = True) -> Workb
         ],
     )
     for d in iter_datasets():
+        if d.slug == "universal":
+            continue
         _write_long_sheet(wb, d, with_sample=with_sample)
     return wb
 

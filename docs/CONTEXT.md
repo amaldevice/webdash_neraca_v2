@@ -20,8 +20,7 @@ Buku pegangan untuk perilaku aplikasi web internal pengelolaan data BPS: unggah 
 - Penyimpanan utama di tabel `data_entries`, dipandu helper model di `models/` dan migrasi `alembic/`.
 - Dashboard memakai `models/queries.py` untuk query data dengan filter periode.
 - Ekspor lewat endpoint `/export` dengan filter aktif.
-
-## Aturan proses
+- Unggah `/upload` (UI saat ini): satu template long **universal** (`dataset_slug` `universal`; kolom `nama_dataset`, `indikator`, `periode`, `nilai`) sebagai jalur utama; dataset REKAP per `source_sheet` tetap di katalog untuk input manual / referensi.
 - Gunakan mode dataset-aware jika fitur berkaitan dengan `/upload` dan pemetaan dataset.
 - Prioritaskan konsistensi perilaku antar halaman: filter periode harus konsisten dari preview, data-management, dashboard, hingga export.
 - Deteksi duplikasi awal (indikator + periode) hanya warning; pencegahan overwrite tetap mengikuti unique key DB.
