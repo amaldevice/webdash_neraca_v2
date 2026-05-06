@@ -10,9 +10,7 @@ from flask import Flask
 from config import configure_flask_app, database_url, database_url_explicit
 from infrastructure.db import dispose_engine, init_engine, register_flask_teardown
 from models import init_db
-from periods import parse_period_date
 from routes import register_routes
-from services.manual_entries import build_manual_entry
 from services.timeutil import to_wita_iso
 from services.validation import allowed_file, validate_metadata
 
@@ -48,15 +46,9 @@ def create_app(*, testing: bool = False, init_sqlalchemy: bool | None = None) ->
 
 app = create_app(testing="pytest" in sys.modules)
 
-# Test / legacy aliases (see tests/test_bugs.py)
-_parse_period_date = parse_period_date
-_build_manual_entry = build_manual_entry
-
 __all__ = [
     "app",
     "create_app",
-    "_build_manual_entry",
-    "_parse_period_date",
     "allowed_file",
     "validate_metadata",
 ]

@@ -56,12 +56,14 @@ def _temp_db_detach(case: unittest.TestCase) -> None:
 
 
 # Import the application modules
-from app import _build_manual_entry, _parse_period_date, allowed_file, app, validate_metadata
+from app import allowed_file, app, validate_metadata
+from periods import parse_period_date as _parse_period_date
+from services.manual_entries import build_manual_entry as _build_manual_entry
 from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
-    _to_float,
 )
+from excel_parser.normalize import _to_float
 from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
 from services.timeutil import utc_now_iso
 
@@ -135,6 +137,23 @@ class TestValidation(unittest.TestCase):
 
         year, month, quarter = _parse_period_date("quarterly", "2024-Q5")  # Invalid quarter
         self.assertEqual((year, month, quarter), (None, None, None))
+
+    def test_models_does_not_export_private_to_float(self):
+        """models public API should not expose _to_float (private symbol)."""
+        import importlib
+        m = importlib.import_module("models")
+        self.assertNotIn("_to_float", m.__all__,
+            "_to_float is a private symbol and must not be in models.__all__")
+        self.assertFalse(hasattr(m, "_to_float") and "_to_float" in dir(m.__dict__),
+            "_to_float should not be importable from models after cleanup")
+
+    def test_app_does_not_expose_test_aliases(self):
+        """app.py should not expose _parse_period_date or _build_manual_entry as aliases."""
+        import app as app_mod
+        self.assertNotIn("_parse_period_date", app_mod.__all__,
+            "_parse_period_date alias must be removed from app.__all__")
+        self.assertNotIn("_build_manual_entry", app_mod.__all__,
+            "_build_manual_entry alias must be removed from app.__all__")
 
 
 class TestExcelParser(unittest.TestCase):

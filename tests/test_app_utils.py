@@ -1,4 +1,5 @@
 from services.list_view import EntryListParams
+from services.manual_entries import build_manual_entry
 
 
 def test_entry_list_params_query_kwargs():
@@ -34,7 +35,7 @@ def test_validate_metadata(app_module):
 
 
 def test_build_manual_entry(app_module):
-    entry = app_module._build_manual_entry(
+    entry = build_manual_entry(
         "Uploader",
         "v1",
         "flow",
@@ -51,7 +52,7 @@ def test_build_manual_entry(app_module):
     assert entry["month"] == 1
 
     # Test invalid value
-    assert app_module._build_manual_entry(
+    assert build_manual_entry(
         "Uploader",
         "v1",
         "flow",
@@ -62,7 +63,7 @@ def test_build_manual_entry(app_module):
     ) is None
 
     # Test quarterly format
-    entry_quarterly = app_module._build_manual_entry(
+    entry_quarterly = build_manual_entry(
         "Uploader",
         "v1",
         "flow",
@@ -74,7 +75,7 @@ def test_build_manual_entry(app_module):
     assert entry_quarterly is not None
     assert entry_quarterly["quarter"] == 1
     # Test quarterly fallback with monthly marker
-    entry_quarterly_marker = app_module._build_manual_entry(
+    entry_quarterly_marker = build_manual_entry(
         "Uploader",
         "v1",
         "flow",
@@ -89,7 +90,7 @@ def test_build_manual_entry(app_module):
     assert entry_quarterly_marker["quarter"] == 1
 
     # Test yearly format
-    entry_yearly = app_module._build_manual_entry(
+    entry_yearly = build_manual_entry(
         "Uploader",
         "v1",
         "stock",
@@ -104,7 +105,7 @@ def test_build_manual_entry(app_module):
     assert entry_yearly["quarter"] is None
 
     # Test yearly fallback with monthly marker format
-    entry_yearly_marker = app_module._build_manual_entry(
+    entry_yearly_marker = build_manual_entry(
         "Uploader",
         "v1",
         "stock",
