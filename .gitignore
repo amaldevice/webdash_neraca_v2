@@ -48,6 +48,7 @@ package-lock.json
 # Testing
 .playwright-cli/
 .playwright-mcp/
+.playwright_e2e.db
 playwright-report/
 test-results/
 .pytest_cache/

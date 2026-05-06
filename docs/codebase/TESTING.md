@@ -28,7 +28,7 @@
 
 ## E2E / UI
 
-- `tests/e2e/smoke.spec.ts` (Playwright)
+- `tests/e2e/smoke.spec.ts` (Playwright); `playwright.config.ts` memakai `testDir: ./tests/e2e` dan `webServer.env.DATABASE_URL=sqlite:///./.playwright_e2e.db` agar proses Flask E2E tidak memakai MySQL dari `.env` pengembang.
 - `tests/simple_tests/ui_tests/` (Python / legacy JS sesuai tree)
 
 Perintah npm: lihat `package.json` (`test:e2e`, dll.).

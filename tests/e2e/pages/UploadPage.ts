@@ -19,8 +19,9 @@ export class UploadPage {
     return this.page.getByRole("textbox", { name: "Pengunggah" });
   }
 
+  /** Versi disimpan di `input[name="version"]` (hidden); GET `/upload` sudah diisi server. */
   versionInput(): Locator {
-    return this.page.getByRole("textbox", { name: "Versi" });
+    return this.page.locator('input[name="version"]');
   }
 
   fileInput(): Locator {

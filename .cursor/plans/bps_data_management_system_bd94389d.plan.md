@@ -152,6 +152,9 @@ todos:
   - id: prd-53-universal-template-slices-54-56
     content: "PRD-53 (GitHub #54–#56): dataset `universal`, `template_universal.xlsx`, long-row parse + flexible period, upload form tanpa picker BI, tes + docs/prd/."
     status: completed
+  - id: prd-53-issue-58-playwright-universal-upload-smoke
+    content: "GitHub #58: Playwright smoke universal template → pratinjau; fixture static/e2e_universal_template.xlsx; playwright.config testDir tests/e2e."
+    status: completed
   - id: make-period-display-period-aware
     content: Make display of saved periods in data-management, preview-data, and upload sample table period-aware for monthly/quarterly/yearly (YYYY-MM, YYYY-Qn, YYYY).
     status: completed

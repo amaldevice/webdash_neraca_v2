@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Run: npm ci && npx playwright install chromium && npm run test:e2e
  */
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -23,5 +23,10 @@ export default defineConfig({
     url: "http://127.0.0.1:5000/",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      // Isolate E2E from developer .env DATABASE_URL (e.g. MySQL) — dotenv uses override=False.
+      DATABASE_URL: "sqlite:///./.playwright_e2e.db",
+      FLASK_SECRET_KEY: "playwright-e2e-not-for-production",
+    },
   },
 });

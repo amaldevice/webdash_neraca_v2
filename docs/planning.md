@@ -10,7 +10,7 @@
 
 Catatan tambahan: format period_date manual dan unggah sekarang lebih toleran — mode `quarterly` menerima `YYYY-Q#` atau `YYYY-MM`, dan mode `yearly` menerima `YYYY` atau `YYYY-MM`; jika `YYYY-MM` dipakai, nilai bulan ikut disimpan sebagai penanda agar tampilan bisa menampilkan `YYYY-MM`.
 
-PRD epic template universal unggah (#53) — **2026-05-06:** dataset katalog `universal`, form `/upload` memakai `dataset_slug=universal` + unduhan `template_universal.xlsx`, parser `try_parse_universal_long_dataframe` + `parse_flexible_universal_period`.
+PRD epic template universal unggah (#53) — **2026-05-06:** dataset katalog `universal`, form `/upload` memakai `dataset_slug=universal` + unduhan `template_universal.xlsx`, parser `try_parse_universal_long_dataframe` + `parse_flexible_universal_period`. **2026-05-07:** smoke Playwright `tests/e2e/smoke.spec.ts` + fixture `static/e2e_universal_template.xlsx` untuk issue [#58](https://github.com/amaldevice/webdash_neraca_v2/issues/58); `playwright.config` `testDir` diperbaiki ke `tests/e2e`.
 
 PRD epic tes/periode (#47) — slice #48–#51 selesai lewat PR #52 (merge `main`). Todo plan: `prd-006-test-reliability-period-architecture` = **completed**; backlog lanjutan ada di [docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md](docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md).
 

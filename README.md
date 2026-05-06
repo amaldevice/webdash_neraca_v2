@@ -324,6 +324,7 @@ git push origin feature/<nama-fitur>
 - Jalankan unit test: `pytest`.
 - Jalankan `python -m py_compile ...` setelah perubahan struktural.
 - Lakukan smoke test manual terhadap alur unggah/manual (lihat `QA_CHECKLIST.md`).
+- Smoke browser root (unggah → pratinjau, template universal): `npm ci`, `npx playwright install chromium`, lalu `npm run test:e2e` (konfigurasi `playwright.config.ts`, tes di `tests/e2e/`).
 - Untuk skenario rentang periode, jalankan:
   - `npx playwright test simple_tests/ui_tests/playwright_period_filter_smoke.spec.js`.
 
