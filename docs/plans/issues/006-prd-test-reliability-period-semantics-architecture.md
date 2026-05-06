@@ -1,6 +1,6 @@
 ---
 title: "PRD — Keandalan tes, semantik periode, dan pengerasan arsitektur"
-status: draft
+status: merged
 created: 2026-05-06
 tracker: github
 github_issue: https://github.com/amaldevice/webdash_neraca_v2/issues/47

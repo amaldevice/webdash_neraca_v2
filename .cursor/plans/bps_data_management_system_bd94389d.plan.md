@@ -205,8 +205,8 @@ todos:
     notes: "Part of dead code sweep 2026-05-06. Issues #41, #42, #43 closed."
   - id: prd-006-test-reliability-period-architecture
     content: "PRD 006 — pytest bootstrap vs .env, semantik periode triwulanan (tahun polos), tes dashboard berbasis makna kolom, seam error integritas & kebijakan unggah, rapatkan API parser, sinkron docs/plan. Lihat docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md"
-    status: in_progress
-    notes: "Slices #48–#51: #48–#50 selesai di branch; #51 docs; seam upload/HITL masih open."
+    status: completed
+    notes: "PR #52 merged ke main (2026-05-06); #48–#51 closed. Item PRD lanjutan (seam error integritas unggah, permukaan publik parser, DRY period marker) belum dieksekusi — lihat isi PRD 006 bila dilanjut."
 isProject: false
 ---
 

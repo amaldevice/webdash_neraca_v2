@@ -10,6 +10,6 @@
 
 Catatan tambahan: format period_date manual dan unggah sekarang lebih toleran — mode `quarterly` menerima `YYYY-Q#` atau `YYYY-MM`, dan mode `yearly` menerima `YYYY` atau `YYYY-MM`; jika `YYYY-MM` dipakai, nilai bulan ikut disimpan sebagai penanda agar tampilan bisa menampilkan `YYYY-MM`.
 
-PRD terbaru (epic tes + periode + arsitektur): `docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md` + todo `prd-006-test-reliability-period-architecture` di `.cursor/plans/bps_data_management_system_bd94389d.plan.md`.
+PRD epic tes/periode (#47) — slice #48–#51 selesai lewat PR #52 (merge `main`). Todo plan: `prd-006-test-reliability-period-architecture` = **completed**; backlog lanjutan ada di [docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md](docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md).
 
 Riwayat naratif panjang sebelum konsolidasi 2026-04-17: `git log --follow -p -- docs/planning.md` (dan `docs/refactor-planning.md` jika masih di history).
