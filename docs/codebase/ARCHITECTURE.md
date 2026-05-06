@@ -7,8 +7,7 @@ Aplikasi adalah repository data BPS berbasis Flask yang memfokuskan fungsi ke:
 - ingest data (upload file/Manual Input),
 - validasi + normalisasi data,
 - manajemen CRUD data,
-- analisis perbandingan periode (M/M, Q/Q, Y/Y, YTD, C/C),
-- ekspor data mentah/hasil analisis.
+- ekspor data mentah.
 
 ## Komponen Utama
 
@@ -34,7 +33,6 @@ Aplikasi adalah repository data BPS berbasis Flask yang memfokuskan fungsi ke:
 - `services/manual_entries.py`: normalisasi input manual.
 - `services/template_service.py`: generate template dataset-aware.
 - `excel_parser/*`: parsing Excel, deteksi layout horizontal/vertical/mixed.
-- `services/charts.py`, `services/period_*`: transform data untuk UI/analisis.
 - `services/raw_export.py`: export CSV/Excel.
 
 ### 4) Data Layer
@@ -64,12 +62,6 @@ Aplikasi adalah repository data BPS berbasis Flask yang memfokuskan fungsi ke:
 1. Form manual diparsing (`build_manual_entry`).
 2. `parse_period_date` menerapkan fleksibilitas marker `YYYY`, `YYYY-MM`, `YYYY-Qn`.
 3. Validasi metadata/time series lalu `insert`.
-
-### Alur Analisis & Ekspor
-
-1. Filter di route dashboard diteruskan ke query period.
-2. Perhitungan growth dilakukan di `period_comparison_calculators` (pure math).
-3. Hasil dirender JSON/table atau diekspor lewat `period_analysis_workbook`.
 
 ## Kontrak Data yang Kritis
 

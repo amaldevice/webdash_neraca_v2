@@ -98,13 +98,12 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 ### Fitur Tambahan
 - [x] **Penyaringan rentang periode**
   - Halaman **Preview-Data** dan **Data-Management** menggunakan parameter `start_period` + `end_period`.
-  - Halaman **Dashboard** menggunakan parameter `period_start` + `period_end` untuk grafik/analisis, serta `start_period` + `end_period` untuk filter rentang yang konsisten.
-  - Semua fitur filter ini berlaku untuk proses ekspor dan analisis agar hasil yang ditampilkan konsisten dengan ruang lingkup waktu yang dipilih.
+  - Halaman **Dashboard** menggunakan parameter `start_period` + `end_period` untuk filter rentang yang konsisten.
+  - Semua fitur filter ini berlaku untuk proses ekspor agar hasil yang ditampilkan konsisten dengan ruang lingkup waktu yang dipilih.
 - [x] **Penelusuran tabel terfilter**: Mendukung paginasi dan pembatasan jumlah data per halaman, dengan tampilan baris/tabel yang konsisten.
 - [x] **Ekspor data mentah**: Menyediakan unduhan CSV/Excel melalui `/export` dengan mempertahankan parameter filter aktif.
 - [x] **Validasi metadata**: Memastikan atribut seperti `uploader`, `version`, `data_type`, dan `time_period` tervalidasi sejak proses unggah/input.
 - [x] **Aksi massal**: Halaman Data-Management menyediakan pembaruan massal, penghapusan massal, dan penghapusan berbasis filter.
-- [x] **Alur analisis periode**: Halaman Dashboard mendukung analisis M to M, Q to Q, Y to Y, YTD, dan C to C, serta ekspor hasil analisis ke Excel.
 - [x] **Deteksi duplikasi lintas unggah/manual**: Sistem menandai konflik awal berdasarkan kunci indikator + periode (`indicator_name`, `year`, `month`, `quarter`), sekaligus tetap menjaga penyimpanan berdasarkan unique key database.
 
 ### Catatan penting: warning bukan berarti overwrite otomatis
@@ -144,9 +143,6 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `infrastructure/orm_models.py`: Model SQLAlchemy 2.0 (mirror skema); `alembic/` + `alembic.ini` untuk migrasi.
 - `services/aggregation.py`: Dihapus. Metrik dihitung dari data aktif.
 - `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
-- `services/period_analysis_workbook.py`: Generator workbook analisis periode ke Excel.
-- `services/period_comparisons.py`: Orkestrasi kalkulasi analisis periodik.
-- `services/period_comparison_calculators.py`: Helper kalkulasi growth (`M/M`, `Q/Q`, `Y/Y`, `YTD`, `C/C`).
 - `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
 - `docs/README_DOCS.md`: Panduan wizard dataset, migrasi `dataset_code`, changelog, taut troubleshooting.
 - `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
@@ -168,7 +164,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 ## Arsitektur
 
 ### Gambaran Tingkat Tinggi
-Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalisasi bersama, lalu disimpan ke `data_entries` di SQLite. Template menampilkan halaman beranda, pratinjau, manajemen data, dan dashboard; endpoint ekspor/analisis menyediakan data mentah serta hasil perhitungan pada mode analisis.
+Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalisasi bersama, lalu disimpan ke `data_entries` di SQLite. Template menampilkan halaman beranda, pratinjau, manajemen data, dan dashboard; endpoint ekspor menyediakan data mentah sesuai filter aktif.
 
 ### Diagram Komponen
 ```
@@ -193,11 +189,11 @@ Template Preview / Data-Management / Dashboard
 4. Pengguna melanjutkan analisis melalui:
    - `/preview-data` untuk meninjau data tabel dengan filter rentang periode.
    - `/data-management` untuk pemeliharaan data dan tindakan massal.
-   - `/dashboard` untuk melihat metrik dan analisis periodik.
+   - `/dashboard` untuk melihat metrik repository.
 5. Semua filter terkait, termasuk `start_period`/`end_period`, ikut diterapkan pada ekspor dan analisis.
 
 ### Alur Tambahan
-- `/dashboard` menampilkan metrik serta opsi analisis yang berangkat dari data aktif.
+- `/dashboard` menampilkan metrik dari data aktif.
 - `/export` menyediakan data mentah (CSV/Excel) sesuai filter aktif.
 
 ## Skema Basis Data
@@ -270,9 +266,6 @@ GET  /preview-data             # Pratinjau data + filter + ekspor
 GET,POST /data-management      # Manajemen data + tindakan massal
 GET  /dashboard               # Metrik repository + analisis periode
 GET  /export                   # Ekspor CSV/Excel berdasarkan filter aktif
-POST /generate-plot            # Membuat grafik garis indikator berdasarkan rentang periode
-POST /generate-period-analysis  # Membuat analisis perbandingan periode
-POST /export-period-analysis    # Mengekspor hasil analisis periode ke Excel
 ```
 
 ## Skrip yang Tersedia
@@ -294,7 +287,7 @@ npm run build:css
 2. Lakukan unggahan data melalui `/upload` atau input manual pada `/manual`.
 3. Gunakan `/preview-data` untuk memfilter dan mengekspor data mentah.
 4. Gunakan `/data-management` untuk pemeliharaan, pembaruan massal, serta penghapusan data.
-5. Gunakan `/dashboard` untuk visualisasi dan analisis rentang periode.
+5. Gunakan `/dashboard` untuk melihat metrik repository.
 
 ### Contoh Pemakaian Endpoint
 ```bash
@@ -302,9 +295,6 @@ GET /preview-data?data_type=flow&time_period=monthly&start_period=2024&end_perio
 GET /data-management?time_period=quarterly&start_period=2024-Q1&end_period=2024-Q4
 GET /export?format=csv&data_type=flow&start_period=2024&end_period=2024-Q4
 GET /export?format=excel&start_period=2024&end_period=2024-Q4
-POST /generate-plot (form: indicator=..., period_start=2024, period_end=2024-Q4, ...)
-POST /generate-period-analysis (form: period_start=2024, end_period=2024-Q4, comparison_type=year-over-year)
-POST /export-period-analysis (form: period_start=2024, end_period=2024-Q4)
 ```
 
 ### Cara verifikasi fitur rentang periode
@@ -315,11 +305,6 @@ POST /export-period-analysis (form: period_start=2024, end_period=2024-Q4)
 2. **Data-Management**
    - Buka `/data-management`.
    - Isi periode yang diinginkan, kirimkan filter, lalu pastikan kontrol aksi (`Hapus Berdasarkan Filter`) tersedia sesuai status filter.
-3. **Dashboard**
-   - Buka `/dashboard`.
-   - Isi `Periode Mulai` dan `Periode Akhir` pada formulir grafik, klik `Hasilkan Grafik Garis`, lalu pastikan payload request membawa `period_start` dan `period_end`.
-   - Pada **Analisis Periode**, isi rentang periode dan klik `Hasilkan Analisis Periode`; pastikan hasil dan ekspor analisis juga menggunakan rentang yang sama.
-
 ## Pedoman Pengembangan
 
 ### Gaya Kode
