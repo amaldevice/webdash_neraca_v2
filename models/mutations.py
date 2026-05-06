@@ -21,15 +21,6 @@ def _to_float(value) -> Optional[float]:
     try:
         if value is None:
             return None
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _to_valid_float(value) -> Optional[float]:
-    try:
-        if value is None:
-            return None
         value_float = float(value)
     except (TypeError, ValueError):
         return None
@@ -136,7 +127,7 @@ def delete_data_by_filter(
 
 def update_data_entry(entry_id: str, new_value: float) -> bool:
     """Update the value of a data entry"""
-    parsed_value = _to_valid_float(new_value)
+    parsed_value = _to_float(new_value)
     if parsed_value is None:
         _log.warning("update_data_entry failed: invalid value %r", new_value)
         return False
@@ -242,7 +233,7 @@ def bulk_update_entries(entry_ids: List[str], updates: Dict) -> int:
         if field in ["uploader_name", "version", "indicator_name", "data_type", "time_period"]:
             vals[field] = value
         elif field == "value":
-            parsed_value = _to_valid_float(value)
+            parsed_value = _to_float(value)
             if parsed_value is None:
                 _log.warning("bulk_update_entries failed: invalid value %r", value)
                 return 0

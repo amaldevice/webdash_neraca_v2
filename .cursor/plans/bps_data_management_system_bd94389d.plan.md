@@ -195,6 +195,14 @@ todos:
     content: Extend upload/manual parser and validation paths to require dataset context and enforce dataset-specific header contracts.
     notes: "Fase 3–4 (2026-04-16): `dataset_code` pada baris (`upload_flow`, `manual_entries`, `dialect_upsert`); duplikat + preview aware dataset; filter list UI. Header contract ketat per dataset masih item Fase 5."
     status: completed
+  - id: dead-code-removal-chart-analysis
+    content: "Remove dead chart/analysis artifacts: charts.py, fetch_series_for_comparison, plotly dep, dead CSS selectors, stale docs. Issues #35-38 closed."
+    status: completed
+    notes: "PR #45 merged into main. Issues #35-38 closed 2026-05-06."
+  - id: dead-code-removal-float-imports
+    content: "Consolidate _to_float, remove app.py test aliases, clean import noise. Issues #41-43."
+    status: completed
+    notes: "Part of dead code sweep 2026-05-06. Issues #41, #42, #43 closed."
 isProject: false
 ---
 

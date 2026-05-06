@@ -82,3 +82,14 @@ def test_query_data_entries_with_value_range_filters(db_path):
     rows = models.query_data_entries(limit=10, value_min=75.0, value_max=200.0)
     assert len(rows) == 1
     assert rows[0]["value"] == 150.0
+
+
+def test_repositories_package_does_not_reexport_entry_list():
+    """models.repositories __init__ should not re-export entry list helpers.
+    Callers must import directly from models.repositories.entry_list."""
+    import importlib
+    pkg = importlib.import_module("models.repositories")
+    assert not hasattr(pkg, "fetch_entries_for_list"), \
+        "fetch_entries_for_list should not be importable from models.repositories directly"
+    assert not hasattr(pkg, "count_entries_for_list"), \
+        "count_entries_for_list should not be importable from models.repositories directly"

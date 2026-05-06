@@ -10,12 +10,14 @@ from werkzeug.datastructures import ImmutableMultiDict
 
 from services import upload_flow
 from services.upload_flow import (
-    collect_upload_file_errors,
-    normalize_upload_action,
-    parse_upload_form,
     process_manual_input_post,
     process_upload_confirm,
     process_upload_post_file,
+)
+from services.upload_form import (
+    collect_upload_file_errors,
+    normalize_upload_action,
+    parse_upload_form,
 )
 from services import upload_handlers
 

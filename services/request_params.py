@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from excel_parser.normalize import _to_float
+
 
 def get_period_range_params(
     source,
@@ -14,18 +16,6 @@ def get_period_range_params(
         start_period.strip() if start_period is not None else None,
         end_period.strip() if end_period is not None else None,
     )
-
-
-def _to_float(value) -> float | None:
-    if value is None:
-        return None
-    value_str = str(value).strip()
-    if not value_str:
-        return None
-    try:
-        return float(value_str)
-    except (TypeError, ValueError):
-        return None
 
 
 def get_value_range_params(
