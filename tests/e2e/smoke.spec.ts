@@ -41,6 +41,24 @@ test.describe("smoke", () => {
     await expect(page.getByRole("heading", { name: "Tabel Pratinjau Data" })).toBeVisible();
   });
 
+  /** GitHub #58 — universal long template (nama_dataset, indikator, periode, nilai) → pratinjau. */
+  test("universal template upload reaches preview panel", async ({ page }) => {
+    const landing = new LandingPage(page);
+    const upload = new UploadPage(page);
+
+    await landing.goto();
+    await landing.unggahDataLink().click();
+    await expect(page.locator('input[name="csrf_token"]')).toHaveAttribute("value", /.+/);
+    await upload.pengunggahInput().fill("E2E Universal Playwright");
+    await upload
+      .fileInput()
+      .setInputFiles(path.join(process.cwd(), "static", "e2e_universal_template.xlsx"));
+    await upload.previewButton().click();
+
+    await expect(upload.previewSectionHeading()).toBeVisible();
+    await expect(upload.previewDataSampleHeading()).toBeVisible();
+  });
+
   test("upload file picker can trigger preview panel", async ({ page }) => {
     const landing = new LandingPage(page);
     const upload = new UploadPage(page);
@@ -48,7 +66,6 @@ test.describe("smoke", () => {
     await landing.goto();
     await landing.unggahDataLink().click();
     await upload.pengunggahInput().fill("E2E Tester Playwright");
-    await upload.versionInput().fill("v-e2e-playwright-1");
     await upload.fileInput().setInputFiles(path.join(process.cwd(), "static", "e2e_agent_browser.xlsx"));
     await upload.previewButton().click();
 
@@ -63,7 +80,6 @@ test.describe("smoke", () => {
     await landing.goto();
     await landing.unggahDataLink().click();
     await upload.pengunggahInput().fill("E2E Tester Playwright 2");
-    await upload.versionInput().fill("v-e2e-playwright-2");
     await upload.fileInput().setInputFiles(path.join(process.cwd(), "static", "e2e_agent_browser.xlsx"));
     await upload.previewButton().click();
 
