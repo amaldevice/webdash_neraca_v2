@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from infrastructure.db import get_session, is_engine_initialized
 
-from .data_filters import build_data_entry_filter_sqlalchemy, period_analysis_range_sqlalchemy
+from .data_filters import build_data_entry_filter_sqlalchemy
 
 
 def _format_period_text_from_parts(year: Any, month: Any, quarter: Any) -> str:
@@ -258,47 +258,6 @@ def query_data_entries(
         dataset_code,
     )
 
-
-def fetch_series_for_comparison(
-    indicator: str,
-    analysis_year: Optional[str] = None,
-    period_start: Optional[str] = None,
-    period_end: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Rows for period-analysis calculators (indicator + optional year + period range)."""
-    if not is_engine_initialized():
-        return []
-    from infrastructure.orm_models import DataEntry
-
-    t = DataEntry
-    w: List[Any] = [t.indicator_name == indicator, t.year.isnot(None)]
-    if analysis_year:
-        w.append(t.year == int(analysis_year))
-    pr = period_analysis_range_sqlalchemy(period_start, period_end)
-    if pr is not None:
-        w.append(pr)
-    stmt = (
-        select(t.year, t.month, t.quarter, t.value, t.time_period, t.data_type)
-        .where(and_(*w))
-        .order_by(t.year, t.month, t.quarter)
-    )
-    out: List[Dict[str, Any]] = []
-    try:
-        session = get_session()
-        for y, m, q, val, tp, dt in session.execute(stmt):
-            out.append(
-                {
-                    "year": y,
-                    "month": m,
-                    "quarter": q,
-                    "value": val,
-                    "time_period": tp,
-                    "data_type": dt,
-                }
-            )
-    except SQLAlchemyError:
-        return []
-    return out
 
 
 def preview_duplicates_batches(

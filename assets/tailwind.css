@@ -215,14 +215,6 @@
     vertical-align: middle;
   }
 
-  .aggregated-plot-container {
-    min-height: 520px;
-  }
-
-  .aggregated-plot-display {
-    min-height: 480px;
-  }
-
   /* Enhanced Table Styles */
   .table {
     @apply border-collapse;

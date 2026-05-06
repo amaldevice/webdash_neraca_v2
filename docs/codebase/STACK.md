@@ -9,7 +9,6 @@
   - default development: `sqlite:///<BASE_DIR>/data.db`
   - production: `mysql+pymysql://` atau PostgreSQL (`postgresql+psycopg://` bila env menyediakan driver).
 - **Excel processing**: pandas 3.0.1 + openpyxl 3.1.5.
-- **Visualisasi**: plotly 6.5.0 (untuk chart data per indicator).
 
 ## Frontend Stack
 

@@ -7,7 +7,7 @@
 - `wsgi.py`: entry point WSGI.
 - `infrastructure/`: engine DB, session lifecycle, ORM model inti.
 - `models/`: query/mutation/filter/browse service data.
-- `services/`: logika domain (upload, parser, manual entry, chart, analitik periodik, preview, templates).
+- `services/`: logika domain (upload, parser, manual entry, preview, templates, ekspor).
 - `excel_parser/`: pipeline parser Excel (universal + dataset-aware).
 - `routes/`: endpoint web app (landing, upload/manual, preview, dashboard, data-management, ekspor).
 - `templates/`, `static/`, `assets/`: UI + stylesheet.
@@ -28,8 +28,6 @@
    - build payload (`services/manual_entries`) → validasi → `insert`/`upsert`.
 5. Dashboard/Preview/Data-management:
    - parameter filter masuk ke `services/data_filters` + query di `models/queries`.
-6. Analisa periode:
-   - endpoint di `manage.py` memakai `services/period_comparisons` + `services/period_comparison_calculators` + exporter workbook.
 
 ## Struktur Folder (fungsi inti)
 
@@ -39,7 +37,6 @@
 - `services/upload_flow.py`: orchestrator upload + duplicate workflow + response serializer.
 - `services/upload_preview.py`: sesi preview disk + filter duplicate DB.
 - `services/template_service.py` + `services/dataset_catalog.py`: template dataset-aware.
-- `services/period_analysis_workbook.py`: ekspor xlsx hasil analisis periodik.
 - `services/timeutil.py` + `periods.py`: format waktu dan normalisasi periode.
 - `excel_parser/*`: parser universial, long-format, layout detect (horizontal/vertical/mixed).
 
