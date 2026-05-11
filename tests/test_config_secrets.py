@@ -41,6 +41,7 @@ def test_subprocess_production_config_logs_secret_warning():
     env["FLASK_ENV"] = "production"
     env["PYTHONPATH"] = str(ROOT)
     env.pop("REQUIRE_FLASK_SECRET", None)
+    env["WEBDASH_SKIP_DOTENV"] = "1"
     code = textwrap.dedent(
         """
         import logging

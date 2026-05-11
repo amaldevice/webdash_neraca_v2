@@ -19,7 +19,11 @@ def _load_dotenv_into_os_environ() -> None:
     """Load ``.env`` from project root (and optional ``DOTENV_PATH``) without overriding existing env.
 
     Production: prefer systemd / service manager ``Environment=`` — those win over file values.
+
+    Set ``WEBDASH_SKIP_DOTENV=1`` (e.g. in subprocess tests) to skip file load entirely.
     """
+    if os.environ.get("WEBDASH_SKIP_DOTENV", "").strip().lower() in ("1", "true", "yes", "on"):
+        return
     try:
         from dotenv import load_dotenv
     except ImportError:
