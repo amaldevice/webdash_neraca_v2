@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Shared pagination and filter wiring for preview-data and data-management list views.
 
-Request parsing + fetch/count bundle lives in ``services.entry_list_page`` (single seam for
+Request parsing + fetch/count bundle lives in ``services.entry_list`` (facade → ``entry_list_page``; single seam for
 preview, data-management, and export filter parity).
 """
 from __future__ import annotations

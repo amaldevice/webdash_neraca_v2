@@ -112,6 +112,9 @@ todos:
   - id: backend-tests-excel-upload-dup
     content: test_excel_parser.py + upload_flow duplicate confirm branches
     status: completed
+  - id: gh-issues-65-70-testing-factory-upload-entrylist
+    content: "GitHub #65–#70: functional pytest.ini [pytest], TESTING.md canonical smoke + env notes, upload_response_adapter + tests, application/factory.py + slim app.py, services/entry_list facade + route test, upload audit txn doc."
+    status: completed
   - id: playwright-test-pom-ci
     content: Root package.json, playwright.config webServer, e2e POM, CI e2e job
     status: completed
@@ -272,7 +275,7 @@ Versioning dipakai untuk:
 - **`config.py`**: `BASE_DIR`, allowed sets, upload limits, `resolve_secret_key()`, `configure_flask_app(app, testing=...)`, `default_secret_risk_in_production`, opsional `REQUIRE_FLASK_SECRET` / peringatan jika `FLASK_ENV=production` dengan secret default (ditekan saat pytest memuat app).
 - **`services/`**: `validation`, `upload_preview` (pratinjau + sesi disk `_preview_sessions` + `excel_preview_source_from_payload`), `upload_flow` (form/validasi/simpan file, konfirmasi pratinjau, respons terstruktur untuk route; `cache_upload_preview` tetap memakai Flask `session`), `request_params`, `manual_entries`, `charts`, `raw_export`, `period_analysis_workbook` (OpenPyXL multi-sheet), `period_analysis_export` (form + Flask `Response`), `period_filters`, `period_comparison_calculators` (murni), `period_comparisons` (SQL + orkestrasi), `data_management_actions`, `timeutil` (UTC ISO / timestamp), `list_view` (pagination + kwargs query + dict filter UI untuk preview/data-management).
 - **`routes/`**: `register_routes(app)` mendaftarkan view lewat `add_url_rule` (endpoint sama dengan sebelum refactor). `pages.py` (landing, preview, export, plot JSON), `upload_routes.py` (upload + manual, memakai `current_app.config`), `manage.py` (data management + export period analysis).
-- **`app.py`**: `create_app(testing=...)` + `app = create_app()`; alias `_parse_period_date` / `_build_manual_entry` dan re-export `allowed_file`, `validate_metadata` untuk tes. **`wsgi.py`**: `app` untuk server produksi.
+- **`application/factory.py`**: `create_app(testing=..., init_sqlalchemy=...)` dengan `Flask(..., root_path=<repo root>)` agar `templates/` tetap ditemukan. **`app.py`**: modul tipis — `app = create_app(...)` + re-export `create_app`, `allowed_file`, `validate_metadata` untuk kompatibilitas impor tes / skrip. **`wsgi.py`**: `from app import app` untuk server produksi.
 - **`models/`** (paket): `connection` (`DB_PATH`, `init_db` pada engine SQLAlchemy), `queries`, `mutations`, `browse`, `data_filters`; re-export API publik + analitik periode dari `services.period_comparisons`. Monolit `models.py` dihapus.
 
 ### 1. Data Input & Processing Pipeline
@@ -431,7 +434,8 @@ Ringkasan:
 
 ```
 bps_data_system/
-├── app.py                 # Flask app + landing/upload/manual/dashboard routes
+├── app.py                 # Flask app instance + compat re-exports (factory in application/)
+├── application/           # create_app factory (root_path = repo root)
 ├── models/                # Paket SQLite (connection, queries, mutations, browse, …)
 ├── excel_parser.py        # Excel logic (upload-only)
 ├── templates/

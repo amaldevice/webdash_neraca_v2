@@ -2,7 +2,7 @@
 
 > Aplikasi web internal berbasis Flask + SQLite untuk mengelola data BPS dari template Excel maupun input manual, melakukan normalisasi, menyusun metrik repository, dan menyediakan dashboard bertingkat dengan filter serta ekspor data mentah yang konsisten.
 
-**State proyek, peta `docs/`, unggah/dataset, migrasi, changelog:** baca **[docs/README_DOCS.md](docs/README_DOCS.md)** — gabungan ringkas dokumen operasional; stub sinkron [`docs/planning.md`](docs/planning.md); plan Cursor (YAML todos) di **[`.cursor/plans/bps_data_management_system_bd94389d.plan.md`](.cursor/plans/bps_data_management_system_bd94389d.plan.md)** (ikut Git).
+**State proyek, peta `docs/`, unggah/dataset, migrasi, changelog:** baca **[docs/README_DOCS.md](docs/README_DOCS.md)** — gabungan ringkas dokumen operasional; stub sinkron [`docs/planning.md`](docs/planning.md); plan Cursor (YAML todos) di **[`.cursor/plans/bps_data_management_system_bd94389d.plan.md`](.cursor/plans/bps_data_management_system_bd94389d.plan.md)** (ikut Git). **Smoke pytest:** `python -m pytest tests --ignore=tests/integration -q` (detail: [docs/codebase/TESTING.md](docs/codebase/TESTING.md)).
 
 ## Langkah Cepat (1-3 Langkah)
 
@@ -135,7 +135,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 
 ### Ringkasan Berkas Python
 
-- `app.py`: Fabrikasi app Flask dan route utama aplikasi.
+- `app.py`: Instance Flask `app` + re-export `create_app` (implementasi di `application/factory.py`).
 - `aggregator.py`: Dihapus; fitur agregat dan cache ringkas tidak lagi dipakai.
 - `excel_parser.py` (legacy): Modul parser lama (masih tetap dipertahankan untuk kompatibilitas).
 - `models.py` (legacy): Entrypoint kompatibilitas untuk paket `models/`.
@@ -161,6 +161,11 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - Status filter dipertahankan pada URL untuk preview dan data-management agar mudah dibagikan ulang.
 - Paginasi dan reset otomatis telah diatur untuk menjaga konsistensi hasil saat halaman berubah.
 
+## Test otomatis
+
+- Smoke dari root: `python -m pytest tests --ignore=tests/integration -q`.
+- Panduan (`USE_ENV_DATABASE_URL_FOR_TESTS`, `WEBDASH_SKIP_DOTENV`, `tests/` vs `simple_tests/`): [docs/codebase/TESTING.md](docs/codebase/TESTING.md).
+
 ## Arsitektur
 
 ### Gambaran Tingkat Tinggi
@@ -170,7 +175,7 @@ Aplikasi menerima alur unggah maupun input manual, diproses oleh parser normalis
 ```
 Halaman Beranda + Form
     ↓ HTTP POST
-Aplikasi Flask (app.py)
+Aplikasi Flask (`application/factory.py` / `app.py`)
     ↓ Parser / helper model
     ↓ SQLite (data_entries)
     ↓ HTTP GET
