@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from excel_parser.normalize import _to_float
+from excel_parser.api import to_float
 
 
 def get_period_range_params(
@@ -26,4 +26,4 @@ def get_value_range_params(
     """Extract optional value-range parameters from request-like inputs."""
     value_min = source.get(min_key, "", type=str)
     value_max = source.get(max_key, "", type=str)
-    return _to_float(value_min), _to_float(value_max)
+    return to_float(value_min), to_float(value_max)

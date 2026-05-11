@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Upload branch handlers extracted from upload_flow.
+Upload branch handlers; persistence lives in `services.upload_commit`.
 
 Each handler implements one specific branch of the upload flow
 (confirm-with-duplicates, save-without-duplicates, preview, etc.).
@@ -14,7 +14,10 @@ from typing import Any
 
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
-from models import insert_entries, upsert_entries
+from services.upload_commit import (
+    persist_upload_entries,
+    persist_upload_entries_with_overwrite,
+)
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
 from services.dataset_catalog import normalize_dataset_code
 from services.upload_duplicates import (
@@ -46,16 +49,6 @@ def _safe_remove_file(path: str) -> None:
             if attempt >= 2:
                 raise
             time.sleep(0.2)
-
-
-def persist_upload_entries(entries: list[dict[str, Any]]) -> None:
-    """Persist valid entries via plain insert."""
-    insert_entries(entries)
-
-
-def persist_upload_entries_with_overwrite(entries: list[dict[str, Any]]) -> None:
-    """Persist entries via upsert (duplicate unique keys are overwritten)."""
-    upsert_entries(entries)
 
 
 def handle_upload_confirm_with_duplicates(

@@ -91,6 +91,24 @@ def scoped_transaction() -> Generator[Session, None, None]:
         raise
 
 
+@contextmanager
+def write_session(session: Session | None) -> Generator[Session, None, None]:
+    """
+    Mutations: use global scoped transaction when session is None; otherwise use the
+    provided Session (commit/rollback on this block only). For tests or nested tooling.
+    """
+    if session is not None:
+        try:
+            yield session
+            session.commit()
+        except BaseException:
+            session.rollback()
+            raise
+    else:
+        with scoped_transaction() as sess:
+            yield sess
+
+
 def remove_scoped_session() -> None:
     if _scoped_factory is not None:
         _scoped_factory.remove()

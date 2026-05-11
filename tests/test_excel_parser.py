@@ -8,7 +8,14 @@ import pandas as pd
 import pytest
 from openpyxl import Workbook
 
-from excel_parser import _parse_period, _to_float, detect_template_format, parse_excel_payload
+from excel_parser import detect_template_format, parse_excel_payload, parse_period, to_float
+
+
+def test_excel_parser_public_all_has_no_leading_underscore():
+    import excel_parser as ep
+
+    assert ep.__all__
+    assert all(not name.startswith("_") for name in ep.__all__)
 
 
 @pytest.mark.parametrize(
@@ -26,7 +33,7 @@ from excel_parser import _parse_period, _to_float, detect_template_format, parse
     ],
 )
 def test_to_float_parsing(raw, expected):
-    got = _to_float(raw)
+    got = to_float(raw)
     if expected is None:
         assert got is None
     elif isinstance(expected, float):
@@ -182,7 +189,7 @@ def _period_to_tuple(parsed):
     ],
 )
 def test_parse_period_respects_time_period(value, time_period, expected):
-    assert _period_to_tuple(_parse_period(value, time_period)) == expected
+    assert _period_to_tuple(parse_period(value, time_period)) == expected
 
 
 def test_parse_excel_payload_yearly_accepts_numeric_year_headers(tmp_path):

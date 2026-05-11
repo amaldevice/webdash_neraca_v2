@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from sqlalchemy import and_, case, desc, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from infrastructure.db import get_session, is_engine_initialized
 
@@ -59,6 +60,8 @@ def _sa_get_total_entries_count(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
     dataset_code: Optional[str] = None,
+    *,
+    session: Session,
 ) -> int:
     from infrastructure.orm_models import DataEntry
 
@@ -77,7 +80,6 @@ def _sa_get_total_entries_count(
     if where is not None:
         stmt = stmt.where(where)
     try:
-        session = get_session()
         n = session.execute(stmt).scalar_one()
         return int(n) if n is not None else 0
     except SQLAlchemyError:
@@ -94,8 +96,14 @@ def get_total_entries_count(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
     dataset_code: Optional[str] = None,
+    *,
+    session: Session | None = None,
 ) -> int:
-    if not is_engine_initialized():
+    if session is None and not is_engine_initialized():
+        return 0
+    try:
+        sess = session if session is not None else get_session()
+    except SQLAlchemyError:
         return 0
     return _sa_get_total_entries_count(
         data_type,
@@ -107,10 +115,11 @@ def get_total_entries_count(
         value_min,
         value_max,
         dataset_code,
+        session=sess,
     )
 
 
-def _sa_get_landing_summary() -> Dict[str, Any]:
+def _sa_get_landing_summary(*, session: Session) -> Dict[str, Any]:
     from infrastructure.orm_models import DataEntry
 
     summary = {
@@ -138,7 +147,6 @@ def _sa_get_landing_summary() -> Dict[str, Any]:
     )
 
     try:
-        session = get_session()
         metrics_row = session.execute(metrics_stmt).one()
         latest_row = session.execute(latest_stmt).one_or_none()
 
@@ -157,8 +165,8 @@ def _sa_get_landing_summary() -> Dict[str, Any]:
     return summary
 
 
-def get_landing_summary() -> Dict[str, Any]:
-    if not is_engine_initialized():
+def get_landing_summary(*, session: Session | None = None) -> Dict[str, Any]:
+    if session is None and not is_engine_initialized():
         return {
             "total_data_rows": 0,
             "total_indicators": 0,
@@ -169,7 +177,20 @@ def get_landing_summary() -> Dict[str, Any]:
             "latest_version": None,
             "latest_created_at": None,
         }
-    return _sa_get_landing_summary()
+    try:
+        sess = session if session is not None else get_session()
+    except SQLAlchemyError:
+        return {
+            "total_data_rows": 0,
+            "total_indicators": 0,
+            "monthly_rows": 0,
+            "quarterly_rows": 0,
+            "yearly_rows": 0,
+            "latest_uploader": None,
+            "latest_version": None,
+            "latest_created_at": None,
+        }
+    return _sa_get_landing_summary(session=sess)
 
 
 def _sa_query_data_entries(
@@ -184,6 +205,8 @@ def _sa_query_data_entries(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
     dataset_code: Optional[str] = None,
+    *,
+    session: Session,
 ) -> List[Dict[str, Any]]:
     from infrastructure.orm_models import DataEntry
 
@@ -204,7 +227,6 @@ def _sa_query_data_entries(
         stmt = stmt.where(where)
     stmt = stmt.order_by(desc(DataEntry.created_at)).limit(limit).offset(safe_offset)
     try:
-        session = get_session()
         rows = session.scalars(stmt).all()
     except SQLAlchemyError:
         return []
@@ -241,8 +263,14 @@ def query_data_entries(
     value_min: Optional[float] = None,
     value_max: Optional[float] = None,
     dataset_code: Optional[str] = None,
+    *,
+    session: Session | None = None,
 ) -> List[Dict]:
-    if not is_engine_initialized():
+    if session is None and not is_engine_initialized():
+        return []
+    try:
+        sess = session if session is not None else get_session()
+    except SQLAlchemyError:
         return []
     return _sa_query_data_entries(
         data_type,
@@ -256,15 +284,20 @@ def query_data_entries(
         value_min,
         value_max,
         dataset_code,
+        session=sess,
     )
 
 
 
 def preview_duplicates_batches(
     unique_keys: Sequence[Tuple[Any, ...]],
+    *,
+    session: Session | None = None,
 ) -> List[Dict[str, Any]]:
     """Load existing rows matching (indicator_name, year, month, quarter, dataset_code) keys in batches."""
-    if not unique_keys or not is_engine_initialized():
+    if not unique_keys:
+        return []
+    if session is None and not is_engine_initialized():
         return []
 
     from infrastructure.orm_models import DataEntry
@@ -286,7 +319,10 @@ def preview_duplicates_batches(
     max_batch_size = max(1, 999 // 5)
     out: List[Dict[str, Any]] = []
     try:
-        session = get_session()
+        sess = session if session is not None else get_session()
+    except SQLAlchemyError:
+        return []
+    try:
         for offset in range(0, len(unique_keys), max_batch_size):
             batch = unique_keys[offset : offset + max_batch_size]
             ors = []
@@ -298,7 +334,7 @@ def preview_duplicates_batches(
                     i, y, m, q, dc = tup[0], tup[1], tup[2], tup[3], tup[4]
                 ors.append(one_key(i, y, m, q, dc))
             stmt = select(DataEntry).where(or_(*ors))
-            for row in session.scalars(stmt).all():
+            for row in sess.scalars(stmt).all():
                 out.append(
                     {
                         "id": row.id,

@@ -5,38 +5,16 @@ from __future__ import annotations
 from flask import Flask, flash, redirect, render_template, request, url_for
 
 from models import get_filter_options
-from models.repositories.entry_list import count_entries_for_list, fetch_entries_for_list
 from services.data_management_actions import apply_data_management_post
-from services.list_view import (
-    EntryListParams,
-    build_entries_filters_ui_dict,
-    parse_entries_pagination,
+from services.entry_list_page import (
+    build_entry_list_page_bundle,
+    parse_entry_list_params_and_pagination,
 )
-from services.request_params import get_period_range_params, get_value_range_params
 
 
 def data_management():
-    filter_source = request.values
-    data_type = filter_source.get("data_type", "")
-    time_period = filter_source.get("time_period", "")
-    uploader = filter_source.get("uploader", "")
-    indicator = filter_source.get("indicator", "")
-    dataset_code = filter_source.get("dataset_code", "")
-    period_start, period_end = get_period_range_params(filter_source)
-    value_min, value_max = get_value_range_params(filter_source)
-
-    page, limit, offset = parse_entries_pagination(request)
-
-    list_params = EntryListParams.from_request_strings(
-        data_type=data_type,
-        time_period=time_period,
-        uploader=uploader,
-        indicator=indicator,
-        period_start=period_start,
-        period_end=period_end,
-        value_min=value_min,
-        value_max=value_max,
-        dataset_code=dataset_code,
+    list_params, page, limit, offset = parse_entry_list_params_and_pagination(
+        request, filter_source="values"
     )
 
     if request.method == "POST":
@@ -45,29 +23,19 @@ def data_management():
         return redirect(
             url_for(
                 "data_management",
-                data_type=data_type,
-                time_period=time_period,
-                uploader=uploader,
-                indicator=indicator,
-                dataset_code=dataset_code,
-                start_period=period_start or "",
-                end_period=period_end or "",
-                value_min=value_min if value_min is not None else "",
-                value_max=value_max if value_max is not None else "",
+                data_type=list_params.data_type or "",
+                time_period=list_params.time_period or "",
+                uploader=list_params.uploader or "",
+                indicator=list_params.indicator or "",
+                dataset_code=list_params.dataset_code or "",
+                start_period=list_params.period_start or "",
+                end_period=list_params.period_end or "",
+                value_min=list_params.value_min if list_params.value_min is not None else "",
+                value_max=list_params.value_max if list_params.value_max is not None else "",
             )
         )
 
-    qkw = list_params.to_query_kwargs()
-    entries = fetch_entries_for_list(limit=limit, offset=offset, filters=qkw)
-
-    total_entries = count_entries_for_list(qkw)
-
-    filters = build_entries_filters_ui_dict(
-        **list_params.to_ui_strings(),
-        page=page,
-        limit=limit,
-        total_entries=total_entries,
-    )
+    entries, filters = build_entry_list_page_bundle(list_params, page, limit, offset)
 
     filter_options = get_filter_options()
 

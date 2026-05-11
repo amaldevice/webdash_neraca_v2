@@ -94,6 +94,18 @@ todos:
   - id: upload-flow-unit-tests
     content: tests/test_upload_flow.py — mocks for preview/cache + db_path for confirm/manual inserts
     status: completed
+  - id: excel-parser-public-api
+    content: excel_parser/api.py stable facade; package __all__ without underscore exports
+    status: completed
+  - id: entry-list-page-facade
+    content: services/entry_list_page.py DRY preview + data-management + export filters
+    status: completed
+  - id: models-session-kwarg-seam
+    content: Optional SQLAlchemy session on queries/mutations/browse + write_session in infrastructure/db
+    status: completed
+  - id: upload-parse-commit-modules
+    content: Phase A strangler — services/upload_parse.py + upload_commit.py; persist dari handlers; tests/test_upload_parse.py
+    status: completed
   - id: playwright-cli-smoke-script
     content: scripts/playwright_cli_smoke.ps1 + .gitignore .playwright-cli; npx @playwright/cli
     status: completed
@@ -213,6 +225,9 @@ todos:
     content: "PRD 006 — pytest bootstrap vs .env, semantik periode triwulanan (tahun polos), tes dashboard berbasis makna kolom, seam error integritas & kebijakan unggah, rapatkan API parser, sinkron docs/plan. Lihat docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md"
     status: completed
     notes: "PR #52 merged ke main (2026-05-06); #48–#51 closed. Item PRD lanjutan (seam error integritas unggah, permukaan publik parser, DRY period marker) belum dieksekusi — lihat isi PRD 006 bila dilanjut."
+  - id: pytest-upload-runs-manual-and-confirm
+    content: "Pytest asserts `upload_runs` after successful `process_manual_input_post` (#62) and `process_upload_confirm` (#63); `tests/test_upload_flow.py`."
+    status: completed
 isProject: false
 ---
 

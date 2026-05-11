@@ -63,8 +63,7 @@ from models import (
     init_db, insert_entries, query_data_entries, get_total_entries_count,
     delete_data_entry, update_data_entry_full, bulk_delete_entries, bulk_update_entries,
 )
-from excel_parser.normalize import _to_float
-from excel_parser import parse_excel, detect_template_format, _normalize_record, _parse_period
+from excel_parser import detect_template_format, normalize_record, to_float
 from services.timeutil import utc_now_iso
 
 
@@ -188,7 +187,7 @@ class TestExcelParser(unittest.TestCase):
 
     def test_normalize_record_valid(self):
         """Test record normalization with valid data"""
-        record = _normalize_record(
+        record = normalize_record(
             uploader="test_user",
             version="v1.0",
             layout="vertical",
@@ -206,7 +205,7 @@ class TestExcelParser(unittest.TestCase):
 
     def test_normalize_record_invalid_value(self):
         """Test record normalization with invalid value"""
-        record = _normalize_record(
+        record = normalize_record(
             uploader="test_user",
             version="v1.0",
             layout="vertical",
@@ -220,7 +219,7 @@ class TestExcelParser(unittest.TestCase):
 
     def test_normalize_record_missing_indicator(self):
         """Test record normalization with missing indicator"""
-        record = _normalize_record(
+        record = normalize_record(
             uploader="test_user",
             version="v1.0",
             layout="vertical",
@@ -387,7 +386,7 @@ class TestSecurityVulnerabilities(unittest.TestCase):
         """Test buffer overflow prevention"""
         # Test with extremely large input values
         large_value = "1" * 10000  # Very large number string
-        parsed = _to_float(large_value)
+        parsed = to_float(large_value)
         self.assertIsNotNone(parsed)  # Should handle large numbers gracefully
 
 
