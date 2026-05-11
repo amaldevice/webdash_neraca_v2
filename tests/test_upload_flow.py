@@ -9,6 +9,7 @@ import models
 from werkzeug.datastructures import ImmutableMultiDict
 
 from services import upload_flow
+from services import upload_parse
 from services.upload_flow import (
     process_manual_input_post,
     process_upload_confirm,
@@ -20,6 +21,28 @@ from services.upload_form import (
     parse_upload_form,
 )
 from services import upload_handlers
+
+
+def _list_upload_runs(uploader_name: str, version: str):
+    """ORM read of ``upload_runs`` for assertions (stable filter: uploader + version)."""
+    from infrastructure.db import get_session, remove_scoped_session
+    from infrastructure.orm_models import UploadRun
+    from sqlalchemy import select
+
+    session = get_session()
+    try:
+        return list(
+            session.scalars(
+                select(UploadRun)
+                .where(
+                    UploadRun.uploader_name == uploader_name,
+                    UploadRun.version == version,
+                )
+                .order_by(UploadRun.id.asc())
+            ).all()
+        )
+    finally:
+        remove_scoped_session()
 
 
 def _minimal_entry() -> dict:
@@ -148,7 +171,7 @@ def test_process_upload_confirm_inserts_without_duplicates(db_path, tmp_path):
     }
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
-        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=[]):
                 with patch.object(upload_handlers, "delete_preview_session") as del_sess:
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
@@ -159,6 +182,62 @@ def test_process_upload_confirm_inserts_without_duplicates(db_path, tmp_path):
     assert models.get_total_entries_count() == 1
     del_sess.assert_called_once_with(str(upload_dir), "tok")
     assert not fp.exists()
+    runs = _list_upload_runs("U1", "v1")
+    assert len(runs) == 1
+    ur = runs[0]
+    assert ur.status == "success"
+    assert ur.message is None
+    assert ur.row_count == 1
+    assert ur.file_name == "f.xlsx"
+    assert ur.dataset_code == ""
+
+
+def test_process_upload_confirm_records_single_upload_run_for_multi_row_insert(db_path, tmp_path):
+    """``row_count`` on ``upload_runs`` matches inserted entry count; one audit row per confirm."""
+    upload_dir = tmp_path / "u"
+    upload_dir.mkdir()
+    fp = upload_dir / "f.xlsx"
+    fp.write_bytes(b"x")
+    token_payload = {
+        "file_path": str(fp),
+        "file_name": "f.xlsx",
+        "metadata": {
+            "uploader": "U1",
+            "version": "v1",
+            "data_type": "flow",
+            "time_period": "monthly",
+        },
+        "layout_override": "auto",
+    }
+    e2 = {
+        **_minimal_entry(),
+        "indicator_name": "CPI",
+        "month": 4,
+        "quarter": 2,
+        "value": 2.0,
+    }
+    parse_out = _parse_payload_with_entries([_minimal_entry(), e2])
+    form_values = {
+        "uploader": "U1",
+        "version": "v1",
+        "data_type": "flow",
+        "time_period": "monthly",
+        "layout_override": "auto",
+    }
+
+    with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
+            with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=[]):
+                with patch.object(upload_handlers, "delete_preview_session"):
+                    r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
+
+    assert r.kind == "redirect"
+    assert models.get_total_entries_count() == 2
+    runs = _list_upload_runs("U1", "v1")
+    assert len(runs) == 1
+    assert runs[0].row_count == 2
+    assert runs[0].status == "success"
+    assert runs[0].file_name == "f.xlsx"
 
 
 def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db_path, tmp_path):
@@ -194,7 +273,7 @@ def test_process_upload_confirm_partial_duplicate_selection_overwrites_others(db
     }
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
-        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
                 with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
@@ -228,7 +307,7 @@ def test_process_upload_confirm_all_duplicate_rows_skipped_renders(db_path, tmp_
     duplicates = [{"indicator_name": "GDP", "year": 2024, "month": 3, "quarter": 1}]
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
-        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
                 r = process_upload_confirm(str(upload_dir), "tok", {}, ["0"])
 
@@ -271,7 +350,7 @@ def test_process_upload_confirm_skip_duplicate_inserts_remaining_rows(db_path, t
     }
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
-        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
                 with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, ["0"])
@@ -315,7 +394,7 @@ def test_process_upload_confirm_duplicate_without_skip_overwrites_existing_row(d
     }
 
     with patch.object(upload_flow, "load_preview_session", return_value=token_payload):
-        with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+        with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
             with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=duplicates):
                 with patch.object(upload_handlers, "delete_preview_session"):
                         r = process_upload_confirm(str(upload_dir), "tok", form_values, [])
@@ -345,7 +424,7 @@ def test_process_upload_post_file_parse_error_deletes_file(tmp_path):
     def boom(*_a, **_k):
         raise ValueError("parse fail")
 
-    with patch.object(upload_flow, "parse_excel_payload", side_effect=boom):
+    with patch.object(upload_parse, "parse_excel_payload", side_effect=boom):
         r = process_upload_post_file(str(upload_dir), dest, "bad.xlsx", form_values, "preview")
 
     assert r.kind == "render"
@@ -369,7 +448,7 @@ def test_process_upload_post_file_preview_mocks_cache(db_path, tmp_path):
     }
     parse_out = _parse_payload_with_entries([_minimal_entry()])
 
-    with patch.object(upload_flow, "parse_excel_payload", return_value=parse_out):
+    with patch.object(upload_parse, "parse_excel_payload", return_value=parse_out):
         with patch.object(upload_flow, "find_duplicate_entries_in_db", return_value=[]):
             with patch.object(upload_handlers, "cache_upload_preview", return_value="mocktok") as cache:
                 r = process_upload_post_file(str(upload_dir), dest, "ok.xlsx", form_values, "preview")
@@ -390,6 +469,33 @@ def test_process_manual_input_post_success(db_path):
     r = process_manual_input_post("M1", "v9", "flow", "monthly", "2024-06", "PIB", "99.5")
     assert r.kind == "redirect"
     assert models.get_total_entries_count() == 1
+    runs = _list_upload_runs("M1", "v9")
+    assert len(runs) == 1
+    ur = runs[0]
+    assert ur.status == "success"
+    assert ur.message == "manual_input"
+    assert ur.row_count == 1
+    assert ur.file_name is None
+    assert ur.dataset_code == ""
+
+
+def test_process_manual_input_post_success_sets_dataset_code_from_slug(db_path):
+    r = process_manual_input_post(
+        "M2",
+        "v1",
+        "flow",
+        "monthly",
+        "2024-06",
+        "PIB",
+        "1",
+        dataset_slug="pinjaman",
+    )
+    assert r.kind == "redirect"
+    runs = _list_upload_runs("M2", "v1")
+    assert len(runs) == 1
+    assert runs[0].dataset_code == "pinjaman"
+    assert runs[0].message == "manual_input"
+    assert runs[0].row_count == 1
 
 
 def test_process_manual_input_post_duplicate_detection(db_path):
@@ -436,6 +542,11 @@ def test_process_manual_input_post_duplicate_confirmation_inserts_row(db_path):
     )
     assert r.kind == "redirect"
     assert models.get_total_entries_count() == 2
+    runs = _list_upload_runs("M1", "v9")
+    assert len(runs) == 1
+    assert runs[0].message == "manual_input"
+    assert runs[0].row_count == 1
+    assert runs[0].status == "success"
 
 
 def test_process_manual_input_post_require_dataset_empty_slug(db_path):
