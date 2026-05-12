@@ -7,7 +7,7 @@ from typing import Any
 from excel_parser import parse_excel_payload
 from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
-from services.dataset_catalog import normalize_dataset_code
+from services.dataset_intake import resolve_dataset_for_intake
 from services.upload_duplicates import (
     _build_internal_duplicate_warning_message,
     _collect_internal_duplicate_counts,
@@ -46,7 +46,7 @@ def parse_and_validate_upload_payload(
         require_dataset_context=require_dataset_context,
     )
     entries = payload.get("entries", [])
-    code = normalize_dataset_code(dataset_slug)
+    code = resolve_dataset_for_intake(dataset_slug).dataset_code
     for row in entries:
         row["dataset_code"] = code
     warnings = list(payload.get("warnings", []))

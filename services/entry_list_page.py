@@ -10,7 +10,10 @@ from services.list_view import (
     build_entries_filters_ui_dict,
     parse_entries_pagination,
 )
-from services.request_params import get_period_range_params, get_value_range_params
+from services.request_params import (
+    data_entries_period_marker_range_from_request,
+    get_value_range_params,
+)
 
 # Max rows returned by /export (must stay aligned with product expectation for large exports).
 EXPORT_ENTRY_HARD_CAP = 1000
@@ -31,7 +34,9 @@ def parse_entry_list_params_from_request(
     uploader = src.get("uploader", "") or ""
     indicator = src.get("indicator", "") or ""
     dataset_code = src.get("dataset_code", "") or ""
-    period_start, period_end = get_period_range_params(src)
+    period_start, period_end = data_entries_period_marker_range_from_request(
+        request, filter_source=filter_source
+    )
     value_min, value_max = get_value_range_params(src)
     return EntryListParams.from_request_strings(
         data_type=data_type,
