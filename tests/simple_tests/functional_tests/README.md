@@ -108,6 +108,10 @@ pytest --json=results.json
 
 ## 🛠️ Test Configuration
 
+### `pytest.ini` (folder ini)
+
+Gunakan section **`[pytest]`** (bukan `[tool:pytest]`) agar pytest memuat opsi lokal. Verifikasi cepat dari repo root: `python -m pytest tests/test_simple_tests_pytest_ini.py -q`, atau `cd tests/simple_tests/functional_tests` lalu `python -m pytest --collect-only -q`.
+
 ### Environment Variables
 ```bash
 # Base URL aplikasi (default: http://localhost:5000)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from flask import Flask, request
 
-from services.entry_list_page import (
+from services.entry_list import (
     EXPORT_ENTRY_HARD_CAP,
     parse_entry_list_params_from_request,
 )

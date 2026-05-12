@@ -2,8 +2,8 @@
 """
 Excel upload orchestration: validation, confirm-from-session, and post-parse branches.
 
-HTTP (flash, redirect, session) stays in `routes/upload_routes`; this module returns structured
-results. Preview disk I/O and duplicate checks live in `services.upload_preview`.
+HTTP (flash, redirect, session) is applied in ``routes/upload_response_adapter``; routes delegate from ``routes/upload_routes``.
+This module returns structured results. Preview disk I/O and duplicate checks live in `services.upload_preview`.
 """
 from __future__ import annotations
 

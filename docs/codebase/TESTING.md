@@ -1,51 +1,57 @@
-# Testing Strategy & Coverage Snapshot
+# Testing strategy & commands
 
-## Tujuan Testing
+## Canonical smoke (Python)
 
-- Menjamin stabilitas alur unggah + manual + pratinjau data (`preview-data`).
-- Memastikan query, filter `period marker`, dan ekspor konsisten.
-- Mempertahankan parser Excel (layout horizontal/vertikal, dataset-aware) dan normalisasi periode.
-- Menjaga keamanan dasar input dan alur yang berdekatan dengan CSRF pada unggah.
+From **repository root**:
 
-## Default pytest & basis data
+```bash
+python -m pytest tests --ignore=tests/integration -q
+```
 
-- Root `tests/conftest.py` mengatur **`DATABASE_URL`** ke SQLite berkas di repo **sebelum** impor `models`, supaya nilai `DATABASE_URL` dari `.env` (mis. MySQL produksi) tidak memutuskan koleksi tes atau suite default.
-- Untuk menjalankan tes **terhadap DSN dari lingkungan** (mis. integrasi MySQL di Docker): set  
-  `USE_ENV_DATABASE_URL_FOR_TESTS=1` (atau `true` / `yes` / `on`) **dan** `DATABASE_URL` ke DSN non-sqlite, lalu jalankan subset yang relevan (lihat README root bagian integrasi dialek).
+(`rtk python -m pytest …` when RTK wrapper available.) This is the default regression slice: unit + route + upload flow tests under `tests/`, excluding long-running **integration** tests that need a real non-SQLite DSN.
 
-## Unit / functional (cuplikan — lihat `tests/` untuk daftar aktual)
+## Default `DATABASE_URL` vs integration
 
-- `tests/test_app_factory.py`, `tests/test_models.py`, `tests/test_routes.py`
-- `tests/test_queries_sqlalchemy.py`, `tests/test_mutations_sqlalchemy.py`
-- `tests/test_upload_flow.py`, `tests/test_upload_preview.py`, `tests/test_dataset_long_parse.py`
-- `tests/test_excel_parser.py`, `tests/test_data_management_actions.py`
-- `tests/simple_tests/functional_tests/` (termasuk pratinjau / dashboard)
-- `tests/test_bugs.py` — regresi edge case
+- **`tests/conftest.py`** sets `DATABASE_URL` to an in-repo SQLite file **before** `models` import (unless opted out), so a developer `.env` pointing at MySQL/PostgreSQL does not hijack the default suite.
+- **Remote dialect / integration:** set `USE_ENV_DATABASE_URL_FOR_TESTS` to `1`, `true`, `yes`, or `on`, **and** set `DATABASE_URL` to a non-sqlite DSN. Then run only the integration subset you need, for example:
 
-## Integrasi dialek remote
+  ```bash
+  USE_ENV_DATABASE_URL_FOR_TESTS=1 DATABASE_URL=mysql+pymysql://... python -m pytest tests/integration/test_remote_dialect_smoke.py -q
+  ```
 
-- `tests/integration/test_remote_dialect_smoke.py` — memerlukan `USE_ENV_DATABASE_URL_FOR_TESTS=1`, `DATABASE_URL` non-sqlite, dan skema `alembic upgrade head` pada target.
+  Target database must already have schema from `alembic upgrade head`.
 
-## E2E / UI
+## Subprocess / config tests (`WEBDASH_SKIP_DOTENV`)
 
-- `tests/e2e/smoke.spec.ts` (Playwright); `playwright.config.ts` memakai `testDir: ./tests/e2e` dan `webServer.env.DATABASE_URL=sqlite:///./.playwright_e2e.db` agar proses Flask E2E tidak memakai MySQL dari `.env` pengembang.
-- `tests/simple_tests/ui_tests/` (Python / legacy JS sesuai tree)
+`tests/test_config_secrets.py` runs a **subprocess** without `pytest` in `sys.modules` to assert production secret warnings. It sets **`WEBDASH_SKIP_DOTENV=1`** so `load_dotenv` does not override env from a local `.env` during that scenario. Use the same flag in any ad-hoc script that must mirror that behaviour.
 
-Perintah npm: lihat `package.json` (`test:e2e`, dll.).
+## CI / workflows
 
-## Dokumen testing lain
+GitHub Actions (or other CI) configuration lives under `.github/workflows/` when present. This document does **not** guarantee job names or matrix versions stay in sync with local pins—after changing `requirements*.txt` or pytest layout, confirm the workflow still invokes the canonical command above (or an equivalent documented in the workflow file).
 
-- `tests/README.md` — overview
-- `tests/README_TESTING.md`, `tests/TESTING_SUMMARY.md` — laporan historis (bisa stale)
+## `tests/` vs `tests/simple_tests/`
 
-## Command set
+| Area | Role |
+|------|------|
+| **`tests/`** | Primary automated suite (`conftest.py`, `test_*.py`). Default smoke command targets this tree. |
+| **`tests/simple_tests/`** | Older / broader functional, bug, and UI experiments; may assume a running server or extra deps. Not part of the canonical `-q` smoke unless you opt in. |
+| **`tests/simple_tests/functional_tests/`** | Own `pytest.ini` (valid **`[pytest]`** section). Prove config is picked up: `cd tests/simple_tests/functional_tests` then `python -m pytest --collect-only -q`, or rely on `tests/test_simple_tests_pytest_ini.py`. |
 
-- Suite Python utama: `python -m pytest tests -q`
-- Integrasi remote (contoh):  
-  `USE_ENV_DATABASE_URL_FOR_TESTS=1 DATABASE_URL=mysql+pymysql://... python -m pytest tests/integration/test_remote_dialect_smoke.py -q`
-- E2E: dari root, `npm run test:e2e`
+## E2E
 
-## Status & fokus
+- Playwright: `tests/e2e/smoke.spec.ts`; `playwright.config.ts` uses `testDir: ./tests/e2e` and pins `webServer.env.DATABASE_URL` for a local SQLite E2E DB.
+- npm scripts: see root `package.json` (`test:e2e`, etc.).
 
-- Setelah patch besar, jalankan ulang suite baseline; angka historis di dokumen lama tidak dijamin mutakhir.
-- Fokus regresi: toleransi periode (`time_period` + parser), duplikat unggah, template dataset-aware, filter rentang periode + ekspor, WinError 32 pada file pratinjau (Windows).
+## Application entry for tests
+
+- **`create_app`** lives in **`application/factory.py`** (import re-exported from **`app`** for backwards compatibility).
+- **`wsgi.py`** continues to use `from app import app`.
+
+## Further reading
+
+- `tests/README.md` — tree overview (may include stale counts).
+- `docs/README_DOCS.md` — project changelog + operational index.
+
+## Regression focus
+
+Period parsing (`time_period` + parser), upload duplicates + preview, dataset-aware templates, period-range filters + export, WinError 32 on Windows preview files.

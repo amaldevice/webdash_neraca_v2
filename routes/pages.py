@@ -5,7 +5,7 @@ from __future__ import annotations
 from flask import Flask, render_template, request
 
 from models import get_filter_options, get_landing_summary
-from services.entry_list_page import (
+from services.entry_list import (
     build_entry_list_page_bundle,
     fetch_entries_for_export,
     parse_entry_list_params_and_pagination,

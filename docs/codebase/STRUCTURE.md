@@ -2,7 +2,8 @@
 
 ## Lokasi Kritis
 
-- `app.py`: factory aplikasi (`create_app`) + alias helper untuk compat test.
+- `app.py`: modul tipis — instance `app` + re-export `create_app` dari `application/factory.py` + helper compat tes.
+- `application/factory.py`: `create_app` (Flask `root_path` = root repo agar `templates/` terbaca).
 - `.env` / `.env.example`: konfigurasi environment dan DSN.
 - `wsgi.py`: entry point WSGI.
 - `infrastructure/`: engine DB, session lifecycle, ORM model inti.
@@ -17,7 +18,7 @@
 
 ## Jalur Request Penting
 
-1. `app.py` memanggil `create_app()`.
+1. `app.py` memuat `create_app` dari `application/factory.py` lalu membuat `app`.
 2. `register_routes` (`routes/__init__.py`) mendaftarkan:
    - `routes/pages.py`
    - `routes/upload_routes.py`

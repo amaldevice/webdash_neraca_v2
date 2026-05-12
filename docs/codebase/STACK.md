@@ -32,6 +32,6 @@
 ## Runtime Dependencies (Ringkas)
 
 - `config.py` memuat `.env`, memilih `DATABASE_URL`, mengatur `SESSION_COOKIE_*`, dan menerapkan proteksi produksi.
-- `app.py` memakai application factory (`create_app`) dan guard produksi: `DATABASE_URL` wajib di `FLASK_ENV=production`.
+- `application/factory.py` memuat application factory (`create_app`) dan guard produksi: `DATABASE_URL` wajib di `FLASK_ENV=production`. `app.py` hanya membuat `app` dan re-export simbol compat.
 - `wsgi.py` mengekspor `app` untuk server WSGI.
 

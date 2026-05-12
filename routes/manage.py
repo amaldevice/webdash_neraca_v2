@@ -6,7 +6,7 @@ from flask import Flask, flash, redirect, render_template, request, url_for
 
 from models import get_filter_options
 from services.data_management_actions import apply_data_management_post
-from services.entry_list_page import (
+from services.entry_list import (
     build_entry_list_page_bundle,
     parse_entry_list_params_and_pagination,
 )
