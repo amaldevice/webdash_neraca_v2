@@ -14,6 +14,8 @@ PRD epic template universal unggah (#53) — **2026-05-06:** dataset katalog `un
 
 PRD epic tes/periode (#47) — slice #48–#51 selesai lewat PR #52 (merge `main`). Todo plan: `prd-006-test-reliability-period-architecture` = **completed**; backlog lanjutan ada di [docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md](docs/plans/issues/006-prd-test-reliability-period-semantics-architecture.md).
 
+**2026-05-12 (GitHub #72–#76):** orkestrasi pasca-persist unggah sukses, seam penyimpanan sesi pratinjau, policy POST (CSRF + rate limit), period marker tunggal untuk filter `data_entries`, resolve dataset intake — lihat changelog `docs/README_DOCS.md`.
+
 **2026-05-12 (GitHub #65–#70):** smoke pytest kanonik + pemisahan `create_app` ke `application/factory.py`, adapter respons upload Flask, facade `services/entry_list`, dokumentasi txn audit — rincian di `docs/README_DOCS.md` changelog + `docs/codebase/TESTING.md`.
 
 Riwayat naratif panjang sebelum konsolidasi 2026-04-17: `git log --follow -p -- docs/planning.md` (dan `docs/refactor-planning.md` jika masih di history).

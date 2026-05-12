@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import sqlite3
-import time
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
@@ -19,7 +18,10 @@ from services.upload_commit import (
     persist_upload_entries_with_overwrite,
 )
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
-from services.dataset_catalog import normalize_dataset_code
+from services.upload_intake_finalize import (
+    _safe_remove_file,
+    finalize_successful_excel_upload_intake,
+)
 from services.upload_duplicates import (
     _build_duplicate_confirmation_summary,
     _duplicate_conflict_message,
@@ -29,27 +31,9 @@ from services.upload_types import UploadFlowResponse, build_upload_response
 from services.upload_preview import (
     build_upload_preview,
     cache_upload_preview,
-    delete_preview_session,
     excel_preview_source_from_payload,
     to_preview_context,
 )
-from services.upload_runs import record_upload_run
-
-
-def _safe_remove_file(path: str) -> None:
-    if not path or not os.path.exists(path):
-        return
-    for attempt in range(3):
-        try:
-            os.remove(path)
-            return
-        except FileNotFoundError:
-            return
-        except PermissionError:
-            if attempt >= 2:
-                raise
-            time.sleep(0.2)
-
 
 def handle_upload_confirm_with_duplicates(
     upload_folder: str,
@@ -101,20 +85,15 @@ def handle_upload_confirm_with_duplicates(
         )
     try:
         persist_upload_entries_with_overwrite(deduped_entries)
-        if deduped_entries:
-            record_upload_run(
-                uploader_name=deduped_entries[0]["uploader_name"],
-                version=deduped_entries[0]["version"],
-                dataset_code=str(deduped_entries[0].get("dataset_code") or "")
-                or normalize_dataset_code(metadata.get("dataset_slug")),
-                file_name=token_payload.get("file_name"),
-                status="success",
-                message="overwrite_confirm",
-                row_count=len(deduped_entries),
-            )
-        delete_preview_session(upload_folder, preview_token)
-        if os.path.exists(file_path):
-            _safe_remove_file(file_path)
+        finalize_successful_excel_upload_intake(
+            entries=deduped_entries,
+            token_metadata=metadata,
+            file_name=token_payload.get("file_name"),
+            upload_folder=upload_folder,
+            preview_token=preview_token,
+            working_file_path=file_path,
+            message="overwrite_confirm",
+        )
 
         if overwrite_count > 0 and skipped_count > 0:
             msg = (
@@ -170,20 +149,14 @@ def handle_upload_confirm_without_duplicates(
 ) -> UploadFlowResponse:
     try:
         persist_upload_entries(entries)
-        if entries:
-            meta = (token_payload or {}).get("metadata") or {}
-            record_upload_run(
-                uploader_name=entries[0]["uploader_name"],
-                version=entries[0]["version"],
-                dataset_code=str(entries[0].get("dataset_code") or "")
-                or normalize_dataset_code(meta.get("dataset_slug")),
-                file_name=(token_payload or {}).get("file_name"),
-                status="success",
-                row_count=len(entries),
-            )
-        delete_preview_session(upload_folder, preview_token)
-        if os.path.exists(file_path):
-            _safe_remove_file(file_path)
+        finalize_successful_excel_upload_intake(
+            entries=entries,
+            token_metadata=(token_payload or {}).get("metadata") or {},
+            file_name=(token_payload or {}).get("file_name"),
+            upload_folder=upload_folder,
+            preview_token=preview_token,
+            working_file_path=file_path,
+        )
         return build_upload_response(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
@@ -274,15 +247,14 @@ def handle_upload_post_file_save_without_duplicates(
 ) -> UploadFlowResponse:
     try:
         persist_upload_entries(entries)
-        if entries:
-            record_upload_run(
-                uploader_name=entries[0]["uploader_name"],
-                version=entries[0]["version"],
-                dataset_code=str(entries[0].get("dataset_code") or ""),
-                file_name=source_file_name or None,
-                status="success",
-                row_count=len(entries),
-            )
+        finalize_successful_excel_upload_intake(
+            entries=entries,
+            token_metadata=None,
+            file_name=source_file_name or None,
+            upload_folder=None,
+            preview_token=None,
+            working_file_path=None,
+        )
         return build_upload_response(
             "redirect",
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],

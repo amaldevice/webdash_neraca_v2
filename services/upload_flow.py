@@ -16,7 +16,7 @@ from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from models import upsert_entries
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
-from services.dataset_catalog import get_dataset_or_none
+from services.dataset_intake import resolve_dataset_for_intake
 from services.manual_entries import build_manual_entry
 from services.upload_duplicates import (
     _build_internal_duplicate_warning_message,
@@ -24,8 +24,8 @@ from services.upload_duplicates import (
     _hydrate_duplicate_records_with_values,
 )
 from services.upload_parse import parse_and_validate_upload_payload
+from services.upload_intake_finalize import _safe_remove_file
 from services.upload_handlers import (
-    _safe_remove_file,
     handle_upload_confirm_with_duplicates,
     handle_upload_confirm_without_duplicates,
     handle_upload_post_file_no_entries,
@@ -36,8 +36,8 @@ from services.upload_handlers import (
 from services.upload_preview import (
     find_duplicate_entries_by_indicator_period,
     find_duplicate_entries_in_db,
-    load_preview_session,
 )
+from services.upload_preview_session_storage import file_backed_upload_preview_session_store
 from services.upload_runs import record_upload_run
 from services.upload_types import (
     ManualFlowResponse,
@@ -81,7 +81,8 @@ def process_upload_confirm(
         - preview dan upload_preview_token hanya diisi saat branch render.
         - pop_upload_session_token True pada redirect sukses setelah insert/pembersihan.
     """
-    token_payload = load_preview_session(upload_folder, preview_token) or {}
+    session_store = file_backed_upload_preview_session_store(upload_folder)
+    token_payload = session_store.load_session(preview_token) or {}
     if not token_payload:
         return build_upload_response(
             "redirect",
@@ -297,7 +298,7 @@ def process_manual_input_post(
             form_values=form_values,
         )
     ds = (dataset_slug or "").strip()
-    if ds and get_dataset_or_none(ds) is None:
+    if ds and not resolve_dataset_for_intake(ds).is_known:
         return ManualFlowResponse(
             kind="render",
             flashes=[("Dataset tidak dikenal.", "error")],

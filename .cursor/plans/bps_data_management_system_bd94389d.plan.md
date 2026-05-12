@@ -115,6 +115,9 @@ todos:
   - id: gh-issues-65-70-testing-factory-upload-entrylist
     content: "GitHub #65–#70: functional pytest.ini [pytest], TESTING.md canonical smoke + env notes, upload_response_adapter + tests, application/factory.py + slim app.py, services/entry_list facade + route test, upload audit txn doc."
     status: completed
+  - id: gh-issues-72-76-upload-seams-period-dataset
+    content: "GitHub #72–#76: upload_intake_finalize orchestration; upload_preview_session_storage Protocol; upload_request_policy CSRF+rate limit; data_entries_period_marker_range_from_request; dataset_intake.resolve_dataset_for_intake + tests."
+    status: completed
   - id: playwright-test-pom-ci
     content: Root package.json, playwright.config webServer, e2e POM, CI e2e job
     status: completed

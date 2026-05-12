@@ -11,7 +11,7 @@ import os
 import uuid
 from typing import Any
 
-from services.dataset_catalog import get_dataset_or_none
+from services.dataset_intake import resolve_dataset_for_intake
 from services.validation import allowed_file, validate_metadata
 from werkzeug.utils import secure_filename
 
@@ -76,7 +76,7 @@ def collect_upload_file_errors(
     if require_dataset and not (dataset_slug or "").strip():
         errors.append("Pilih dataset / tabel terlebih dahulu.")
     slug = (dataset_slug or "").strip()
-    if slug and get_dataset_or_none(slug) is None:
+    if slug and not resolve_dataset_for_intake(slug).is_known:
         errors.append("Dataset tidak dikenal.")
     errors.extend(validate_metadata(data_type, time_period))
     return errors

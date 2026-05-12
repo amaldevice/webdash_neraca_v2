@@ -142,6 +142,10 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `models/`: Paket model utama (`connection`, `queries`, `mutations`, `browse`, `data_filters`).
 - `infrastructure/orm_models.py`: Model SQLAlchemy 2.0 (mirror skema); `alembic/` + `alembic.ini` untuk migrasi.
 - `services/aggregation.py`: Dihapus. Metrik dihitung dari data aktif.
+- `services/upload_intake_finalize.py`: Setelah baris Excel tersimpan — audit `upload_runs` (best-effort), hapus sesi pratinjau, hapus berkas kerja.
+- `services/upload_preview_session_storage.py`: Seam domain load/save/delete sesi pratinjau (adapter file-backed).
+- `routes/upload_request_policy.py`: CSRF form unggah + rate limit per klien (dipanggil tipis dari `routes/upload_routes.py`).
+- `services/dataset_intake.py`: `resolve_dataset_for_intake` — slug terpilih vs katalog untuk jalur unggah/manual/parse.
 - `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
 - `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
 - `docs/README_DOCS.md`: Panduan wizard dataset, migrasi `dataset_code`, changelog, taut troubleshooting.

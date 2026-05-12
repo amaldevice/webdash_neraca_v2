@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import Any, Literal
+
 from excel_parser.api import to_float
+
+
+def data_entries_period_marker_range_from_request(
+    request: Any,
+    *,
+    filter_source: Literal["args", "values"],
+) -> tuple[str | None, str | None]:
+    """Single entry point for ``start_period`` / ``end_period`` (preview, manage, export)."""
+    src = request.args if filter_source == "args" else request.values
+    return get_period_range_params(src)
 
 
 def get_period_range_params(

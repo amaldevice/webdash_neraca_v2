@@ -2,10 +2,6 @@
 """Excel upload + manual entry routes."""
 from __future__ import annotations
 
-from collections import defaultdict, deque
-import secrets
-import threading
-import time
 from flask import Flask, Response, abort, current_app, flash, render_template, request, session
 
 from routes.upload_response_adapter import (
@@ -14,7 +10,8 @@ from routes.upload_response_adapter import (
     apply_manual_flow_response,
     apply_upload_flow_response,
 )
-from services.dataset_catalog import get_dataset_or_none
+from routes.upload_request_policy import evaluate_upload_csrf, evaluate_upload_rate_limit
+from services.dataset_intake import resolve_dataset_for_intake
 from services.template_service import build_template_file_response
 from services.upload_flow import (
     MANUAL_ROUTE_MODE,
@@ -34,46 +31,9 @@ from services.upload_form import (
 )
 from services.upload_preview import (
     cleanup_upload_preview_cache,
-    delete_preview_session,
-    load_preview_session,
     to_preview_context,
 )
-_UPLOAD_RATE_LIMIT_LOCK = threading.Lock()
-_UPLOAD_RATE_LIMIT_STATE: dict[str, deque[float]] = defaultdict(deque)
-
-
-def _validate_upload_csrf_token() -> bool:
-    expected = session.get("_upload_csrf_token")
-    provided = request.form.get("csrf_token", "")
-    if not expected or not provided:
-        return False
-    return secrets.compare_digest(str(expected), str(provided))
-
-
-def _upload_client_key() -> str:
-    client_key = session.get("_upload_client_id")
-    if not isinstance(client_key, str) or not client_key.strip():
-        client_key = secrets.token_urlsafe(16)
-        session["_upload_client_id"] = client_key
-    return client_key
-
-
-def _upload_is_rate_limited() -> tuple[bool, int, int]:
-    max_requests = int(current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0))
-    window_seconds = int(current_app.config.get("UPLOAD_RATE_LIMIT_WINDOW_SECONDS", 60))
-    if max_requests <= 0:
-        return False, max_requests, window_seconds
-
-    key = _upload_client_key()
-    now = time.monotonic()
-    with _UPLOAD_RATE_LIMIT_LOCK:
-        bucket = _UPLOAD_RATE_LIMIT_STATE[key]
-        while bucket and now - bucket[0] > window_seconds:
-            bucket.popleft()
-        if len(bucket) >= max_requests:
-            return True, 0, window_seconds
-        bucket.append(now)
-        return False, max_requests - len(bucket), window_seconds
+from services.upload_preview_session_storage import file_backed_upload_preview_session_store
 
 
 def _render_upload_template(
@@ -93,6 +53,7 @@ def _render_upload_template(
 
 def upload_data():
     upload_folder = upload_folder_from_config(current_app.config)
+    preview_store = file_backed_upload_preview_session_store(upload_folder)
     cleanup_upload_preview_cache(upload_folder, session)
     preview_payload = None
     form_values: dict = {}
@@ -100,32 +61,29 @@ def upload_data():
         old_token = session.get("upload_preview_token")
         if isinstance(old_token, str):
             session.pop("upload_preview_token", None)
-            delete_preview_session(upload_folder, old_token)
+            preview_store.delete_session(old_token)
 
     require_dataset = bool(current_app.config.get("REQUIRE_DATASET_FOR_UPLOAD", False))
 
     if request.method == "POST":
-        if request.path == "/upload":
-            is_rate_limited, _, window_seconds = _upload_is_rate_limited()
-            if is_rate_limited:
-                response = _render_upload_template(
-                    preview=None,
-                    upload_preview_token=session.get("upload_preview_token"),
-                    form_values={},
-                )
-                response.status_code = 429
-                response.headers["Retry-After"] = str(window_seconds)
-                response.headers["X-RateLimit-Limit"] = str(
-                    current_app.config.get("UPLOAD_RATE_LIMIT_MAX_REQUESTS", 0)
-                )
-                response.headers["X-RateLimit-Remaining"] = "0"
-                response.headers["X-RateLimit-Window-Seconds"] = str(window_seconds)
-                flash("Terlalu banyak unggahan dalam waktu singkat. Coba lagi nanti.", "error")
-                return response
+        limit_decision = evaluate_upload_rate_limit()
+        if not limit_decision.allowed:
+            response = _render_upload_template(
+                preview=None,
+                upload_preview_token=session.get("upload_preview_token"),
+                form_values={},
+            )
+            response.status_code = 429
+            response.headers["Retry-After"] = str(limit_decision.window_seconds)
+            response.headers["X-RateLimit-Limit"] = str(limit_decision.max_requests)
+            response.headers["X-RateLimit-Remaining"] = "0"
+            response.headers["X-RateLimit-Window-Seconds"] = str(limit_decision.window_seconds)
+            flash("Terlalu banyak unggahan dalam waktu singkat. Coba lagi nanti.", "error")
+            return response
 
         normalized_form = _ensure_upload_version(request.form.to_dict())
         form_values, action, preview_token, skip_dup = parse_upload_form(normalized_form)
-        if not _validate_upload_csrf_token():
+        if not evaluate_upload_csrf().allowed:
             response = apply_upload_flow_response(
                 build_upload_response(
                     "render",
@@ -184,7 +142,7 @@ def upload_data():
 
     preview_token = session.get("upload_preview_token")
     payload = (
-        load_preview_session(upload_folder, preview_token)
+        preview_store.load_session(preview_token)
         if isinstance(preview_token, str)
         else None
     )
@@ -245,7 +203,7 @@ def manual_input():
 
 def upload_dataset_template(dataset_slug: str) -> Response:
     slug = (dataset_slug or "").strip()
-    if not slug or get_dataset_or_none(slug) is None:
+    if not slug or resolve_dataset_for_intake(slug).definition is None:
         abort(404)
     return build_template_file_response(slug)
 

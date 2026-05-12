@@ -55,3 +55,5 @@ GitHub Actions (or other CI) configuration lives under `.github/workflows/` when
 ## Regression focus
 
 Period parsing (`time_period` + parser), upload duplicates + preview, dataset-aware templates, period-range filters + export, WinError 32 on Windows preview files.
+
+**Period marker / `data_entries` filters:** rentang `start_period` / `end_period` dari request dipusatkan lewat `services.request_params.data_entries_period_marker_range_from_request` (dipanggil dari `services/entry_list_page.parse_entry_list_params_from_request` untuk jalur preview GET args, manajemen POST values, dan ekspor).
