@@ -31,7 +31,7 @@ from services.upload_form import (
 )
 from services.upload_preview import (
     cleanup_upload_preview_cache,
-    to_preview_context,
+    upload_page_preview_from_session,
 )
 from services.upload_preview_session_storage import file_backed_upload_preview_session_store
 
@@ -155,7 +155,9 @@ def upload_data():
             "time_period": meta.get("time_period", "monthly"),
             "dataset_slug": (meta.get("dataset_slug") or "").strip(),
         }
-        preview_payload = to_preview_context(payload)
+        preview_payload = upload_page_preview_from_session(
+            payload, upload_preview_token=preview_token
+        )
 
     return _render_upload_template(
         preview=preview_payload,

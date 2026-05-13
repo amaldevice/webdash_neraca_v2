@@ -35,7 +35,7 @@ GitHub Actions (or other CI) configuration lives under `.github/workflows/` when
 |------|------|
 | **`tests/`** | Primary automated suite (`conftest.py`, `test_*.py`). Default smoke command targets this tree. |
 | **`tests/simple_tests/`** | Older / broader functional, bug, and UI experiments; may assume a running server or extra deps. Not part of the canonical `-q` smoke unless you opt in. |
-| **`tests/simple_tests/functional_tests/`** | Own `pytest.ini` (valid **`[pytest]`** section). Prove config is picked up: `cd tests/simple_tests/functional_tests` then `python -m pytest --collect-only -q`, or rely on `tests/test_simple_tests_pytest_ini.py`. |
+| **`tests/simple_tests/functional_tests/`** | Own `pytest.ini` (valid **`[pytest]`** section + **`pythonpath = ../../..`** so imports like `services.*` resolve when cwd is this folder). Prove config is picked up: `cd tests/simple_tests/functional_tests` then `python -m pytest --collect-only -q`, or rely on `tests/test_simple_tests_pytest_ini.py`. |
 
 ## E2E
 

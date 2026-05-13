@@ -27,4 +27,4 @@ Unggah file kecil → pratinjau → konfirmasi simpan; file di `uploads/` harus 
 
 - `excel_parser/payload.py` — `_resolve_read_sheet`, `parse_excel_payload`
 - `services/upload_flow.py` — `os.remove` pada path unggah setelah sukses / error
-- `services/upload_preview.py` — `_safe_remove_uploaded_file`
+- `services/upload_preview.py` — `_safe_remove_uploaded_file` mem-delegasi ke `services/upload_fs.safe_remove_upload_working_file` (guard path + retry `PermissionError` / WinError 32).

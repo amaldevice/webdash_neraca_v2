@@ -8,25 +8,30 @@ import pandas as pd
 from flask import Response
 
 
+# Canonical column order shared by CSV and Excel raw export (parity).
+RAW_EXPORT_COLUMNS = [
+    "id",
+    "uploader_name",
+    "version",
+    "dataset_code",
+    "indicator_name",
+    "value",
+    "data_type",
+    "time_period",
+    "created_at",
+    "year",
+    "month",
+    "quarter",
+]
+
+
 def build_raw_data_export_response(entries: list, fmt: str) -> Response:
     """CSV or Excel attachment for filtered raw rows."""
     fmt = fmt.lower()
     if fmt == "excel":
-        columns = [
-            "id",
-            "uploader_name",
-            "version",
-            "dataset_code",
-            "indicator_name",
-            "value",
-            "data_type",
-            "time_period",
-            "created_at",
-            "year",
-            "month",
-            "quarter",
-        ]
-        df = pd.DataFrame(entries, columns=columns) if entries else pd.DataFrame(columns=columns)
+        df = pd.DataFrame(entries, columns=RAW_EXPORT_COLUMNS) if entries else pd.DataFrame(
+            columns=RAW_EXPORT_COLUMNS
+        )
         output = io.BytesIO()
         df.to_excel(output, index=False)
         output.seek(0)
@@ -40,30 +45,9 @@ def build_raw_data_export_response(entries: list, fmt: str) -> Response:
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)
-    headers = [
-        "id",
-        "uploader_name",
-        "version",
-        "indicator_name",
-        "value",
-        "data_type",
-        "time_period",
-        "created_at",
-    ]
-    writer.writerow(headers)
+    writer.writerow(RAW_EXPORT_COLUMNS)
     for row in entries:
-        writer.writerow(
-            [
-                row["id"],
-                row["uploader_name"],
-                row["version"],
-                row["indicator_name"],
-                row["value"],
-                row["data_type"],
-                row["time_period"],
-                row["created_at"],
-            ]
-        )
+        writer.writerow([row.get(col, "") for col in RAW_EXPORT_COLUMNS])
 
     response = Response(buffer.getvalue(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=raw-data.csv"

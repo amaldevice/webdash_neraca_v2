@@ -2,28 +2,16 @@
 """Orchestrate post-persist side effects for successful Excel upload intake (audit + preview cleanup)."""
 from __future__ import annotations
 
-import os
-import time
 from typing import Any
 
 from services.dataset_catalog import normalize_dataset_code
+from services.upload_fs import safe_remove_upload_working_file
 from services.upload_preview import delete_preview_session
 from services.upload_runs import record_upload_run
 
 
-def _safe_remove_file(path: str) -> None:
-    if not path or not os.path.exists(path):
-        return
-    for attempt in range(3):
-        try:
-            os.remove(path)
-            return
-        except FileNotFoundError:
-            return
-        except PermissionError:
-            if attempt >= 2:
-                raise
-            time.sleep(0.2)
+def _safe_remove_file(path: str | None, *, upload_root: str | None = None) -> None:
+    safe_remove_upload_working_file(path, upload_root=upload_root)
 
 
 def finalize_successful_excel_upload_intake(
@@ -60,4 +48,4 @@ def finalize_successful_excel_upload_intake(
     if upload_folder and preview_token:
         delete_preview_session(upload_folder, preview_token)
     if working_file_path:
-        _safe_remove_file(working_file_path)
+        _safe_remove_file(working_file_path, upload_root=upload_folder)
