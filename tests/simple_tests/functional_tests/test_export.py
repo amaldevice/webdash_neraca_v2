@@ -15,6 +15,8 @@ import csv
 import io
 import pandas as pd
 
+from services.raw_export import RAW_EXPORT_COLUMNS
+
 
 class TestExport:
     """Test suite untuk export functionality"""
@@ -34,7 +36,7 @@ class TestExport:
 
         # Minimal harus ada header
         assert len(rows) >= 1, "CSV harus minimal memiliki header"
-        expected_headers = ['id', 'uploader_name', 'version', 'indicator_name', 'value', 'data_type', 'time_period', 'created_at']
+        expected_headers = list(RAW_EXPORT_COLUMNS)
         assert rows[0] == expected_headers, f"Header CSV harus {expected_headers}"
 
     def test_export_excel_empty_database(self, test_client):
@@ -68,7 +70,7 @@ class TestExport:
         assert len(rows) > 1, "CSV harus memiliki header dan data"
 
         # Validasi header
-        expected_headers = ['id', 'uploader_name', 'version', 'indicator_name', 'value', 'data_type', 'time_period', 'created_at']
+        expected_headers = list(RAW_EXPORT_COLUMNS)
         assert rows[0] == expected_headers, f"Header CSV harus {expected_headers}"
 
         # Validasi data rows
@@ -77,10 +79,11 @@ class TestExport:
             # ID harus integer
             assert row[0].isdigit(), "ID harus berupa angka"
             # Value harus numeric
+            vi = RAW_EXPORT_COLUMNS.index("value")
             try:
-                float(row[4])  # value column
+                float(row[vi])
             except ValueError:
-                pytest.fail(f"Value '{row[4]}' harus berupa angka")
+                pytest.fail(f"Value '{row[vi]}' harus berupa angka")
 
     def test_export_excel_with_data(self, populated_db):
         """Test export Excel dengan data"""
@@ -96,7 +99,7 @@ class TestExport:
         assert len(df) > 0, "Excel harus mengandung data"
 
         # Validasi kolom yang diperlukan
-        required_columns = ['id', 'uploader_name', 'version', 'indicator_name', 'value', 'data_type', 'time_period', 'created_at']
+        required_columns = list(RAW_EXPORT_COLUMNS)
         for col in required_columns:
             assert col in df.columns, f"Kolom {col} harus ada di Excel"
 
@@ -117,8 +120,9 @@ class TestExport:
 
         # Skip header dan validasi hanya ada data Alice
         data_rows = rows[1:]
+        ui = RAW_EXPORT_COLUMNS.index("uploader_name")
         for row in data_rows:
-            uploader_name = row[1]  # uploader_name column
+            uploader_name = row[ui]
             assert uploader_name == 'Alice', f"Filter uploader gagal, menemukan {uploader_name}"
 
     def test_export_excel_filtered_by_data_type(self, populated_db):
@@ -148,8 +152,9 @@ class TestExport:
 
         # Skip header dan validasi hanya ada indicator GDP
         data_rows = rows[1:]
+        ii = RAW_EXPORT_COLUMNS.index("indicator_name")
         for row in data_rows:
-            indicator = row[3]  # indicator_name column
+            indicator = row[ii]
             assert indicator == 'GDP', f"Filter indicator gagal, menemukan {indicator}"
 
     def test_export_multiple_filters(self, populated_db):
@@ -165,9 +170,11 @@ class TestExport:
 
         # Validasi multiple filters
         data_rows = rows[1:]
+        ui = RAW_EXPORT_COLUMNS.index("uploader_name")
+        dti = RAW_EXPORT_COLUMNS.index("data_type")
         for row in data_rows:
-            uploader = row[1]
-            data_type = row[5]
+            uploader = row[ui]
+            data_type = row[dti]
             assert uploader == 'Alice', f"Filter uploader gagal, menemukan {uploader}"
             assert data_type == 'flow', f"Filter data_type gagal, menemukan {data_type}"
 
@@ -198,7 +205,7 @@ class TestExport:
 
         # Harus hanya ada header, tidak ada data
         assert len(rows) == 1, "Filter yang tidak cocok harus menghasilkan hanya header"
-        expected_headers = ['id', 'uploader_name', 'version', 'indicator_name', 'value', 'data_type', 'time_period', 'created_at']
+        expected_headers = list(RAW_EXPORT_COLUMNS)
         assert rows[0] == expected_headers, f"Header harus tetap ada: {expected_headers}"
 
     def test_export_csv_data_integrity(self, populated_db):
@@ -228,9 +235,12 @@ class TestExport:
                     break
 
             assert csv_data_row is not None, "Data dari database harus ada di CSV"
-            assert csv_data_row[1] == db_entry['uploader_name'], "Uploader name harus sama"
-            assert csv_data_row[3] == db_entry['indicator_name'], "Indicator name harus sama"
-            assert abs(float(csv_data_row[4]) - db_entry['value']) < 0.001, "Value harus sama"
+            ui = RAW_EXPORT_COLUMNS.index("uploader_name")
+            ii = RAW_EXPORT_COLUMNS.index("indicator_name")
+            vi = RAW_EXPORT_COLUMNS.index("value")
+            assert csv_data_row[ui] == db_entry['uploader_name'], "Uploader name harus sama"
+            assert csv_data_row[ii] == db_entry['indicator_name'], "Indicator name harus sama"
+            assert abs(float(csv_data_row[vi]) - db_entry['value']) < 0.001, "Value harus sama"
 
     def test_export_excel_data_integrity(self, populated_db):
         """Test integritas data dalam export Excel"""

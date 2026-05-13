@@ -22,7 +22,7 @@ def test_finalize_successful_excel_upload_intake_side_effect_order() -> None:
     def _track_delete(_folder, _tok):
         order.append("delete")
 
-    def _track_remove(_path):
+    def _track_remove(_path, **_kwargs):
         order.append("file")
 
     with (

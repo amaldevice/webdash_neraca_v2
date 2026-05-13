@@ -13,6 +13,7 @@ from flask import session
 from config import UPLOAD_PREVIEW_TTL_SECONDS
 from models.queries import preview_duplicates_batches
 from services.timeutil import utc_now_timestamp
+from services.upload_fs import safe_remove_upload_working_file
 
 
 def _sessions_root(upload_folder: str) -> str:
@@ -24,15 +25,7 @@ def _session_json_path(upload_folder: str, token: str) -> str:
 
 
 def _safe_remove_uploaded_file(upload_folder: str, file_path: str | None) -> None:
-    if not file_path or not os.path.isfile(file_path):
-        return
-    try:
-        uf = os.path.realpath(upload_folder)
-        fp = os.path.realpath(file_path)
-        if fp == uf or fp.startswith(uf + os.sep):
-            os.remove(file_path)
-    except OSError:
-        pass
+    safe_remove_upload_working_file(file_path, upload_root=upload_folder)
 
 
 def _read_preview_session(upload_folder: str, token: str) -> dict | None:
@@ -308,6 +301,47 @@ def excel_preview_source_from_payload(
     }
 
 
+def upload_page_preview_from_session(
+    session_payload: dict[str, Any],
+    *,
+    upload_preview_token: str,
+) -> dict:
+    """
+    Template preview context from disk session shape produced by ``_build_preview_session_payload``.
+
+    Used for GET /upload reload and kept in sync with ``build_upload_preview`` POST path.
+    """
+    meta = session_payload.get("metadata") or {}
+    slug = (meta.get("dataset_slug") or "").strip()
+    label = ""
+    if slug:
+        from services.dataset_catalog import get_dataset_or_none
+
+        d = get_dataset_or_none(slug)
+        if d is not None:
+            label = d.label
+    src = {
+        "file_name": session_payload.get("file_name"),
+        "layout": session_payload["layout"],
+        "source_mode": session_payload.get("source_mode", "headered"),
+        "header_row": session_payload["header_row"],
+        "source_rows": session_payload["source_rows"],
+        "source_columns": session_payload["source_columns"],
+        "warnings": session_payload.get("warnings", []),
+        "entries_preview": session_payload.get("entries_preview", []),
+        "invalid_rows": session_payload.get("invalid_rows", []),
+        "total_records": session_payload.get("total_records"),
+        "upload_preview_token": upload_preview_token,
+        "dataset_slug": slug,
+        "dataset_label": label,
+    }
+    return to_preview_context(
+        src,
+        duplicates=session_payload.get("duplicate_records"),
+        skip_duplicate_indexes=session_payload.get("skip_duplicate_indexes") or [],
+    )
+
+
 def to_preview_context(
     payload: dict,
     duplicates: list[dict] | None = None,
@@ -373,14 +407,8 @@ def build_upload_preview(
         payload,
         duplicates,
     )
-    preview_payload = to_preview_context(
-        excel_preview_source_from_payload(
-            file_name=display_name,
-            payload=payload,
-            upload_preview_token=upload_token,
-            total_records=len(entries),
-        ),
-        duplicates=duplicates,
-        skip_duplicate_indexes=[],
+    session_data = load_preview_session(upload_folder, upload_token) or {}
+    preview_payload = upload_page_preview_from_session(
+        session_data, upload_preview_token=upload_token
     )
     return upload_token, preview_payload

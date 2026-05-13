@@ -20,20 +20,7 @@ def data_management():
     if request.method == "POST":
         for msg, category in apply_data_management_post(request.form, **list_params.to_action_kwargs()):
             flash(msg, category)
-        return redirect(
-            url_for(
-                "data_management",
-                data_type=list_params.data_type or "",
-                time_period=list_params.time_period or "",
-                uploader=list_params.uploader or "",
-                indicator=list_params.indicator or "",
-                dataset_code=list_params.dataset_code or "",
-                start_period=list_params.period_start or "",
-                end_period=list_params.period_end or "",
-                value_min=list_params.value_min if list_params.value_min is not None else "",
-                value_max=list_params.value_max if list_params.value_max is not None else "",
-            )
-        )
+        return redirect(url_for("data_management", **list_params.to_data_management_redirect_query()))
 
     entries, filters = build_entry_list_page_bundle(list_params, page, limit, offset)
 

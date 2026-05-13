@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""POST action handlers for /data-management (CRUD + bulk); returns flash (message, category) tuples."""
+"""POST action handlers for /data-management (CRUD + bulk); returns flash (message, category) tuples.
+
+Transactional model is **mixed (campuran)**: each action runs as the caller's unit; underlying
+writers in ``models/mutations`` use ``write_session`` per operation. See
+``docs/codebase/data-management-actions.md`` for rationale (#83).
+"""
 from __future__ import annotations
 
 from typing import Any, List, Tuple

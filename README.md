@@ -149,6 +149,7 @@ Catatan keamanan: file backup SQLite hasil copy adalah snapshot data; lakukan `c
 - `services/list_view.py`: Helper paging/filter yang dipakai halaman preview dan management.
 - `services/upload_flow.py`: Alur unggah yang dieksekusi endpoint `/upload`.
 - `docs/README_DOCS.md`: Panduan wizard dataset, migrasi `dataset_code`, changelog, taut troubleshooting.
+- `services/upload_fs.py`: Hapus aman berkas kerja unggah (`upload_root` + retry Windows).
 - `services/upload_preview.py`: Penyimpanan dan pengambilan sesi preview upload.
 - `services/manual_entries.py`: Helper normalisasi dan validasi input manual.
 

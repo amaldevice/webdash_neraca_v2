@@ -94,6 +94,20 @@ class EntryListParams:
             "dataset_code": self.dataset_code or "",
         }
 
+    def to_data_management_redirect_query(self) -> dict[str, Any]:
+        """Query args for ``url_for('data_management', ...)`` after POST (period marker uses start/end keys)."""
+        return {
+            "data_type": self.data_type or "",
+            "time_period": self.time_period or "",
+            "uploader": self.uploader or "",
+            "indicator": self.indicator or "",
+            "dataset_code": self.dataset_code or "",
+            "start_period": self.period_start or "",
+            "end_period": self.period_end or "",
+            "value_min": self.value_min if self.value_min is not None else "",
+            "value_max": self.value_max if self.value_max is not None else "",
+        }
+
 
 def normalize_entries_page_limit(limit_value: Any, default: int = 20) -> int:
     try:

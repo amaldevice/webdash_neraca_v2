@@ -20,6 +20,25 @@ def test_entry_list_params_query_kwargs():
     assert qkw["indicator"] == "GDP"
 
 
+def test_entry_list_params_data_management_redirect_query_uses_start_end_period_keys():
+    p = EntryListParams.from_request_strings(
+        data_type="flow",
+        time_period="monthly",
+        uploader="u1",
+        indicator="GDP",
+        period_start="2024-01",
+        period_end="2024-03",
+        value_min=1.0,
+        value_max=9.0,
+    )
+    rq = p.to_data_management_redirect_query()
+    assert rq["start_period"] == "2024-01"
+    assert rq["end_period"] == "2024-03"
+    assert "period_start" not in rq
+    assert rq["data_type"] == "flow"
+    assert rq["value_min"] == 1.0
+
+
 def test_allowed_file(app_module):
     assert app_module.allowed_file("data.xlsx") is True
     assert app_module.allowed_file("data.xls") is True
