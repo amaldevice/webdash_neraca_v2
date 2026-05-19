@@ -7,19 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from infrastructure.db import get_session, is_engine_initialized
 from infrastructure.orm_models import DataEntry
+from models.read_session import with_read_session
+
+_EMPTY_FILTER: Dict[str, List[str]] = {"uploaders": [], "indicators": [], "dataset_codes": []}
 
 
 def get_filter_options(*, session: Session | None = None) -> Dict[str, List[str]]:
     """Get available options for filters (uploaders, indicators, dataset_code)."""
-    if session is None and not is_engine_initialized():
-        return {"uploaders": [], "indicators": [], "dataset_codes": []}
-    try:
-        sess = session if session is not None else get_session()
-    except SQLAlchemyError:
-        return {"uploaders": [], "indicators": [], "dataset_codes": []}
-    try:
+
+    def _query(sess: Session) -> Dict[str, List[str]]:
         uploaders = sess.scalars(
             select(DataEntry.uploader_name).distinct().order_by(DataEntry.uploader_name)
         ).all()
@@ -34,5 +31,5 @@ def get_filter_options(*, session: Session | None = None) -> Dict[str, List[str]
             "indicators": list(indicators),
             "dataset_codes": list(codes),
         }
-    except SQLAlchemyError:
-        return {"uploaders": [], "indicators": [], "dataset_codes": []}
+
+    return with_read_session(_query, default=_EMPTY_FILTER, session=session)

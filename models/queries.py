@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from infrastructure.db import get_session, is_engine_initialized
 
 from .data_filters import build_data_entry_filter_sqlalchemy
+from .read_session import with_read_session
 
 
 def _format_period_text_from_parts(year: Any, month: Any, quarter: Any) -> str:
@@ -99,24 +100,21 @@ def get_total_entries_count(
     *,
     session: Session | None = None,
 ) -> int:
-    if session is None and not is_engine_initialized():
-        return 0
-    try:
-        sess = session if session is not None else get_session()
-    except SQLAlchemyError:
-        return 0
-    return _sa_get_total_entries_count(
-        data_type,
-        time_period,
-        uploader,
-        indicator,
-        period_start,
-        period_end,
-        value_min,
-        value_max,
-        dataset_code,
-        session=sess,
-    )
+    def _query(sess: Session) -> int:
+        return _sa_get_total_entries_count(
+            data_type,
+            time_period,
+            uploader,
+            indicator,
+            period_start,
+            period_end,
+            value_min,
+            value_max,
+            dataset_code,
+            session=sess,
+        )
+
+    return with_read_session(_query, default=0, session=session)
 
 
 def _sa_get_landing_summary(*, session: Session) -> Dict[str, Any]:
@@ -166,31 +164,21 @@ def _sa_get_landing_summary(*, session: Session) -> Dict[str, Any]:
 
 
 def get_landing_summary(*, session: Session | None = None) -> Dict[str, Any]:
-    if session is None and not is_engine_initialized():
-        return {
-            "total_data_rows": 0,
-            "total_indicators": 0,
-            "monthly_rows": 0,
-            "quarterly_rows": 0,
-            "yearly_rows": 0,
-            "latest_uploader": None,
-            "latest_version": None,
-            "latest_created_at": None,
-        }
-    try:
-        sess = session if session is not None else get_session()
-    except SQLAlchemyError:
-        return {
-            "total_data_rows": 0,
-            "total_indicators": 0,
-            "monthly_rows": 0,
-            "quarterly_rows": 0,
-            "yearly_rows": 0,
-            "latest_uploader": None,
-            "latest_version": None,
-            "latest_created_at": None,
-        }
-    return _sa_get_landing_summary(session=sess)
+    _default = {
+        "total_data_rows": 0,
+        "total_indicators": 0,
+        "monthly_rows": 0,
+        "quarterly_rows": 0,
+        "yearly_rows": 0,
+        "latest_uploader": None,
+        "latest_version": None,
+        "latest_created_at": None,
+    }
+
+    def _query(sess: Session) -> Dict[str, Any]:
+        return _sa_get_landing_summary(session=sess)
+
+    return with_read_session(_query, default=_default, session=session)
 
 
 def _sa_query_data_entries(
