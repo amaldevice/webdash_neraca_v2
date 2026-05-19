@@ -12,7 +12,24 @@ from typing import Any
 from services.upload_preview import filter_duplicate_entries, parse_selected_duplicate_indexes
 
 
-def _duplicate_conflict_message() -> str:
+def entry_duplicate_key(entry: dict) -> tuple:
+    """Return the canonical duplicate-check key for a parsed entry.
+
+    Key shape: (indicator_name, year, month, quarter, dataset_code)
+
+    dataset_slug is legacy alias for dataset_code in incoming parsed entries.
+    """
+    ds = (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip()
+    return (
+        entry.get("indicator_name"),
+        entry.get("year"),
+        entry.get("month"),
+        entry.get("quarter"),
+        ds,
+    )
+
+
+def duplicate_conflict_message() -> str:
     return (
         "Terdeteksi data duplikasi: kombinasi unik pengunggah, versi, indikator, dan periode "
         "sudah ada di basis data.\n"
@@ -21,7 +38,7 @@ def _duplicate_conflict_message() -> str:
     )
 
 
-def _collect_internal_duplicate_counts(entries: list[dict[str, Any]]) -> dict[tuple[str, int, int | None, int | None], int]:
+def collect_internal_duplicate_counts(entries: list[dict[str, Any]]) -> dict[tuple[str, int, int | None, int | None], int]:
     """Hitung berapa kali setiap kombinasi indikator+periode muncul di dalam file upload."""
     if not entries:
         return {}
@@ -37,7 +54,7 @@ def _collect_internal_duplicate_counts(entries: list[dict[str, Any]]) -> dict[tu
     return {key: count for key, count in counts.items() if count > 1}
 
 
-def _build_internal_duplicate_warning_message(
+def build_internal_duplicate_warning_message(
     duplicate_counts: dict[tuple[str, int, int | None, int | None], int]
 ) -> str | None:
     if not duplicate_counts:
@@ -52,7 +69,7 @@ def _build_internal_duplicate_warning_message(
     )
 
 
-def _hydrate_duplicate_records_with_values(
+def hydrate_duplicate_records_with_values(
     duplicate_records: list[dict[str, Any]],
     entries: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -61,13 +78,7 @@ def _hydrate_duplicate_records_with_values(
     """
     value_by_key: dict[tuple, Any] = {}
     for entry in entries:
-        key = (
-            entry.get("indicator_name"),
-            entry.get("year"),
-            entry.get("month"),
-            entry.get("quarter"),
-            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
-        )
+        key = entry_duplicate_key(entry)
         if key not in value_by_key:
             value_by_key[key] = entry.get("value")
     hydrated: list[dict[str, Any]] = []
@@ -88,35 +99,17 @@ def prepare_duplicate_plan(
     duplicates: list[dict[str, Any]],
     skip_duplicate_indexes_raw: list[str],
 ) -> tuple[list[int], list[str], list[dict[str, Any]], int]:
-    """
-    Buat rencana penanganan duplikasi untuk branch confirm.
-
-    Return:
-      - selected_indexes: index duplikasi yang dipilih user untuk dikecualikan.
-      - selected_indexes_payload: versi string untuk context/template.
-      - deduped_entries: entries setelah duplikasi terpilih dihapus.
-      - skipped_count: jumlah baris yang di-skip.
-    """
-
     selected_indexes = parse_selected_duplicate_indexes(skip_duplicate_indexes_raw, duplicates)
     selected_indexes_payload = [str(i) for i in sorted(selected_indexes)]
     deduped_entries, skipped_count = filter_duplicate_entries(entries, duplicates, selected_indexes)
     return selected_indexes, selected_indexes_payload, deduped_entries, skipped_count
 
 
-def _build_duplicate_confirmation_summary(
+def build_duplicate_confirmation_summary(
     duplicates: list[dict[str, Any]],
     selected_indexes: set[int],
     deduped_entries: list[dict[str, Any]],
 ) -> tuple[int, int, int]:
-    """
-    Hitung ringkasan penanganan duplikasi saat confirm.
-
-    Return:
-      - skipped_count: jumlah kandidat duplikasi yang dikecualikan.
-      - overwrite_count: jumlah kandidat duplikasi yang akan ditimpa.
-      - safe_rows_count: jumlah baris non-duplikasi yang akan disimpan.
-    """
     duplicate_keys = [
         (
             duplicate.get("indicator_name"),
@@ -134,13 +127,7 @@ def _build_duplicate_confirmation_summary(
 
     deduped_duplicate_count = 0
     for entry in deduped_entries:
-        key = (
-            entry.get("indicator_name"),
-            entry.get("year"),
-            entry.get("month"),
-            entry.get("quarter"),
-            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
-        )
+        key = entry_duplicate_key(entry)
         if key in overwrite_keys:
             deduped_duplicate_count += 1
     safe_rows_count = len(deduped_entries) - deduped_duplicate_count

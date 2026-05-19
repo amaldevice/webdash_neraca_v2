@@ -1,5 +1,6 @@
 from services.list_view import EntryListParams
 from services.manual_entries import build_manual_entry
+from services.validation import allowed_file, validate_metadata
 
 
 def test_entry_list_params_query_kwargs():
@@ -40,15 +41,15 @@ def test_entry_list_params_data_management_redirect_query_uses_start_end_period_
 
 
 def test_allowed_file(app_module):
-    assert app_module.allowed_file("data.xlsx") is True
-    assert app_module.allowed_file("data.xls") is True
-    assert app_module.allowed_file("data.csv") is False
-    assert app_module.allowed_file("data") is False
+    assert allowed_file("data.xlsx") is True
+    assert allowed_file("data.xls") is True
+    assert allowed_file("data.csv") is False
+    assert allowed_file("data") is False
 
 
 def test_validate_metadata(app_module):
-    assert app_module.validate_metadata("flow", "monthly") == []
-    errors = app_module.validate_metadata("invalid", "bad")
+    assert validate_metadata("flow", "monthly") == []
+    errors = validate_metadata("invalid", "bad")
     assert "Tipe data tidak valid." in errors
     assert "Periode tidak valid." in errors
 
@@ -70,7 +71,6 @@ def test_build_manual_entry(app_module):
     assert entry["year"] == 2024
     assert entry["month"] == 1
 
-    # Test invalid value
     assert build_manual_entry(
         "Uploader",
         "v1",
@@ -81,7 +81,6 @@ def test_build_manual_entry(app_module):
         "not-a-number",
     ) is None
 
-    # Test quarterly format
     entry_quarterly = build_manual_entry(
         "Uploader",
         "v1",
@@ -93,7 +92,6 @@ def test_build_manual_entry(app_module):
     )
     assert entry_quarterly is not None
     assert entry_quarterly["quarter"] == 1
-    # Test quarterly fallback with monthly marker
     entry_quarterly_marker = build_manual_entry(
         "Uploader",
         "v1",
@@ -108,7 +106,6 @@ def test_build_manual_entry(app_module):
     assert entry_quarterly_marker["month"] == 1
     assert entry_quarterly_marker["quarter"] == 1
 
-    # Test yearly format
     entry_yearly = build_manual_entry(
         "Uploader",
         "v1",
@@ -123,7 +120,6 @@ def test_build_manual_entry(app_module):
     assert entry_yearly["month"] is None
     assert entry_yearly["quarter"] is None
 
-    # Test yearly fallback with monthly marker format
     entry_yearly_marker = build_manual_entry(
         "Uploader",
         "v1",

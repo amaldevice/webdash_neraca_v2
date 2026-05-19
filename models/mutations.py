@@ -71,8 +71,6 @@ def upsert_entries(entries: Iterable[Dict], *, session: Session | None = None) -
 
 def delete_data_entry(entry_id: str, *, session: Session | None = None) -> bool:
     """Delete a single data entry by ID"""
-    if session is None:
-        _require_engine()
     try:
         with write_session(session) as sess:
             res = sess.execute(delete(DataEntry).where(DataEntry.id == int(entry_id)))
@@ -84,8 +82,6 @@ def delete_data_entry(entry_id: str, *, session: Session | None = None) -> bool:
 
 def clear_all_data(*, session: Session | None = None) -> bool:
     """Clear all data from database tables (for testing)"""
-    if session is None:
-        _require_engine()
     try:
         with write_session(session) as sess:
             sess.execute(delete(DataEntry))
@@ -109,8 +105,6 @@ def delete_data_by_filter(
     session: Session | None = None,
 ) -> int:
     """Delete data entries based on filters"""
-    if session is None:
-        _require_engine()
     where = build_data_entry_filter_sqlalchemy(
         data_type,
         time_period,
@@ -140,8 +134,6 @@ def update_data_entry(entry_id: str, new_value: float, *, session: Session | Non
         _log.warning("update_data_entry failed: invalid value %r", new_value)
         return False
 
-    if session is None:
-        _require_engine()
     try:
         with write_session(session) as sess:
             res = sess.execute(
@@ -155,8 +147,6 @@ def update_data_entry(entry_id: str, new_value: float, *, session: Session | Non
 
 def update_data_entry_full(entry_id: str, data: Dict, *, session: Session | None = None) -> bool:
     """Update all fields of a data entry"""
-    if session is None:
-        _require_engine()
     try:
         with write_session(session) as sess:
             res = sess.execute(
@@ -190,8 +180,6 @@ def insert_single_entry(
     session: Session | None = None,
 ) -> bool:
     """Insert a single data entry"""
-    if session is None:
-        _require_engine()
     try:
         year, month, quarter = parse_period_date(time_period, period_date)
         with write_session(session) as sess:
@@ -223,8 +211,6 @@ def bulk_delete_entries(entry_ids: List[str], *, session: Session | None = None)
     """Delete multiple data entries by their IDs"""
     if not entry_ids:
         return 0
-    if session is None:
-        _require_engine()
     ids = [int(i) for i in entry_ids]
     try:
         with write_session(session) as sess:
@@ -242,8 +228,6 @@ def bulk_update_entries(
     if not entry_ids or not updates:
         return 0
 
-    if session is None:
-        _require_engine()
     vals: Dict = {}
     for field, value in updates.items():
         if field in ["uploader_name", "version", "indicator_name", "data_type", "time_period"]:
