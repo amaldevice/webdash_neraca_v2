@@ -17,7 +17,7 @@ class TestErrorHandling:
 
     def test_database_connection_failure(self, test_client):
         """Test ketika database connection gagal"""
-        with patch('services.upload_commit.insert_entries') as mock_insert:
+        with patch('models.insert_entries') as mock_insert:
             mock_insert.side_effect = sqlite3.Error("Database connection failed")
 
             with test_client as client:

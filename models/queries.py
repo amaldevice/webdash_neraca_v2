@@ -254,26 +254,14 @@ def query_data_entries(
     *,
     session: Session | None = None,
 ) -> List[Dict]:
-    if session is None and not is_engine_initialized():
-        return []
-    try:
-        sess = session if session is not None else get_session()
-    except SQLAlchemyError:
-        return []
-    return _sa_query_data_entries(
-        data_type,
-        time_period,
-        uploader,
-        indicator,
-        limit,
-        offset,
-        period_start,
-        period_end,
-        value_min,
-        value_max,
-        dataset_code,
-        session=sess,
-    )
+    def _query(sess: Session) -> List[Dict]:
+        return _sa_query_data_entries(
+            data_type, time_period, uploader, indicator,
+            limit, offset, period_start, period_end,
+            value_min, value_max, dataset_code,
+            session=sess,
+        )
+    return with_read_session(_query, default=[], session=session)
 
 
 

@@ -8,10 +8,9 @@ import shutil
 import uuid
 from typing import Any
 
-from flask import session
-
 from config import UPLOAD_PREVIEW_TTL_SECONDS
 from models.queries import preview_duplicates_batches
+from services.dataset_catalog import get_dataset_or_none
 from services.timeutil import utc_now_timestamp
 from services.upload_fs import safe_remove_upload_working_file
 
@@ -222,9 +221,9 @@ def cache_upload_preview(
     metadata: dict,
     payload: dict,
     duplicates: list[dict],
+    old_token: str | None = None,
 ) -> str:
     upload_token = uuid.uuid4().hex
-    old_token = session.get("upload_preview_token")
     if isinstance(old_token, str) and old_token != upload_token:
         _invalidate_preview_session(upload_folder, old_token)
     session_payload = _build_preview_session_payload(
@@ -235,7 +234,6 @@ def cache_upload_preview(
         duplicates=duplicates,
     )
     save_preview_session(upload_folder, upload_token, session_payload)
-    session["upload_preview_token"] = upload_token
     return upload_token
 
 
@@ -279,8 +277,6 @@ def excel_preview_source_from_payload(
     slug = (payload.get("dataset_slug") or "").strip()
     label = ""
     if slug:
-        from services.dataset_catalog import get_dataset_or_none
-
         d = get_dataset_or_none(slug)
         if d is not None:
             label = d.label
@@ -315,8 +311,6 @@ def upload_page_preview_from_session(
     slug = (meta.get("dataset_slug") or "").strip()
     label = ""
     if slug:
-        from services.dataset_catalog import get_dataset_or_none
-
         d = get_dataset_or_none(slug)
         if d is not None:
             label = d.label
@@ -391,6 +385,7 @@ def build_upload_preview(
     entries: list[dict],
     duplicates: list[dict],
     dataset_slug: str = "",
+    old_token: str | None = None,
 ) -> tuple[str, dict]:
     """Create cached preview state and normalized preview context for templates."""
     upload_token = cache_upload_preview(
@@ -406,6 +401,7 @@ def build_upload_preview(
         },
         payload,
         duplicates,
+        old_token=old_token,
     )
     session_data = load_preview_session(upload_folder, upload_token) or {}
     preview_payload = upload_page_preview_from_session(

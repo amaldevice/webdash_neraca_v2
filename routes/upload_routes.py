@@ -137,6 +137,7 @@ def upload_data():
                 form_values,
                 action,
                 require_dataset=require_dataset,
+                old_token=session.get("upload_preview_token"),
             )
         )
 

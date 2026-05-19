@@ -69,6 +69,8 @@ def apply_upload_flow_response(resp: UploadFlowResponse) -> Response:
         session.pop("upload_preview_token", None)
     if resp.kind == "redirect":
         return redirect(url_for("upload_data"))
+    if resp.upload_preview_token is not None:
+        session["upload_preview_token"] = resp.upload_preview_token
     return _render_upload_template(
         preview=resp.preview,
         upload_preview_token=resp.upload_preview_token,

@@ -237,6 +237,9 @@ todos:
   - id: pytest-upload-runs-manual-and-confirm
     content: "Pytest asserts `upload_runs` after successful `process_manual_input_post` (#62) and `process_upload_confirm` (#63); `tests/test_upload_flow.py`."
     status: completed
+  - id: fix-cache-upload-preview-session-regression
+    content: "Issue #102 — `services/upload_preview.py`: `cache_upload_preview` menerima `old_token: str | None = None`, tidak lagi akses `flask.session`. `from flask import session` dihapus. Callers diperbarui: `build_upload_preview`, `handle_upload_post_file_preview`, `handle_upload_post_file_save_with_duplicates`, `process_upload_post_file` (+ `old_token`), `upload_routes.py` (pass `old_token=session.get(...)`). `apply_upload_flow_response` set `session[\"upload_preview_token\"]`. Tes baru: `tests/test_upload_preview_pure.py`."
+    status: completed
 isProject: false
 ---
 

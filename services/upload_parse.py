@@ -9,8 +9,8 @@ from excel_parser.constants import PREVIEW_SAMPLE_LIMIT
 
 from services.dataset_intake import resolve_dataset_for_intake
 from services.upload_duplicates import (
-    _build_internal_duplicate_warning_message,
-    _collect_internal_duplicate_counts,
+    build_internal_duplicate_warning_message,
+    collect_internal_duplicate_counts,
 )
 
 
@@ -50,8 +50,8 @@ def parse_and_validate_upload_payload(
     for row in entries:
         row["dataset_code"] = code
     warnings = list(payload.get("warnings", []))
-    internal_duplicate_warning = _build_internal_duplicate_warning_message(
-        _collect_internal_duplicate_counts(entries)
+    internal_duplicate_warning = build_internal_duplicate_warning_message(
+        collect_internal_duplicate_counts(entries)
     )
     if internal_duplicate_warning:
         warnings.append(internal_duplicate_warning)
