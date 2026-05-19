@@ -7,8 +7,13 @@ import io
 import pandas as pd
 from flask import Response
 
+from services.entry_list_page import EXPORT_ENTRY_HARD_CAP
+
 
 # Canonical column order shared by CSV and Excel raw export (parity).
+# These are the definitive columns produced by every raw-data export endpoint,
+# in fixed order.  Do NOT reorder or remove columns without updating the
+# corresponding Excel template and any downstream consumers.
 RAW_EXPORT_COLUMNS = [
     "id",
     "uploader_name",
@@ -26,8 +31,13 @@ RAW_EXPORT_COLUMNS = [
 
 
 def build_raw_data_export_response(entries: list, fmt: str) -> Response:
-    """CSV or Excel attachment for filtered raw rows."""
+    """CSV or Excel attachment for filtered raw rows.
+
+    Hard-caps output at ``EXPORT_ENTRY_HARD_CAP`` rows so callers that bypass
+    ``fetch_entries_for_export`` cannot produce unbounded downloads.
+    """
     fmt = fmt.lower()
+    entries = entries[:EXPORT_ENTRY_HARD_CAP]
     if fmt == "excel":
         df = pd.DataFrame(entries, columns=RAW_EXPORT_COLUMNS) if entries else pd.DataFrame(
             columns=RAW_EXPORT_COLUMNS
