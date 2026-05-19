@@ -199,11 +199,11 @@ Template Preview / Data-Management / Dashboard
 4. Pengguna melanjutkan analisis melalui:
    - `/preview-data` untuk meninjau data tabel dengan filter rentang periode.
    - `/data-management` untuk pemeliharaan data dan tindakan massal.
-   - `/dashboard` untuk melihat metrik repository.
+   - `/preview-data` untuk melihat metrik repository.
 5. Semua filter terkait, termasuk `start_period`/`end_period`, ikut diterapkan pada ekspor dan analisis.
 
 ### Alur Tambahan
-- `/dashboard` menampilkan metrik dari data aktif.
+- `/preview-data` menampilkan metrik dari data aktif (dulunya `/dashboard`, sekarang redirect ke sini).
 - `/export` menyediakan data mentah (CSV/Excel) sesuai filter aktif.
 
 ## Skema Basis Data
@@ -274,7 +274,7 @@ GET,POST /upload               # Unggah file Excel
 GET,POST /manual               # Input data manual
 GET  /preview-data             # Pratinjau data + filter + ekspor
 GET,POST /data-management      # Manajemen data + tindakan massal
-GET  /dashboard               # Metrik repository + analisis periode
+GET  /dashboard               # Redirect 301 ke /preview-data (legacy alias)
 GET  /export                   # Ekspor CSV/Excel berdasarkan filter aktif
 ```
 
@@ -297,7 +297,7 @@ npm run build:css
 2. Lakukan unggahan data melalui `/upload` atau input manual pada `/manual`.
 3. Gunakan `/preview-data` untuk memfilter dan mengekspor data mentah.
 4. Gunakan `/data-management` untuk pemeliharaan, pembaruan massal, serta penghapusan data.
-5. Gunakan `/dashboard` untuk melihat metrik repository.
+5. Gunakan `/preview-data` untuk melihat metrik repository.
 
 ### Contoh Pemakaian Endpoint
 ```bash

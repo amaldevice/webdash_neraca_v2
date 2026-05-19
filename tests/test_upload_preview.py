@@ -1,8 +1,6 @@
 import json
 import os
 
-from flask import session
-
 import models
 from services import upload_preview
 from services.upload_preview import (
@@ -71,7 +69,7 @@ def test_cache_upload_preview_and_load_session(app_module, tmp_path):
             [],
         )
         assert isinstance(token, str)
-        assert session["upload_preview_token"] == token
+        # session is no longer written by cache_upload_preview (caller's responsibility)
 
         payload = load_preview_session(str(upload_dir), token)
         assert payload is not None
@@ -109,7 +107,7 @@ def test_build_upload_preview_returns_payload_and_token(app_module, tmp_path):
             entries=_parse_payload()["entries"],
             duplicates=duplicates,
         )
-        assert session["upload_preview_token"] == token
+        # session is now managed by the route adapter, not by build_upload_preview
         assert preview["upload_preview_token"] == token
         assert preview["duplicate_records"] == duplicates
         assert preview["skip_duplicate_indexes"] == []

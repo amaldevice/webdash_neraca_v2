@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Upload branch handlers; persistence lives in `services.upload_commit`.
+Upload branch handlers.
 
 Each handler implements one specific branch of the upload flow
 (confirm-with-duplicates, save-without-duplicates, preview, etc.).
@@ -13,18 +13,15 @@ from typing import Any
 
 from sqlalchemy.exc import IntegrityError as SAIntegrityError
 
-from services.upload_commit import (
-    persist_upload_entries,
-    persist_upload_entries_with_overwrite,
-)
+from models import insert_entries, upsert_entries
 from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_dialect
 from services.upload_intake_finalize import (
     _safe_remove_file,
     finalize_successful_excel_upload_intake,
 )
 from services.upload_duplicates import (
-    _build_duplicate_confirmation_summary,
-    _duplicate_conflict_message,
+    build_duplicate_confirmation_summary,
+    duplicate_conflict_message,
     prepare_duplicate_plan,
 )
 from services.upload_types import UploadFlowResponse, build_upload_response
@@ -34,6 +31,15 @@ from services.upload_preview import (
     excel_preview_source_from_payload,
     to_preview_context,
 )
+
+
+def _handle_db_integrity_error(e, *, kind="redirect", form_values=None, preview=None, upload_preview_token=None):
+    if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
+        flash_msg = duplicate_conflict_message()
+    else:
+        flash_msg = f"Terjadi kesalahan database: {e}"
+    return build_upload_response(kind, [(flash_msg, "error")], preview=preview, upload_preview_token=upload_preview_token, form_values=form_values)
+
 
 def handle_upload_confirm_with_duplicates(
     upload_folder: str,
@@ -51,7 +57,7 @@ def handle_upload_confirm_with_duplicates(
         duplicates=duplicates,
         skip_duplicate_indexes_raw=skip_duplicate_indexes_raw,
     )
-    _, overwrite_count, safe_rows_count = _build_duplicate_confirmation_summary(
+    _, overwrite_count, safe_rows_count = build_duplicate_confirmation_summary(
         duplicates,
         selected_indexes,
         deduped_entries,
@@ -84,7 +90,7 @@ def handle_upload_confirm_with_duplicates(
             form_values=form_values,
         )
     try:
-        persist_upload_entries_with_overwrite(deduped_entries)
+        upsert_entries(deduped_entries)
         finalize_successful_excel_upload_intake(
             entries=deduped_entries,
             token_metadata=metadata,
@@ -126,12 +132,7 @@ def handle_upload_confirm_with_duplicates(
             pop_upload_session_token=True,
         )
     except (sqlite3.IntegrityError, SAIntegrityError) as e:
-        error_msg = str(e)
-        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
-            flash_msg = _duplicate_conflict_message()
-        else:
-            flash_msg = f"Terjadi kesalahan database: {error_msg}"
-        return build_upload_response("redirect", [(flash_msg, "error")])
+        return _handle_db_integrity_error(e, kind="redirect")
     except Exception as e:
         return build_upload_response(
             "redirect",
@@ -148,7 +149,7 @@ def handle_upload_confirm_without_duplicates(
     token_payload: dict[str, Any] | None = None,
 ) -> UploadFlowResponse:
     try:
-        persist_upload_entries(entries)
+        insert_entries(entries)
         finalize_successful_excel_upload_intake(
             entries=entries,
             token_metadata=(token_payload or {}).get("metadata") or {},
@@ -163,12 +164,7 @@ def handle_upload_confirm_without_duplicates(
             pop_upload_session_token=True,
         )
     except (sqlite3.IntegrityError, SAIntegrityError) as e:
-        error_msg = str(e)
-        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
-            flash_msg = _duplicate_conflict_message()
-        else:
-            flash_msg = f"Terjadi kesalahan database: {error_msg}"
-        return build_upload_response("redirect", [(flash_msg, "error")])
+        return _handle_db_integrity_error(e, kind="redirect")
     except Exception as e:
         return build_upload_response(
             "redirect",
@@ -209,6 +205,7 @@ def handle_upload_post_file_save_with_duplicates(
     entries: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
     form_values: dict[str, str],
+    old_token: str | None = None,
 ) -> UploadFlowResponse:
     upload_token, preview_payload = build_upload_preview(
         upload_folder=upload_folder,
@@ -222,6 +219,7 @@ def handle_upload_post_file_save_with_duplicates(
         entries=entries,
         duplicates=duplicates,
         dataset_slug=form_values.get("dataset_slug", ""),
+        old_token=old_token,
     )
     return build_upload_response(
         "render",
@@ -246,7 +244,7 @@ def handle_upload_post_file_save_without_duplicates(
     source_file_name: str = "",
 ) -> UploadFlowResponse:
     try:
-        persist_upload_entries(entries)
+        insert_entries(entries)
         finalize_successful_excel_upload_intake(
             entries=entries,
             token_metadata=None,
@@ -260,18 +258,7 @@ def handle_upload_post_file_save_without_duplicates(
             [(f"{len(entries)} baris data berhasil disimpan.", "success")],
         )
     except (sqlite3.IntegrityError, SAIntegrityError) as e:
-        error_msg = str(e)
-        if is_duplicate_key_error(e, resolve_duplicate_check_dialect()):
-            flash_msg = _duplicate_conflict_message()
-        else:
-            flash_msg = f"Terjadi kesalahan database: {error_msg}"
-        return build_upload_response(
-            "render",
-            [(flash_msg, "error")],
-            preview=None,
-            upload_preview_token=None,
-            form_values=form_values,
-        )
+        return _handle_db_integrity_error(e, kind="render", form_values=form_values)
     except Exception as e:
         return build_upload_response(
             "render",
@@ -290,6 +277,7 @@ def handle_upload_post_file_preview(
     payload: dict[str, Any],
     entries: list[dict[str, Any]],
     duplicates: list[dict[str, Any]],
+    old_token: str | None = None,
 ) -> UploadFlowResponse:
     metadata = {
         "uploader": form_values["uploader"],
@@ -305,6 +293,7 @@ def handle_upload_post_file_preview(
         metadata,
         payload,
         duplicates,
+        old_token=old_token,
     )
     preview_payload = to_preview_context(
         excel_preview_source_from_payload(

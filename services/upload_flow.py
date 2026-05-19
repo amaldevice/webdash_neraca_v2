@@ -19,9 +19,9 @@ from services.db_errors import is_duplicate_key_error, resolve_duplicate_check_d
 from services.dataset_intake import resolve_dataset_for_intake
 from services.manual_entries import build_manual_entry
 from services.upload_duplicates import (
-    _build_internal_duplicate_warning_message,
-    _collect_internal_duplicate_counts,
-    _hydrate_duplicate_records_with_values,
+    build_internal_duplicate_warning_message,
+    collect_internal_duplicate_counts,
+    hydrate_duplicate_records_with_values,
 )
 from services.upload_parse import parse_and_validate_upload_payload
 from services.upload_intake_finalize import _safe_remove_file
@@ -109,8 +109,8 @@ def process_upload_confirm(
             "redirect",
             [(f"Gagal memproses berkas pratinjau: {str(e)}", "error")],
         )
-    internal_duplicate_warning = _build_internal_duplicate_warning_message(
-        _collect_internal_duplicate_counts(entries)
+    internal_duplicate_warning = build_internal_duplicate_warning_message(
+        collect_internal_duplicate_counts(entries)
     )
     if internal_duplicate_warning:
         return build_upload_response("redirect", [(internal_duplicate_warning, "error")])
@@ -121,7 +121,7 @@ def process_upload_confirm(
             msg = "Dataset wajib dipilih untuk pratinjau ini, tetapi metadata sesi tidak lengkap. Unggah ulang dengan dataset yang sama."
         return build_upload_response("redirect", [(msg, "error")])
 
-    duplicates = _hydrate_duplicate_records_with_values(
+    duplicates = hydrate_duplicate_records_with_values(
         find_duplicate_entries_in_db(meta["uploader"], meta["version"], entries),
         entries,
     )
@@ -155,6 +155,7 @@ def process_upload_post_file(
     action: str,
     *,
     require_dataset: bool = False,
+    old_token: str | None = None,
 ) -> UploadFlowResponse:
     """
     Setelah file multipart tersimpan: parse Excel lalu pilih alur preview / simpan.
@@ -203,8 +204,8 @@ def process_upload_post_file(
 
     if not entries:
         return handle_upload_post_file_no_entries(destination, form_values, warnings)
-    internal_duplicate_warning = _build_internal_duplicate_warning_message(
-        _collect_internal_duplicate_counts(entries)
+    internal_duplicate_warning = build_internal_duplicate_warning_message(
+        collect_internal_duplicate_counts(entries)
     )
     if internal_duplicate_warning:
         extra_flashes = [(internal_duplicate_warning, "error")]
@@ -219,7 +220,7 @@ def process_upload_post_file(
             form_values=form_values,
         )
 
-    duplicates = _hydrate_duplicate_records_with_values(
+    duplicates = hydrate_duplicate_records_with_values(
         find_duplicate_entries_in_db(uploader, version, entries),
         entries,
     )
@@ -237,6 +238,7 @@ def process_upload_post_file(
                 entries=entries,
                 duplicates=duplicates,
                 form_values=form_values,
+                old_token=old_token,
             )
 
         try:
@@ -265,6 +267,7 @@ def process_upload_post_file(
         payload=payload,
         entries=entries,
         duplicates=duplicates,
+        old_token=old_token,
     )
 
 
