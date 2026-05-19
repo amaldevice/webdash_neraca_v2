@@ -8,10 +8,9 @@ import shutil
 import uuid
 from typing import Any
 
-from flask import session
-
 from config import UPLOAD_PREVIEW_TTL_SECONDS
 from models.queries import preview_duplicates_batches
+from services.dataset_catalog import get_dataset_or_none
 from services.timeutil import utc_now_timestamp
 from services.upload_fs import safe_remove_upload_working_file
 
@@ -29,7 +28,6 @@ def _safe_remove_uploaded_file(upload_folder: str, file_path: str | None) -> Non
 
 
 def _read_preview_session(upload_folder: str, token: str) -> dict | None:
-    """Read one preview session payload from disk."""
     if not token:
         return None
     path = _session_json_path(upload_folder, token)
@@ -43,7 +41,6 @@ def _read_preview_session(upload_folder: str, token: str) -> dict | None:
 
 
 def _write_preview_session(upload_folder: str, token: str, payload: dict) -> None:
-    """Persist preview payload with created_at timestamp."""
     root = _sessions_root(upload_folder)
     tdir = os.path.join(root, token)
     os.makedirs(tdir, exist_ok=True)
@@ -85,7 +82,6 @@ def load_preview_session(upload_folder: str, token: str) -> dict | None:
 
 
 def save_preview_session(upload_folder: str, token: str, payload: dict) -> None:
-    """Back-compat wrapper for writing preview payload."""
     _write_preview_session(upload_folder, token, payload)
 
 
@@ -123,18 +119,11 @@ def _drop_stale_session_token(flask_session, upload_folder: str) -> None:
 
 
 def _collect_duplicate_lookup_keys(entries: list[dict]) -> list[tuple]:
-    """Collect unique duplicate-check keys from parsed entries (includes dataset_code)."""
     unique_keys: list[tuple] = []
     seen: set[tuple] = set()
     for entry in entries:
         ds = (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip()
-        key = (
-            entry.get("indicator_name"),
-            entry.get("year"),
-            entry.get("month"),
-            entry.get("quarter"),
-            ds,
-        )
+        key = (entry.get("indicator_name"), entry.get("year"), entry.get("month"), entry.get("quarter"), ds)
         if key in seen:
             continue
         seen.add(key)
@@ -142,77 +131,53 @@ def _collect_duplicate_lookup_keys(entries: list[dict]) -> list[tuple]:
     return unique_keys
 
 
-def find_duplicate_entries_in_db(
-    _uploader: str | None = None,
-    _version: str | None = None,
-    entries: list[dict] | None = None,
-) -> list[dict]:
+def find_duplicate_entries_in_db(_uploader=None, _version=None, entries=None):
     if entries is None:
         return []
     if not entries:
         return []
-    unique_keys = _collect_duplicate_lookup_keys(entries)
-    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
+    return _lookup_existing_duplicate_records_by_indicator_period(_collect_duplicate_lookup_keys(entries))
 
 
-def _lookup_existing_duplicate_records_by_indicator_period(unique_keys: list[tuple]) -> list[dict]:
+def _lookup_existing_duplicate_records_by_indicator_period(unique_keys):
     return preview_duplicates_batches(unique_keys)
 
 
-def find_duplicate_entries_by_indicator_period(entries: list[dict]) -> list[dict]:
+def find_duplicate_entries_by_indicator_period(entries):
     if not entries:
         return []
-    unique_keys = _collect_duplicate_lookup_keys(entries)
-    return _lookup_existing_duplicate_records_by_indicator_period(unique_keys)
+    return _lookup_existing_duplicate_records_by_indicator_period(_collect_duplicate_lookup_keys(entries))
 
 
-def filter_duplicate_entries(
-    entries: list[dict],
-    duplicate_records: list[dict],
-    skip_indexes: set[int],
-) -> tuple[list[dict], int]:
+def filter_duplicate_entries(entries, duplicate_records, skip_indexes):
     duplicate_keys = [
-        (
-            duplicate.get("indicator_name"),
-            duplicate.get("year"),
-            duplicate.get("month"),
-            duplicate.get("quarter"),
-            (duplicate.get("dataset_code") or "").strip(),
-        )
-        for duplicate in duplicate_records
+        (d.get("indicator_name"), d.get("year"), d.get("month"), d.get("quarter"), (d.get("dataset_code") or "").strip())
+        for d in duplicate_records
     ]
     skip_keys = {key for i, key in enumerate(duplicate_keys) if i in skip_indexes}
-    deduped_entries: list[dict] = []
-    skipped_count = 0
+    deduped: list[dict] = []
+    skipped = 0
     for entry in entries:
-        key = (
-            entry.get("indicator_name"),
-            entry.get("year"),
-            entry.get("month"),
-            entry.get("quarter"),
-            (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip(),
-        )
+        key = (entry.get("indicator_name"), entry.get("year"), entry.get("month"), entry.get("quarter"),
+               (entry.get("dataset_code") or entry.get("dataset_slug") or "").strip())
         if key in skip_keys:
-            skipped_count += 1
+            skipped += 1
             continue
-        deduped_entries.append(entry)
-    return deduped_entries, skipped_count
+        deduped.append(entry)
+    return deduped, skipped
 
 
-def parse_selected_duplicate_indexes(
-    raw_indexes: list[str],
-    duplicate_records: list[dict],
-) -> set[int]:
-    selected_indexes: set[int] = set()
+def parse_selected_duplicate_indexes(raw_indexes, duplicate_records):
+    selected: set[int] = set()
     max_index = len(duplicate_records)
-    for raw_index in raw_indexes:
+    for raw in raw_indexes:
         try:
-            idx = int(raw_index)
+            idx = int(raw)
         except (TypeError, ValueError):
             continue
         if 0 <= idx < max_index:
-            selected_indexes.add(idx)
-    return selected_indexes
+            selected.add(idx)
+    return selected
 
 
 def cache_upload_preview(
@@ -222,193 +187,96 @@ def cache_upload_preview(
     metadata: dict,
     payload: dict,
     duplicates: list[dict],
+    old_token: str | None = None,
 ) -> str:
     upload_token = uuid.uuid4().hex
-    old_token = session.get("upload_preview_token")
     if isinstance(old_token, str) and old_token != upload_token:
         _invalidate_preview_session(upload_folder, old_token)
     session_payload = _build_preview_session_payload(
-        destination=destination,
-        file_name=file_name,
-        metadata=metadata,
-        payload=payload,
-        duplicates=duplicates,
+        destination=destination, file_name=file_name, metadata=metadata, payload=payload, duplicates=duplicates,
     )
     save_preview_session(upload_folder, upload_token, session_payload)
-    session["upload_preview_token"] = upload_token
     return upload_token
 
 
-def _build_preview_session_payload(
-    *,
-    destination: str,
-    file_name: str,
-    metadata: dict[str, Any],
-    payload: dict,
-    duplicates: list[dict],
-) -> dict[str, Any]:
+def _build_preview_session_payload(*, destination, file_name, metadata, payload, duplicates):
     return {
-        "file_path": destination,
-        "file_name": file_name,
-        "metadata": metadata,
-        "layout": payload["layout"],
-        "header_row": payload["header_row"],
-        "source_rows": payload["source_rows"],
-        "source_columns": payload["source_columns"],
-        "source_mode": payload["source_mode"],
-        "warnings": payload.get("warnings", []),
-        "entries_preview": payload.get("sample", []),
-        "invalid_rows": payload.get("invalid_rows", []),
-        "total_records": len(payload.get("entries", [])),
-        "duplicate_records": duplicates,
-        "skip_duplicate_indexes": [],
+        "file_path": destination, "file_name": file_name, "metadata": metadata,
+        "layout": payload["layout"], "header_row": payload["header_row"],
+        "source_rows": payload["source_rows"], "source_columns": payload["source_columns"],
+        "source_mode": payload["source_mode"], "warnings": payload.get("warnings", []),
+        "entries_preview": payload.get("sample", []), "invalid_rows": payload.get("invalid_rows", []),
+        "total_records": len(payload.get("entries", [])), "duplicate_records": duplicates, "skip_duplicate_indexes": [],
     }
 
 
-def excel_preview_source_from_payload(
-    *,
-    file_name: str,
-    payload: dict,
-    upload_preview_token: str,
-    total_records: int,
-) -> dict:
-    """
-    Normalized dict for `to_preview_context` after a parse (confirm flow / fresh preview).
-    Keeps upload_flow free of repeated OpenPyXL field wiring.
-    """
+def excel_preview_source_from_payload(*, file_name, payload, upload_preview_token, total_records):
     slug = (payload.get("dataset_slug") or "").strip()
     label = ""
     if slug:
-        from services.dataset_catalog import get_dataset_or_none
-
         d = get_dataset_or_none(slug)
         if d is not None:
             label = d.label
     return {
-        "file_name": file_name,
-        "layout": payload["layout"],
-        "source_mode": payload.get("source_mode", "headered"),
-        "header_row": payload["header_row"],
-        "source_rows": payload["source_rows"],
-        "source_columns": payload["source_columns"],
-        "warnings": payload.get("warnings", []),
-        "entries_preview": payload.get("sample", []),
-        "invalid_rows": payload.get("invalid_rows", []),
-        "total_records": total_records,
-        "upload_preview_token": upload_preview_token,
-        "dataset_slug": slug,
-        "dataset_label": label,
+        "file_name": file_name, "layout": payload["layout"],
+        "source_mode": payload.get("source_mode", "headered"), "header_row": payload["header_row"],
+        "source_rows": payload["source_rows"], "source_columns": payload["source_columns"],
+        "warnings": payload.get("warnings", []), "entries_preview": payload.get("sample", []),
+        "invalid_rows": payload.get("invalid_rows", []), "total_records": total_records,
+        "upload_preview_token": upload_preview_token, "dataset_slug": slug, "dataset_label": label,
     }
 
 
-def upload_page_preview_from_session(
-    session_payload: dict[str, Any],
-    *,
-    upload_preview_token: str,
-) -> dict:
-    """
-    Template preview context from disk session shape produced by ``_build_preview_session_payload``.
-
-    Used for GET /upload reload and kept in sync with ``build_upload_preview`` POST path.
-    """
+def upload_page_preview_from_session(session_payload, *, upload_preview_token):
     meta = session_payload.get("metadata") or {}
     slug = (meta.get("dataset_slug") or "").strip()
     label = ""
     if slug:
-        from services.dataset_catalog import get_dataset_or_none
-
         d = get_dataset_or_none(slug)
         if d is not None:
             label = d.label
     src = {
-        "file_name": session_payload.get("file_name"),
-        "layout": session_payload["layout"],
-        "source_mode": session_payload.get("source_mode", "headered"),
-        "header_row": session_payload["header_row"],
-        "source_rows": session_payload["source_rows"],
-        "source_columns": session_payload["source_columns"],
-        "warnings": session_payload.get("warnings", []),
-        "entries_preview": session_payload.get("entries_preview", []),
-        "invalid_rows": session_payload.get("invalid_rows", []),
-        "total_records": session_payload.get("total_records"),
+        "file_name": session_payload.get("file_name"), "layout": session_payload["layout"],
+        "source_mode": session_payload.get("source_mode", "headered"), "header_row": session_payload["header_row"],
+        "source_rows": session_payload["source_rows"], "source_columns": session_payload["source_columns"],
+        "warnings": session_payload.get("warnings", []), "entries_preview": session_payload.get("entries_preview", []),
+        "invalid_rows": session_payload.get("invalid_rows", []), "total_records": session_payload.get("total_records"),
         "upload_preview_token": upload_preview_token,
-        "dataset_slug": slug,
-        "dataset_label": label,
+        "dataset_slug": slug, "dataset_label": label,
     }
-    return to_preview_context(
-        src,
-        duplicates=session_payload.get("duplicate_records"),
-        skip_duplicate_indexes=session_payload.get("skip_duplicate_indexes") or [],
-    )
+    return to_preview_context(src, duplicates=session_payload.get("duplicate_records"),
+                              skip_duplicate_indexes=session_payload.get("skip_duplicate_indexes") or [])
 
 
-def to_preview_context(
-    payload: dict,
-    duplicates: list[dict] | None = None,
-    skip_duplicate_indexes: list[str] | None = None,
-) -> dict:
+def to_preview_context(payload, duplicates=None, skip_duplicate_indexes=None):
     return _to_template_context(payload, duplicates, skip_duplicate_indexes)
 
 
-def _to_template_context(
-    payload: dict,
-    duplicates: list[dict] | None = None,
-    skip_duplicate_indexes: list[str] | None = None,
-) -> dict:
+def _to_template_context(payload, duplicates=None, skip_duplicate_indexes=None):
     duplicate_records = duplicates if duplicates is not None else payload.get("duplicate_records", [])
     if skip_duplicate_indexes is None:
         skip_duplicate_indexes = payload.get("skip_duplicate_indexes", [])
     return {
-        "file_name": payload.get("file_name"),
-        "layout": payload.get("layout"),
-        "source_mode": payload.get("source_mode"),
-        "header_row": payload.get("header_row"),
-        "source_rows": payload.get("source_rows"),
-        "source_columns": payload.get("source_columns"),
-        "warnings": payload.get("warnings", []),
-        "entries_preview": payload.get("entries_preview", []),
-        "sample_count": len(payload.get("entries_preview", [])),
-        "invalid_rows": payload.get("invalid_rows", []),
-        "total_records": payload.get("total_records"),
-        "duplicate_records": duplicate_records,
-        "skip_duplicate_indexes": skip_duplicate_indexes,
-        "upload_preview_token": payload.get("upload_preview_token"),
-        "dataset_slug": payload.get("dataset_slug", ""),
-        "dataset_label": payload.get("dataset_label", ""),
+        "file_name": payload.get("file_name"), "layout": payload.get("layout"),
+        "source_mode": payload.get("source_mode"), "header_row": payload.get("header_row"),
+        "source_rows": payload.get("source_rows"), "source_columns": payload.get("source_columns"),
+        "warnings": payload.get("warnings", []), "entries_preview": payload.get("entries_preview", []),
+        "sample_count": len(payload.get("entries_preview", [])), "invalid_rows": payload.get("invalid_rows", []),
+        "total_records": payload.get("total_records"), "duplicate_records": duplicate_records,
+        "skip_duplicate_indexes": skip_duplicate_indexes, "upload_preview_token": payload.get("upload_preview_token"),
+        "dataset_slug": payload.get("dataset_slug", ""), "dataset_label": payload.get("dataset_label", ""),
     }
 
 
-def build_upload_preview(
-    *,
-    upload_folder: str,
-    destination: str,
-    display_name: str,
-    uploader: str,
-    version: str,
-    data_type: str,
-    time_period: str,
-    payload: dict,
-    entries: list[dict],
-    duplicates: list[dict],
-    dataset_slug: str = "",
-) -> tuple[str, dict]:
-    """Create cached preview state and normalized preview context for templates."""
+def build_upload_preview(*, upload_folder, destination, display_name, uploader, version,
+                         data_type, time_period, payload, entries, duplicates,
+                         dataset_slug="", old_token=None):
     upload_token = cache_upload_preview(
-        upload_folder,
-        destination,
-        display_name,
-        {
-            "uploader": uploader,
-            "version": version,
-            "data_type": data_type,
-            "time_period": time_period,
-            "dataset_slug": (dataset_slug or "").strip(),
-        },
-        payload,
-        duplicates,
+        upload_folder, destination, display_name,
+        {"uploader": uploader, "version": version, "data_type": data_type,
+         "time_period": time_period, "dataset_slug": (dataset_slug or "").strip()},
+        payload, duplicates, old_token=old_token,
     )
     session_data = load_preview_session(upload_folder, upload_token) or {}
-    preview_payload = upload_page_preview_from_session(
-        session_data, upload_preview_token=upload_token
-    )
+    preview_payload = upload_page_preview_from_session(session_data, upload_preview_token=upload_token)
     return upload_token, preview_payload
