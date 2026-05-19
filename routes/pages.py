@@ -2,7 +2,7 @@
 """Public pages: landing, preview, export."""
 from __future__ import annotations
 
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
 
 from models import get_filter_options, get_landing_summary
 from services.entry_list import (
@@ -37,7 +37,13 @@ def export_data():
     return build_raw_data_export_response(entries, fmt)
 
 
+def dashboard_redirect():
+    """Legacy redirect: /dashboard was renamed to /preview-data."""
+    return redirect(url_for("preview_data", **request.args), code=301)
+
+
 def register(app: Flask) -> None:
     app.add_url_rule("/", endpoint="landing_page", view_func=landing_page, methods=["GET"])
     app.add_url_rule("/preview-data", endpoint="preview_data", view_func=preview_data, methods=["GET"])
+    app.add_url_rule("/dashboard", endpoint="dashboard_redirect", view_func=dashboard_redirect, methods=["GET"])
     app.add_url_rule("/export", endpoint="export_data", view_func=export_data, methods=["GET"])

@@ -31,7 +31,7 @@
 
 - Endpoints utama:
   - `/upload`, `/upload/manual`, `/upload/confirm`, `/upload/template/<slug>`
-  - `/preview-data`, `/data-management`, `/dashboard`, `/export`, `/export-period-analysis`.
+  - `/preview-data`, `/data-management`, `/dashboard` (redirect 301 ke `/preview-data`), `/export`.
 - Export dan chart memakai endpoint yang menerima filter period/range agar konsisten.
 
 ## Integrasi Pengujian
