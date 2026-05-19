@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from services.timeutil import utc_now_iso
-
 from excel_parser.normalize import _parse_period, _to_float
+from excel_parser.timeutil import utc_now_iso
 
 
 def _period_text(entry: dict) -> str:
